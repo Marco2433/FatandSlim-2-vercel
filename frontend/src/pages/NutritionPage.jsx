@@ -351,17 +351,43 @@ export default function NutritionPage() {
     generateMealPlan(mealPlanType);
   };
 
-  const addMealToDiary = async (meal, mealType) => {
+  // Open date picker to select date for meal
+  const openDatePickerForMeal = (meal, mealType) => {
+    setMealToAdd({ meal, mealType });
+    setDatePickerOpen(true);
+  };
+
+  // Add meal to diary with selected date
+  const addMealToDiary = async (meal, mealType, date = null) => {
+    const targetDate = date || selectedDate;
     try {
       await axios.post(`${API}/meals/add-to-diary`, {
         meal,
         meal_type: mealType,
-        date: selectedDate
+        date: targetDate
       }, { withCredentials: true });
-      toast.success(`${meal.name} ajouté au journal`);
+      
+      // Also add to agenda notes for visibility
+      await axios.post(`${API}/agenda/notes`, {
+        date: targetDate,
+        content: `🍽️ ${mealTypes.find(t => t.value === mealType)?.label || 'Repas'}: ${meal.name} (${meal.calories} kcal)`,
+        type: 'meal_plan'
+      }, { withCredentials: true });
+      
+      toast.success(`${meal.name} ajouté au ${new Date(targetDate).toLocaleDateString('fr-FR')}`);
       fetchData();
+      fetchAgendaNotes();
+      setDatePickerOpen(false);
+      setMealToAdd(null);
     } catch (error) {
       toast.error('Erreur lors de l\'ajout');
+    }
+  };
+
+  // Confirm add meal with selected date
+  const confirmAddMeal = () => {
+    if (mealToAdd) {
+      addMealToDiary(mealToAdd.meal, mealToAdd.mealType, selectedDate);
     }
   };
 
