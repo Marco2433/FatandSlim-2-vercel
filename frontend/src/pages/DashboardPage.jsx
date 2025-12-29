@@ -21,7 +21,11 @@ import {
   Sparkles,
   Heart,
   ShoppingCart,
-  Clock
+  Clock,
+  Search,
+  Loader2,
+  ListPlus,
+  BookOpen
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
