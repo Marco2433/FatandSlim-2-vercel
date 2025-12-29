@@ -1396,82 +1396,56 @@ async def clear_shopping_list(user: dict = Depends(get_current_user)):
 
 # ==================== DAILY RECIPES (RECETTES DU JOUR) ====================
 
-# Base de recettes françaises avec photos (URLs Unsplash gratuites)
-RECIPE_DATABASE = [
-    # Petit-déjeuners sains (Nutri-score A-B)
-    {"id": "r001", "name": "Porridge aux fruits rouges", "category": "breakfast", "calories": 320, "protein": 12, "carbs": 52, "fat": 8, "nutri_score": "A", "prep_time": "10 min", "difficulty": "facile", "image": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400", "ingredients": [{"item": "Flocons d'avoine", "quantity": "60g"}, {"item": "Lait d'amande", "quantity": "200ml"}, {"item": "Fruits rouges", "quantity": "100g"}, {"item": "Miel", "quantity": "1 c.à.c"}], "steps": ["Faire chauffer le lait", "Ajouter les flocons d'avoine", "Cuire 5 min en remuant", "Garnir de fruits rouges et miel"]},
-    {"id": "r002", "name": "Œufs brouillés aux légumes", "category": "breakfast", "calories": 280, "protein": 18, "carbs": 8, "fat": 20, "nutri_score": "A", "prep_time": "12 min", "difficulty": "facile", "image": "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400", "ingredients": [{"item": "Œufs", "quantity": "3"}, {"item": "Tomates cerises", "quantity": "100g"}, {"item": "Épinards frais", "quantity": "50g"}, {"item": "Huile d'olive", "quantity": "1 c.à.s"}], "steps": ["Battre les œufs", "Faire revenir les légumes", "Ajouter les œufs et remuer", "Servir chaud"]},
-    {"id": "r003", "name": "Smoothie bowl énergisant", "category": "breakfast", "calories": 350, "protein": 10, "carbs": 58, "fat": 10, "nutri_score": "A", "prep_time": "8 min", "difficulty": "facile", "image": "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400", "ingredients": [{"item": "Banane congelée", "quantity": "1"}, {"item": "Myrtilles", "quantity": "100g"}, {"item": "Yaourt grec", "quantity": "100g"}, {"item": "Granola", "quantity": "30g"}], "steps": ["Mixer banane et myrtilles", "Verser dans un bol", "Ajouter le yaourt", "Parsemer de granola"]},
-    
-    # Déjeuners équilibrés (Nutri-score A-B)
-    {"id": "r004", "name": "Salade de quinoa méditerranéenne", "category": "lunch", "calories": 420, "protein": 15, "carbs": 48, "fat": 18, "nutri_score": "A", "prep_time": "20 min", "difficulty": "facile", "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400", "ingredients": [{"item": "Quinoa", "quantity": "100g"}, {"item": "Concombre", "quantity": "1/2"}, {"item": "Tomates", "quantity": "2"}, {"item": "Feta", "quantity": "50g"}, {"item": "Olives", "quantity": "30g"}], "steps": ["Cuire le quinoa et refroidir", "Couper les légumes en dés", "Mélanger tous les ingrédients", "Assaisonner d'huile d'olive et citron"]},
-    {"id": "r005", "name": "Wrap au poulet et avocat", "category": "lunch", "calories": 480, "protein": 32, "carbs": 35, "fat": 22, "nutri_score": "B", "prep_time": "15 min", "difficulty": "facile", "image": "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400", "ingredients": [{"item": "Tortilla complète", "quantity": "1"}, {"item": "Blanc de poulet", "quantity": "120g"}, {"item": "Avocat", "quantity": "1/2"}, {"item": "Salade", "quantity": "30g"}], "steps": ["Griller le poulet émincé", "Écraser l'avocat", "Garnir la tortilla", "Rouler et servir"]},
-    {"id": "r006", "name": "Buddha bowl aux légumes rôtis", "category": "lunch", "calories": 450, "protein": 18, "carbs": 52, "fat": 20, "nutri_score": "A", "prep_time": "30 min", "difficulty": "moyen", "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400", "ingredients": [{"item": "Patate douce", "quantity": "150g"}, {"item": "Pois chiches", "quantity": "100g"}, {"item": "Brocoli", "quantity": "100g"}, {"item": "Riz complet", "quantity": "80g"}], "steps": ["Rôtir les légumes au four", "Cuire le riz", "Dresser en bol", "Ajouter une sauce tahini"]},
-    
-    # Dîners légers (Nutri-score A-B)
-    {"id": "r007", "name": "Saumon grillé aux asperges", "category": "dinner", "calories": 380, "protein": 35, "carbs": 12, "fat": 22, "nutri_score": "A", "prep_time": "20 min", "difficulty": "moyen", "image": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400", "ingredients": [{"item": "Pavé de saumon", "quantity": "150g"}, {"item": "Asperges", "quantity": "200g"}, {"item": "Citron", "quantity": "1/2"}, {"item": "Ail", "quantity": "1 gousse"}], "steps": ["Préchauffer le four à 200°C", "Disposer saumon et asperges", "Arroser de citron et huile", "Cuire 15-18 minutes"]},
-    {"id": "r008", "name": "Soupe de lentilles corail", "category": "dinner", "calories": 320, "protein": 18, "carbs": 42, "fat": 8, "nutri_score": "A", "prep_time": "25 min", "difficulty": "facile", "image": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400", "ingredients": [{"item": "Lentilles corail", "quantity": "150g"}, {"item": "Carottes", "quantity": "2"}, {"item": "Oignon", "quantity": "1"}, {"item": "Cumin", "quantity": "1 c.à.c"}], "steps": ["Faire revenir l'oignon", "Ajouter carottes et lentilles", "Couvrir d'eau et cuire 20 min", "Mixer et assaisonner"]},
-    {"id": "r009", "name": "Poulet grillé aux herbes", "category": "dinner", "calories": 350, "protein": 42, "carbs": 5, "fat": 18, "nutri_score": "A", "prep_time": "25 min", "difficulty": "facile", "image": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400", "ingredients": [{"item": "Filet de poulet", "quantity": "180g"}, {"item": "Herbes de Provence", "quantity": "1 c.à.s"}, {"item": "Courgettes", "quantity": "200g"}, {"item": "Huile d'olive", "quantity": "1 c.à.s"}], "steps": ["Mariner le poulet avec les herbes", "Griller à la poêle", "Faire sauter les courgettes", "Servir ensemble"]},
-    
-    # Recettes Nutri-score C (30%)
-    {"id": "r010", "name": "Pâtes carbonara légères", "category": "dinner", "calories": 520, "protein": 22, "carbs": 58, "fat": 22, "nutri_score": "C", "prep_time": "20 min", "difficulty": "facile", "image": "https://images.unsplash.com/photo-1612874742237-6526221588e3?w=400", "ingredients": [{"item": "Pâtes complètes", "quantity": "100g"}, {"item": "Lardons", "quantity": "80g"}, {"item": "Œuf", "quantity": "1"}, {"item": "Parmesan", "quantity": "30g"}], "steps": ["Cuire les pâtes", "Faire revenir les lardons", "Mélanger œuf et parmesan", "Assembler hors du feu"]},
-    {"id": "r011", "name": "Burger maison au bœuf", "category": "lunch", "calories": 580, "protein": 32, "carbs": 42, "fat": 32, "nutri_score": "C", "prep_time": "25 min", "difficulty": "moyen", "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400", "ingredients": [{"item": "Steak haché 5%", "quantity": "150g"}, {"item": "Pain burger complet", "quantity": "1"}, {"item": "Tomate", "quantity": "1"}, {"item": "Salade", "quantity": "30g"}], "steps": ["Former le steak", "Cuire à la poêle", "Toaster le pain", "Assembler avec les garnitures"]},
-    {"id": "r012", "name": "Pizza maison aux légumes", "category": "dinner", "calories": 480, "protein": 18, "carbs": 55, "fat": 20, "nutri_score": "C", "prep_time": "35 min", "difficulty": "moyen", "image": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400", "ingredients": [{"item": "Pâte à pizza", "quantity": "200g"}, {"item": "Sauce tomate", "quantity": "80g"}, {"item": "Mozzarella", "quantity": "80g"}, {"item": "Légumes grillés", "quantity": "150g"}], "steps": ["Étaler la pâte", "Garnir de sauce et fromage", "Ajouter les légumes", "Cuire 15 min à 220°C"]},
-    
-    # Plus de recettes saines
-    {"id": "r013", "name": "Taboulé de chou-fleur", "category": "lunch", "calories": 280, "protein": 8, "carbs": 25, "fat": 18, "nutri_score": "A", "prep_time": "15 min", "difficulty": "facile", "image": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400", "ingredients": [{"item": "Chou-fleur", "quantity": "300g"}, {"item": "Persil", "quantity": "1 bouquet"}, {"item": "Menthe", "quantity": "10 feuilles"}, {"item": "Tomates cerises", "quantity": "150g"}], "steps": ["Râper le chou-fleur", "Hacher les herbes", "Couper les tomates", "Assaisonner de citron"]},
-    {"id": "r014", "name": "Tartines d'avocat", "category": "breakfast", "calories": 320, "protein": 8, "carbs": 28, "fat": 20, "nutri_score": "B", "prep_time": "8 min", "difficulty": "facile", "image": "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400", "ingredients": [{"item": "Pain complet", "quantity": "2 tranches"}, {"item": "Avocat", "quantity": "1"}, {"item": "Graines de sésame", "quantity": "1 c.à.s"}, {"item": "Citron vert", "quantity": "1/2"}], "steps": ["Toaster le pain", "Écraser l'avocat", "Tartiner sur le pain", "Garnir de graines et citron"]},
-    {"id": "r015", "name": "Wok de légumes au tofu", "category": "dinner", "calories": 340, "protein": 22, "carbs": 28, "fat": 16, "nutri_score": "A", "prep_time": "20 min", "difficulty": "facile", "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400", "ingredients": [{"item": "Tofu ferme", "quantity": "150g"}, {"item": "Brocoli", "quantity": "150g"}, {"item": "Poivrons", "quantity": "100g"}, {"item": "Sauce soja", "quantity": "2 c.à.s"}], "steps": ["Couper le tofu en cubes", "Faire sauter à feu vif", "Ajouter les légumes", "Assaisonner et servir"]},
-]
-
 @api_router.get("/recipes/daily")
-async def get_daily_recipes(user: dict = Depends(get_current_user)):
-    """Get 3 personalized recipes of the day based on user profile"""
-    import random
-    
+async def get_daily_recipes_endpoint(user: dict = Depends(get_current_user)):
+    """Get 6 personalized recipes of the day based on user profile"""
     profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
     
-    # Use day of year for consistent daily recipes
-    day_of_year = datetime.now(timezone.utc).timetuple().tm_yday
-    random.seed(day_of_year + hash(user["user_id"]))
+    # Use the imported function from recipes_database
+    if profile:
+        profile["user_id"] = user["user_id"]
     
-    # Filter recipes based on user profile
-    suitable_recipes = []
-    allergies = [a.lower() for a in (profile.get("allergies", []) if profile else [])]
-    dislikes = [d.lower() for d in (profile.get("food_dislikes", []) if profile else [])]
+    selected = get_daily_recipes(user_profile=profile, count=6)
     
-    for recipe in RECIPE_DATABASE:
-        # Only include nutri-score A, B, C
-        if recipe["nutri_score"] not in ["A", "B", "C"]:
-            continue
-        
-        # Check ingredients against allergies and dislikes
-        ingredients_text = " ".join([i["item"].lower() for i in recipe["ingredients"]])
-        skip = False
-        for allergy in allergies:
-            if allergy in ingredients_text:
-                skip = True
-                break
-        for dislike in dislikes:
-            if dislike in ingredients_text:
-                skip = True
-                break
-        
-        if not skip:
-            suitable_recipes.append(recipe)
-    
-    # Select 3 random recipes from suitable ones
-    if len(suitable_recipes) >= 3:
-        selected = random.sample(suitable_recipes, 3)
-    else:
-        selected = suitable_recipes[:3] if suitable_recipes else RECIPE_DATABASE[:3]
-    
-    return {"recipes": selected, "date": datetime.now(timezone.utc).strftime("%Y-%m-%d")}
+    return {
+        "recipes": selected, 
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "total_database": len(SAMPLE_RECIPES)
+    }
 
 @api_router.get("/recipes/all")
-async def get_all_recipes():
-    """Get all available recipes"""
-    return {"recipes": RECIPE_DATABASE, "total": len(RECIPE_DATABASE)}
+async def get_all_recipes_endpoint(
+    nutri_score: Optional[str] = None,
+    category: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0
+):
+    """Get all available recipes with filtering"""
+    recipes = SAMPLE_RECIPES.copy()
+    
+    # Filter by nutri_score
+    if nutri_score:
+        recipes = [r for r in recipes if r["nutri_score"] == nutri_score.upper()]
+    
+    # Filter by category
+    if category:
+        recipes = [r for r in recipes if r["category"] == category.lower()]
+    
+    total = len(recipes)
+    paginated = recipes[offset:offset + limit]
+    
+    return {
+        "recipes": paginated, 
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "stats": get_recipes_stats()
+    }
+
+@api_router.get("/recipes/stats")
+async def get_recipes_stats_endpoint():
+    """Get statistics about the recipe database"""
+    return get_recipes_stats()
 
 # ==================== PROFILE PICTURE UPLOAD ====================
 
