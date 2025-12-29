@@ -464,7 +464,7 @@ async def update_profile(data: dict, user: dict = Depends(get_current_user)):
 @api_router.post("/food/analyze")
 async def analyze_food(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
     """Analyze food image using AI vision with user profile context"""
-    from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+    from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContent
     import json
     
     # Get user profile for personalized analysis
@@ -472,6 +472,9 @@ async def analyze_food(file: UploadFile = File(...), user: dict = Depends(get_cu
     
     contents = await file.read()
     image_base64 = base64.b64encode(contents).decode()
+    
+    # Detect content type
+    content_type = file.content_type or "image/jpeg"
     
     # Build context from user profile
     health_context = ""
