@@ -19,7 +19,15 @@ import {
   Dumbbell,
   Scale,
   Ruler,
-  Calendar
+  Calendar,
+  Heart,
+  Clock,
+  Wallet,
+  ThumbsUp,
+  ThumbsDown,
+  AlertTriangle,
+  ChefHat,
+  User
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -49,17 +57,73 @@ const dietaryOptions = [
   { value: 'vegetarian', label: 'Végétarien' },
   { value: 'vegan', label: 'Végan' },
   { value: 'halal', label: 'Halal' },
+  { value: 'kosher', label: 'Casher' },
   { value: 'gluten_free', label: 'Sans gluten' },
   { value: 'lactose_free', label: 'Sans lactose' },
-  { value: 'keto', label: 'Keto' },
+  { value: 'keto', label: 'Keto / Low carb' },
+  { value: 'paleo', label: 'Paléo' },
 ];
 
 const allergyOptions = [
   { value: 'nuts', label: 'Fruits à coque' },
+  { value: 'peanuts', label: 'Arachides' },
   { value: 'shellfish', label: 'Crustacés' },
   { value: 'eggs', label: 'Œufs' },
   { value: 'soy', label: 'Soja' },
   { value: 'fish', label: 'Poisson' },
+  { value: 'milk', label: 'Lait' },
+  { value: 'wheat', label: 'Blé' },
+];
+
+const healthConditions = [
+  { value: 'diabetes', label: 'Diabète', icon: '🩸' },
+  { value: 'sleep_apnea', label: 'Apnée du sommeil', icon: '😴' },
+  { value: 'thyroid', label: 'Problèmes de thyroïde', icon: '🦋' },
+  { value: 'bypass', label: 'By-pass gastrique', icon: '⚕️' },
+  { value: 'sleeve', label: 'Sleeve gastrectomie', icon: '⚕️' },
+  { value: 'hypertension', label: 'Hypertension', icon: '❤️' },
+  { value: 'cholesterol', label: 'Cholestérol élevé', icon: '🫀' },
+  { value: 'heart_disease', label: 'Maladie cardiaque', icon: '💔' },
+  { value: 'arthritis', label: 'Arthrite / Douleurs articulaires', icon: '🦴' },
+  { value: 'digestive', label: 'Problèmes digestifs', icon: '🫃' },
+];
+
+const foodCategories = [
+  { value: 'vegetables', label: 'Légumes verts' },
+  { value: 'fruits', label: 'Fruits' },
+  { value: 'red_meat', label: 'Viande rouge' },
+  { value: 'white_meat', label: 'Volaille' },
+  { value: 'fish', label: 'Poisson' },
+  { value: 'seafood', label: 'Fruits de mer' },
+  { value: 'pasta', label: 'Pâtes' },
+  { value: 'rice', label: 'Riz' },
+  { value: 'bread', label: 'Pain' },
+  { value: 'cheese', label: 'Fromage' },
+  { value: 'eggs', label: 'Œufs' },
+  { value: 'legumes', label: 'Légumineuses' },
+  { value: 'nuts', label: 'Noix / Graines' },
+  { value: 'dairy', label: 'Produits laitiers' },
+  { value: 'spicy', label: 'Plats épicés' },
+  { value: 'sweet', label: 'Desserts sucrés' },
+];
+
+const timeConstraints = [
+  { value: 'very_limited', label: 'Très limité', description: '< 15 min par repas' },
+  { value: 'limited', label: 'Limité', description: '15-30 min par repas' },
+  { value: 'moderate', label: 'Modéré', description: '30-45 min par repas' },
+  { value: 'flexible', label: 'Flexible', description: 'Je peux cuisiner longtemps' },
+];
+
+const budgetOptions = [
+  { value: 'tight', label: 'Serré', description: 'Économiser au maximum' },
+  { value: 'medium', label: 'Moyen', description: 'Équilibre qualité/prix' },
+  { value: 'comfortable', label: 'Confortable', description: 'La qualité avant tout' },
+];
+
+const cookingSkills = [
+  { value: 'beginner', label: 'Débutant', description: 'Recettes simples uniquement' },
+  { value: 'intermediate', label: 'Intermédiaire', description: 'Je me débrouille bien' },
+  { value: 'advanced', label: 'Confirmé', description: 'J\'aime les défis culinaires' },
 ];
 
 export default function OnboardingPage() {
@@ -67,9 +131,10 @@ export default function OnboardingPage() {
   const { updateUser } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const totalSteps = 5;
+  const totalSteps = 8;
 
   const [formData, setFormData] = useState({
+    gender: '',
     age: '',
     height: '',
     weight: '',
@@ -79,6 +144,13 @@ export default function OnboardingPage() {
     fitness_level: '',
     dietary_preferences: [],
     allergies: [],
+    health_conditions: [],
+    food_likes: [],
+    food_dislikes: [],
+    time_constraint: 'moderate',
+    budget: 'medium',
+    cooking_skill: 'intermediate',
+    meals_per_day: 3,
   });
 
   const handleNext = () => {
@@ -109,23 +181,39 @@ export default function OnboardingPage() {
       navigate('/dashboard');
     } catch (error) {
       toast.error('Erreur lors de la sauvegarde');
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
+  const toggleArrayItem = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].includes(value)
+        ? prev[field].filter(v => v !== value)
+        : [...prev[field], value]
+    }));
+  };
+
   const canProceed = () => {
     switch (step) {
       case 1:
-        return formData.age && formData.height && formData.weight;
+        return formData.gender;
       case 2:
-        return formData.goal && formData.target_weight;
+        return formData.age && formData.height && formData.weight;
       case 3:
-        return formData.activity_level;
+        return formData.goal && formData.target_weight;
       case 4:
-        return formData.fitness_level;
+        return formData.activity_level && formData.fitness_level;
       case 5:
-        return true;
+        return true; // Health conditions optional
+      case 6:
+        return true; // Food preferences optional
+      case 7:
+        return true; // Dietary/allergies optional
+      case 8:
+        return formData.time_constraint && formData.budget;
       default:
         return false;
     }
@@ -143,8 +231,45 @@ export default function OnboardingPage() {
           <Progress value={(step / totalSteps) * 100} className="h-2" />
         </div>
 
-        {/* Step 1: Basic Info */}
+        {/* Step 1: Gender */}
         {step === 1 && (
+          <Card className="animate-fade-in">
+            <CardHeader>
+              <CardTitle className="font-heading text-2xl flex items-center gap-2">
+                <User className="w-6 h-6 text-primary" />
+                Vous êtes
+              </CardTitle>
+              <CardDescription>
+                Cela nous aide à personnaliser vos recommandations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { value: 'male', label: 'Homme', emoji: '👨' },
+                  { value: 'female', label: 'Femme', emoji: '👩' },
+                ].map((option) => (
+                  <div
+                    key={option.value}
+                    onClick={() => setFormData({ ...formData, gender: option.value })}
+                    data-testid={`gender-${option.value}`}
+                    className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 cursor-pointer transition-all ${
+                      formData.gender === option.value 
+                        ? 'border-primary bg-primary/10 shadow-glow' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <span className="text-4xl mb-2">{option.emoji}</span>
+                    <span className="font-medium">{option.label}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 2: Basic Info */}
+        {step === 2 && (
           <Card className="animate-fade-in">
             <CardHeader>
               <CardTitle className="font-heading text-2xl flex items-center gap-2">
@@ -152,7 +277,7 @@ export default function OnboardingPage() {
                 Vos mensurations
               </CardTitle>
               <CardDescription>
-                Ces informations nous aident à calculer vos besoins
+                Ces informations nous aident à calculer votre IMC et vos besoins caloriques
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -195,12 +320,20 @@ export default function OnboardingPage() {
                   />
                 </div>
               </div>
+              {formData.height && formData.weight && (
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
+                  <p className="text-sm text-muted-foreground">Votre IMC actuel</p>
+                  <p className="font-heading text-2xl font-bold text-primary">
+                    {(parseFloat(formData.weight) / Math.pow(parseFloat(formData.height) / 100, 2)).toFixed(1)}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
 
-        {/* Step 2: Goal */}
-        {step === 2 && (
+        {/* Step 3: Goal */}
+        {step === 3 && (
           <Card className="animate-fade-in">
             <CardHeader>
               <CardTitle className="font-heading text-2xl flex items-center gap-2">
@@ -212,29 +345,23 @@ export default function OnboardingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <RadioGroup
-                value={formData.goal}
-                onValueChange={(value) => setFormData({ ...formData, goal: value })}
-              >
-                <div className="grid gap-3">
-                  {goals.map((goal) => (
-                    <div
-                      key={goal.value}
-                      onClick={() => setFormData({ ...formData, goal: goal.value })}
-                      data-testid={`goal-${goal.value}`}
-                      className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
-                        formData.goal === goal.value 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <RadioGroupItem value={goal.value} id={goal.value} />
-                      <goal.icon className="w-5 h-5 text-primary" />
-                      <span className="font-medium">{goal.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </RadioGroup>
+              <div className="grid gap-3">
+                {goals.map((goal) => (
+                  <div
+                    key={goal.value}
+                    onClick={() => setFormData({ ...formData, goal: goal.value })}
+                    data-testid={`goal-${goal.value}`}
+                    className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
+                      formData.goal === goal.value 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <goal.icon className="w-5 h-5 text-primary" />
+                    <span className="font-medium">{goal.label}</span>
+                  </div>
+                ))}
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="target_weight">Poids cible (kg)</Label>
@@ -251,65 +378,38 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {/* Step 3: Activity Level */}
-        {step === 3 && (
+        {/* Step 4: Activity & Fitness Level */}
+        {step === 4 && (
           <Card className="animate-fade-in">
             <CardHeader>
               <CardTitle className="font-heading text-2xl flex items-center gap-2">
                 <Activity className="w-6 h-6 text-primary" />
                 Niveau d'activité
               </CardTitle>
-              <CardDescription>
-                Décrivez votre niveau d'activité quotidien
-              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <RadioGroup
-                value={formData.activity_level}
-                onValueChange={(value) => setFormData({ ...formData, activity_level: value })}
-              >
-                <div className="grid gap-3">
-                  {activityLevels.map((level) => (
-                    <div
-                      key={level.value}
-                      onClick={() => setFormData({ ...formData, activity_level: level.value })}
-                      data-testid={`activity-${level.value}`}
-                      className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
-                        formData.activity_level === level.value 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <RadioGroupItem value={level.value} id={level.value} className="mt-1" />
-                      <div>
-                        <span className="font-medium">{level.label}</span>
-                        <p className="text-sm text-muted-foreground">{level.description}</p>
-                      </div>
+            <CardContent className="space-y-6">
+              <div className="grid gap-3">
+                {activityLevels.map((level) => (
+                  <div
+                    key={level.value}
+                    onClick={() => setFormData({ ...formData, activity_level: level.value })}
+                    data-testid={`activity-${level.value}`}
+                    className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
+                      formData.activity_level === level.value 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div>
+                      <span className="font-medium">{level.label}</span>
+                      <p className="text-sm text-muted-foreground">{level.description}</p>
                     </div>
-                  ))}
-                </div>
-              </RadioGroup>
-            </CardContent>
-          </Card>
-        )}
+                  </div>
+                ))}
+              </div>
 
-        {/* Step 4: Fitness Level */}
-        {step === 4 && (
-          <Card className="animate-fade-in">
-            <CardHeader>
-              <CardTitle className="font-heading text-2xl flex items-center gap-2">
-                <Dumbbell className="w-6 h-6 text-primary" />
-                Niveau sportif
-              </CardTitle>
-              <CardDescription>
-                Cela nous aide à personnaliser vos entraînements
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <RadioGroup
-                value={formData.fitness_level}
-                onValueChange={(value) => setFormData({ ...formData, fitness_level: value })}
-              >
+              <div className="pt-4 border-t">
+                <Label className="mb-3 block">Niveau sportif</Label>
                 <div className="grid gap-3">
                   {fitnessLevels.map((level) => (
                     <div
@@ -322,7 +422,6 @@ export default function OnboardingPage() {
                           : 'border-border hover:border-primary/50'
                       }`}
                     >
-                      <RadioGroupItem value={level.value} id={`fitness-${level.value}`} className="mt-1" />
                       <div>
                         <span className="font-medium">{level.label}</span>
                         <p className="text-sm text-muted-foreground">{level.description}</p>
@@ -330,88 +429,259 @@ export default function OnboardingPage() {
                     </div>
                   ))}
                 </div>
-              </RadioGroup>
+              </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Step 5: Dietary Preferences */}
+        {/* Step 5: Health Conditions */}
         {step === 5 && (
           <Card className="animate-fade-in">
             <CardHeader>
               <CardTitle className="font-heading text-2xl flex items-center gap-2">
-                <Apple className="w-6 h-6 text-primary" />
-                Préférences alimentaires
+                <Heart className="w-6 h-6 text-primary" />
+                Conditions de santé
               </CardTitle>
               <CardDescription>
-                Optionnel - Sélectionnez vos régimes et allergies
+                Important pour adapter vos repas et exercices (optionnel)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-2">
+                {healthConditions.map((condition) => (
+                  <div
+                    key={condition.value}
+                    onClick={() => toggleArrayItem('health_conditions', condition.value)}
+                    className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
+                      formData.health_conditions.includes(condition.value)
+                        ? 'border-destructive bg-destructive/10'
+                        : 'border-border hover:border-destructive/50'
+                    }`}
+                  >
+                    <span>{condition.icon}</span>
+                    <span className="text-sm">{condition.label}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-4 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" />
+                Ces informations restent confidentielles et servent uniquement à personnaliser vos recommandations
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 6: Food Likes & Dislikes */}
+        {step === 6 && (
+          <Card className="animate-fade-in">
+            <CardHeader>
+              <CardTitle className="font-heading text-2xl flex items-center gap-2">
+                <Apple className="w-6 h-6 text-primary" />
+                Vos goûts alimentaires
+              </CardTitle>
+              <CardDescription>
+                Sélectionnez ce que vous aimez et n'aimez pas
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <Label>Régimes alimentaires</Label>
+              <div>
+                <Label className="mb-3 flex items-center gap-2">
+                  <ThumbsUp className="w-4 h-4 text-primary" />
+                  J'aime
+                </Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {foodCategories.map((food) => (
+                    <div
+                      key={`like-${food.value}`}
+                      onClick={() => {
+                        // Remove from dislikes if present
+                        const newDislikes = formData.food_dislikes.filter(v => v !== food.value);
+                        setFormData(prev => ({
+                          ...prev,
+                          food_dislikes: newDislikes,
+                          food_likes: prev.food_likes.includes(food.value)
+                            ? prev.food_likes.filter(v => v !== food.value)
+                            : [...prev.food_likes, food.value]
+                        }));
+                      }}
+                      className={`p-2 rounded-lg border text-center cursor-pointer transition-all text-sm ${
+                        formData.food_likes.includes(food.value)
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      {food.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="mb-3 flex items-center gap-2">
+                  <ThumbsDown className="w-4 h-4 text-destructive" />
+                  Je n'aime pas
+                </Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {foodCategories.map((food) => (
+                    <div
+                      key={`dislike-${food.value}`}
+                      onClick={() => {
+                        // Remove from likes if present
+                        const newLikes = formData.food_likes.filter(v => v !== food.value);
+                        setFormData(prev => ({
+                          ...prev,
+                          food_likes: newLikes,
+                          food_dislikes: prev.food_dislikes.includes(food.value)
+                            ? prev.food_dislikes.filter(v => v !== food.value)
+                            : [...prev.food_dislikes, food.value]
+                        }));
+                      }}
+                      className={`p-2 rounded-lg border text-center cursor-pointer transition-all text-sm ${
+                        formData.food_dislikes.includes(food.value)
+                          ? 'border-destructive bg-destructive/10 text-destructive'
+                          : 'border-border hover:border-destructive/50'
+                      }`}
+                    >
+                      {food.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 7: Dietary Preferences & Allergies */}
+        {step === 7 && (
+          <Card className="animate-fade-in">
+            <CardHeader>
+              <CardTitle className="font-heading text-2xl flex items-center gap-2">
+                <AlertTriangle className="w-6 h-6 text-primary" />
+                Régimes & Allergies
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <Label className="mb-3 block">Régimes alimentaires</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {dietaryOptions.map((option) => (
-                    <Label
+                    <div
                       key={option.value}
+                      onClick={() => toggleArrayItem('dietary_preferences', option.value)}
                       className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                         formData.dietary_preferences.includes(option.value)
                           ? 'border-primary bg-primary/5'
                           : 'border-border hover:border-primary/50'
                       }`}
                     >
-                      <Checkbox
-                        checked={formData.dietary_preferences.includes(option.value)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFormData({
-                              ...formData,
-                              dietary_preferences: [...formData.dietary_preferences, option.value]
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              dietary_preferences: formData.dietary_preferences.filter(v => v !== option.value)
-                            });
-                          }
-                        }}
-                      />
+                      <Checkbox checked={formData.dietary_preferences.includes(option.value)} />
                       <span className="text-sm">{option.label}</span>
-                    </Label>
+                    </div>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Label>Allergies</Label>
+              <div>
+                <Label className="mb-3 block text-destructive">Allergies alimentaires</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {allergyOptions.map((option) => (
-                    <Label
+                    <div
                       key={option.value}
+                      onClick={() => toggleArrayItem('allergies', option.value)}
                       className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                         formData.allergies.includes(option.value)
                           ? 'border-destructive bg-destructive/5'
                           : 'border-border hover:border-destructive/50'
                       }`}
                     >
-                      <Checkbox
-                        checked={formData.allergies.includes(option.value)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFormData({
-                              ...formData,
-                              allergies: [...formData.allergies, option.value]
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              allergies: formData.allergies.filter(v => v !== option.value)
-                            });
-                          }
-                        }}
-                      />
+                      <Checkbox checked={formData.allergies.includes(option.value)} />
                       <span className="text-sm">{option.label}</span>
-                    </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 8: Constraints */}
+        {step === 8 && (
+          <Card className="animate-fade-in">
+            <CardHeader>
+              <CardTitle className="font-heading text-2xl flex items-center gap-2">
+                <Clock className="w-6 h-6 text-primary" />
+                Vos contraintes
+              </CardTitle>
+              <CardDescription>
+                Pour des recommandations réalistes
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <Label className="mb-3 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Temps disponible pour cuisiner
+                </Label>
+                <div className="grid gap-2">
+                  {timeConstraints.map((option) => (
+                    <div
+                      key={option.value}
+                      onClick={() => setFormData({ ...formData, time_constraint: option.value })}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        formData.time_constraint === option.value
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <span className="font-medium">{option.label}</span>
+                      <p className="text-xs text-muted-foreground">{option.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="mb-3 flex items-center gap-2">
+                  <Wallet className="w-4 h-4" />
+                  Budget alimentation
+                </Label>
+                <div className="grid gap-2">
+                  {budgetOptions.map((option) => (
+                    <div
+                      key={option.value}
+                      onClick={() => setFormData({ ...formData, budget: option.value })}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        formData.budget === option.value
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <span className="font-medium">{option.label}</span>
+                      <p className="text-xs text-muted-foreground">{option.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="mb-3 flex items-center gap-2">
+                  <ChefHat className="w-4 h-4" />
+                  Niveau en cuisine
+                </Label>
+                <div className="grid gap-2">
+                  {cookingSkills.map((option) => (
+                    <div
+                      key={option.value}
+                      onClick={() => setFormData({ ...formData, cooking_skill: option.value })}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        formData.cooking_skill === option.value
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <span className="font-medium">{option.label}</span>
+                      <p className="text-xs text-muted-foreground">{option.description}</p>
+                    </div>
                   ))}
                 </div>
               </div>
