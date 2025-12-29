@@ -461,28 +461,6 @@ Respond ONLY in JSON format:
         }
     
     return result
-                "protein": 10,
-                "carbs": 20,
-                "fat": 8,
-                "nutri_score": "C",
-                "serving_size": "1 portion",
-                "health_tips": ["Unable to analyze. Please try again."],
-                "ingredients_detected": []
-            }
-    except json.JSONDecodeError:
-        result = {
-            "food_name": "Analysis failed",
-            "calories": 0,
-            "protein": 0,
-            "carbs": 0,
-            "fat": 0,
-            "nutri_score": "?",
-            "serving_size": "unknown",
-            "health_tips": ["Please try with a clearer image"],
-            "ingredients_detected": []
-        }
-    
-    return result
 
 @api_router.post("/food/log")
 async def log_food(entry: FoodLogEntry, user: dict = Depends(get_current_user)):
