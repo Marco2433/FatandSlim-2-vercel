@@ -889,14 +889,40 @@ Règles:
 9. TOUS les textes en FRANÇAIS"""
         ).with_model("openai", "gpt-4o")
         
-        prompt = f"""Create a weekly meal plan for:
-- Daily calorie target: {profile.get('daily_calorie_target', 2000)} kcal
-- Goal: {profile.get('goal', 'maintain')}
-- Dietary preferences: {', '.join(profile.get('dietary_preferences', [])) or 'None'}
-- Allergies/restrictions: {', '.join(profile.get('allergies', [])) or 'None'}
-- Activity level: {profile.get('activity_level', 'moderate')}
-
-Create balanced, delicious meals that are easy to prepare. Return JSON only."""
+        if plan_type == "daily":
+            prompt = """Crée un plan repas pour UNE journée avec 3 repas. TOUT EN FRANÇAIS.
+Réponds UNIQUEMENT avec ce JSON (noms de plats en français):
+{
+    "date": "aujourd'hui",
+    "meals": {
+        "breakfast": {"name": "Nom du plat en français", "calories": number, "protein": number, "carbs": number, "fat": number, "recipe": "instructions courtes en français", "prep_time": "10 min", "ingredients": ["ingrédient 1", "ingrédient 2"]},
+        "lunch": {"name": "Nom du plat en français", "calories": number, "protein": number, "carbs": number, "fat": number, "recipe": "instructions courtes en français", "prep_time": "20 min", "ingredients": ["ingrédient 1", "ingrédient 2"]},
+        "dinner": {"name": "Nom du plat en français", "calories": number, "protein": number, "carbs": number, "fat": number, "recipe": "instructions courtes en français", "prep_time": "15 min", "ingredients": ["ingrédient 1", "ingrédient 2"]}
+    },
+    "total_calories": number,
+    "shopping_list": ["ingrédient 1 en français", "ingrédient 2 en français"],
+    "tips": ["conseil en français"]
+}"""
+        else:
+            prompt = """Crée un plan repas pour 7 jours avec 3 repas par jour. TOUT EN FRANÇAIS.
+Les jours doivent être: Lundi, Mardi, Mercredi, Jeudi, Vendredi, Samedi, Dimanche.
+Réponds UNIQUEMENT avec ce JSON (tous les textes en français):
+{
+    "days": [
+        {
+            "day": "Lundi",
+            "meals": {
+                "breakfast": {"name": "Nom en français", "calories": number, "protein": number, "carbs": number, "fat": number, "recipe": "instructions en français", "prep_time": "10 min", "ingredients": ["ingrédient"]},
+                "lunch": {"name": "Nom en français", "calories": number, "protein": number, "carbs": number, "fat": number, "recipe": "instructions en français", "prep_time": "20 min", "ingredients": ["ingrédient"]},
+                "dinner": {"name": "Nom en français", "calories": number, "protein": number, "carbs": number, "fat": number, "recipe": "instructions en français", "prep_time": "15 min", "ingredients": ["ingrédient"]}
+            },
+            "total_calories": number
+        }
+    ],
+    "shopping_list": ["ingrédient en français"],
+    "tips": ["conseil en français"],
+    "estimated_weekly_cost": "XX€"
+}"""
         
         response = await chat.send_message(UserMessage(text=prompt))
         
