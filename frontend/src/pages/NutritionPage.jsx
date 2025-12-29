@@ -489,13 +489,19 @@ export default function NutritionPage() {
     
     try {
       const response = await axios.post(`${API}/recipes/search`, { 
-        query: recipeSearchQuery 
+        query: recipeSearchQuery.trim()
       }, { withCredentials: true });
-      setSearchedRecipe(response.data.recipe);
-      toast.success('Recette trouvée !');
+      
+      if (response.data.recipe) {
+        setSearchedRecipe(response.data.recipe);
+        toast.success('Recette trouvée !');
+      } else {
+        toast.error('Aucune recette générée. Réessayez avec une autre description.');
+      }
     } catch (error) {
       console.error('Error searching recipe:', error);
-      toast.error('Erreur lors de la recherche. Veuillez réessayer.');
+      const errorMsg = error.response?.data?.detail || 'Erreur lors de la recherche';
+      toast.error(errorMsg + '. Veuillez réessayer.');
     } finally {
       setLoadingSearch(false);
     }
