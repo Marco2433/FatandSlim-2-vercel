@@ -27,6 +27,9 @@ backend:
       - working: true
         agent: "main"
         comment: "Nouvel endpoint POST /api/recipes/search qui utilise GPT-4o pour générer une recette personnalisée basée sur la requête utilisateur. Testé via curl avec succès."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTÉ ET VALIDÉ: API /api/recipes/search fonctionne parfaitement. Génère des recettes personnalisées avec tous les champs requis (name, calories, protein, carbs, fat, nutri_score, ingredients, steps). Test avec requête 'recette avec crevettes et riz en 30 minutes' réussi. Réponse contient 8 ingrédients et 5 étapes détaillées."
 
   - task: "API Liste de courses bulk"
     implemented: true
@@ -39,6 +42,33 @@ backend:
       - working: true
         agent: "main"
         comment: "Endpoint POST /api/shopping-list/bulk permet d'ajouter plusieurs ingrédients à la fois. Testé via curl avec succès."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTÉ ET VALIDÉ: API /api/shopping-list/bulk fonctionne parfaitement. Test avec ajout de 'Poulet' (200g) et 'Riz' (100g) réussi. Les 2 items ont été ajoutés correctement et sont visibles via GET /api/shopping-list. Persistance MongoDB confirmée."
+
+  - task: "API Catalogue de recettes"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTÉ ET VALIDÉ: API /api/recipes/all fonctionne parfaitement. Retourne 1000 recettes avec champ 'stats' contenant les statistiques par nutri-score. Filtrage par nutri_score=A testé et validé - toutes les recettes retournées ont bien nutri_score='A'. Base de données de recettes opérationnelle."
+
+  - task: "API Recettes du jour (6 recettes)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTÉ ET VALIDÉ: API /api/recipes/daily fonctionne parfaitement. Retourne exactement 6 recettes (au lieu de 3 auparavant). Chaque recette contient tous les champs requis: id, name, calories, nutri_score, ingredients, steps. Personnalisation basée sur le profil utilisateur active."
 
 frontend:
   - task: "Recherche de recettes IA dans onglet IA"
