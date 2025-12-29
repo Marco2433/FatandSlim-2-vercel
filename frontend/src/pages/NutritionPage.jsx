@@ -93,6 +93,12 @@ export default function NutritionPage() {
   // Shopping list state
   const [shoppingList, setShoppingList] = useState([]);
   
+  // Catalog state
+  const [catalogRecipes, setCatalogRecipes] = useState([]);
+  const [catalogFilter, setCatalogFilter] = useState('all');
+  const [catalogStats, setCatalogStats] = useState(null);
+  const [loadingCatalog, setLoadingCatalog] = useState(false);
+  
   // Note state
   const [newNote, setNewNote] = useState({ date: '', content: '' });
   
@@ -117,6 +123,9 @@ export default function NutritionPage() {
     if (activeTab === 'diary') {
       fetchDiary();
       fetchAgendaNotes();
+    }
+    if (activeTab === 'catalog') {
+      fetchCatalogRecipes();
     }
     if (activeTab === 'shopping') {
       fetchShoppingList();
