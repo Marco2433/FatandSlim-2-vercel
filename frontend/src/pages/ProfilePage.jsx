@@ -30,10 +30,12 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [uploadingPicture, setUploadingPicture] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchProfile();
@@ -54,6 +56,56 @@ export default function ProfilePage() {
     await logout();
     toast.success('Déconnexion réussie');
     navigate('/');
+  };
+
+  const handlePictureUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Le fichier doit être une image');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('L\'image est trop grande (max 2MB)');
+      return;
+    }
+
+    setUploadingPicture(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await axios.post(`${API}/profile/picture`, formData, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      // Update local state
+      setProfile(prev => ({ ...prev, picture: response.data.picture }));
+      updateUser({ picture: response.data.picture });
+      toast.success('Photo de profil mise à jour');
+    } catch (error) {
+      console.error('Error uploading picture:', error);
+      toast.error(error.response?.data?.detail || 'Erreur lors du téléchargement');
+    } finally {
+      setUploadingPicture(false);
+    }
+  };
+
+  const handleDeletePicture = async () => {
+    try {
+      await axios.delete(`${API}/profile/picture`, { withCredentials: true });
+      setProfile(prev => ({ ...prev, picture: null }));
+      updateUser({ picture: null });
+      toast.success('Photo de profil supprimée');
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
   };
 
   const menuItems = [
