@@ -1229,8 +1229,135 @@ export default function NutritionPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Shopping List Tab */}
+          <TabsContent value="shopping" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="font-heading text-lg flex items-center gap-2">
+                    <ShoppingCart className="w-5 h-5 text-primary" />
+                    Liste de courses
+                  </CardTitle>
+                  {shoppingList.some(item => item.checked) && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={clearCheckedItems}
+                      className="text-xs"
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" />
+                      Supprimer cochés
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {shoppingList.length > 0 ? (
+                  <div className="space-y-2">
+                    {shoppingList.map((item) => (
+                      <div 
+                        key={item.item_id}
+                        className={`flex items-center justify-between p-3 rounded-xl ${
+                          item.checked ? 'bg-muted/30 opacity-60' : 'bg-muted/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={item.checked}
+                            onCheckedChange={(checked) => toggleShoppingItem(item.item_id, checked)}
+                          />
+                          <div>
+                            <p className={`font-medium text-sm ${item.checked ? 'line-through' : ''}`}>
+                              {item.display_name}
+                            </p>
+                            {item.quantity && (
+                              <p className="text-xs text-muted-foreground">{item.quantity}</p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => deleteShoppingItem(item.item_id)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <ShoppingCart className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Liste de courses vide</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Ajoutez des ingrédients depuis les recettes
+                    </p>
+                  </div>
+                )}
+
+                {/* Add item manually */}
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Ajouter un article..."
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && e.target.value) {
+                          addToShoppingList(e.target.value);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <Button
+                      size="icon"
+                      onClick={(e) => {
+                        const input = e.target.closest('div').querySelector('input');
+                        if (input.value) {
+                          addToShoppingList(input.value);
+                          input.value = '';
+                        }
+                      }}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
+
+      {/* Date Picker Dialog for adding meals */}
+      <Dialog open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Choisir la date</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {mealToAdd && (
+              <p className="text-sm text-muted-foreground">
+                Ajouter "{mealToAdd.meal.name}" à quelle date ?
+              </p>
+            )}
+            <Input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDatePickerOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={confirmAddMeal}>
+                <CalendarPlus className="w-4 h-4 mr-2" />
+                Ajouter
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Note Dialog */}
       <Dialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
