@@ -455,6 +455,137 @@ class FatSlimAPITester:
         success, response, details = self.test_endpoint('GET', 'challenges', 200)
         self.log_test("Get Challenges", success, details)
 
+    def test_new_features_endpoints(self):
+        """Test the new features requested in the review"""
+        print("\n🆕 Testing New Features (Review Request)...")
+        
+        # 1. Test AI Recipe Search Endpoint
+        print("\n🔍 Testing AI Recipe Search...")
+        search_query = {"query": "recette avec crevettes et riz en 30 minutes"}
+        success, response, details = self.test_endpoint(
+            'POST', 'recipes/search', 200,
+            data=search_query
+        )
+        
+        # Verify response structure for AI recipe search
+        if success and response:
+            recipe = response.get('recipe', {})
+            required_fields = ['name', 'calories', 'protein', 'carbs', 'fat', 'nutri_score', 'ingredients', 'steps']
+            has_all_fields = all(field in recipe for field in required_fields)
+            
+            self.log_test("AI Recipe Search - Response Structure", has_all_fields, 
+                         f"Missing fields: {[f for f in required_fields if f not in recipe]}")
+            
+            # Verify ingredients and steps are lists
+            ingredients_valid = isinstance(recipe.get('ingredients', []), list) and len(recipe.get('ingredients', [])) > 0
+            steps_valid = isinstance(recipe.get('steps', []), list) and len(recipe.get('steps', [])) > 0
+            
+            self.log_test("AI Recipe Search - Ingredients List", ingredients_valid, 
+                         f"Ingredients type: {type(recipe.get('ingredients'))}, count: {len(recipe.get('ingredients', []))}")
+            self.log_test("AI Recipe Search - Steps List", steps_valid, 
+                         f"Steps type: {type(recipe.get('steps'))}, count: {len(recipe.get('steps', []))}")
+        
+        self.log_test("AI Recipe Search Endpoint", success, details)
+        
+        # 2. Test Recipe Catalogue Endpoint
+        print("\n📚 Testing Recipe Catalogue...")
+        
+        # Test without filter
+        success, response, details = self.test_endpoint('GET', 'recipes/all', 200)
+        
+        if success and response:
+            has_stats = 'stats' in response
+            has_recipes = 'recipes' in response and len(response.get('recipes', [])) > 0
+            
+            self.log_test("Recipe Catalogue - Stats Field", has_stats, 
+                         f"Response keys: {list(response.keys())}")
+            self.log_test("Recipe Catalogue - Recipes Present", has_recipes, 
+                         f"Recipe count: {len(response.get('recipes', []))}")
+        
+        self.log_test("Recipe Catalogue (No Filter)", success, details)
+        
+        # Test with nutri_score filter
+        success, response, details = self.test_endpoint('GET', 'recipes/all?nutri_score=A', 200)
+        
+        if success and response:
+            recipes = response.get('recipes', [])
+            all_nutri_a = all(recipe.get('nutri_score') == 'A' for recipe in recipes) if recipes else False
+            
+            self.log_test("Recipe Catalogue - Nutri-Score A Filter", all_nutri_a, 
+                         f"Recipe count: {len(recipes)}, All nutri-score A: {all_nutri_a}")
+        
+        self.log_test("Recipe Catalogue (Nutri-Score A Filter)", success, details)
+        
+        # 3. Test Daily Recipes Endpoint
+        print("\n🌅 Testing Daily Recipes...")
+        success, response, details = self.test_endpoint('GET', 'recipes/daily', 200)
+        
+        if success and response:
+            recipes = response.get('recipes', [])
+            has_six_recipes = len(recipes) == 6
+            
+            # Check if each recipe has required fields
+            required_fields = ['id', 'name', 'calories', 'nutri_score', 'ingredients', 'steps']
+            all_recipes_valid = True
+            invalid_recipes = []
+            
+            for i, recipe in enumerate(recipes):
+                missing_fields = [field for field in required_fields if field not in recipe]
+                if missing_fields:
+                    all_recipes_valid = False
+                    invalid_recipes.append(f"Recipe {i+1}: missing {missing_fields}")
+            
+            self.log_test("Daily Recipes - Count (6 recipes)", has_six_recipes, 
+                         f"Actual count: {len(recipes)}")
+            self.log_test("Daily Recipes - Required Fields", all_recipes_valid, 
+                         f"Invalid recipes: {invalid_recipes[:3]}")  # Show first 3 issues
+        
+        self.log_test("Daily Recipes Endpoint", success, details)
+        
+        # 4. Test Shopping List Bulk Endpoint
+        print("\n🛒 Testing Shopping List Bulk...")
+        
+        # First, clear any existing shopping list items
+        self.test_endpoint('DELETE', 'shopping-list', 200)
+        
+        # Test bulk add
+        bulk_items = {
+            "items": [
+                {"item": "Poulet", "quantity": "200g"},
+                {"item": "Riz", "quantity": "100g"}
+            ]
+        }
+        
+        success, response, details = self.test_endpoint(
+            'POST', 'shopping-list/bulk', 200,
+            data=bulk_items
+        )
+        
+        if success and response:
+            added_count = response.get('added_count', 0)
+            expected_count = 2
+            bulk_add_success = added_count == expected_count
+            
+            self.log_test("Shopping List Bulk - Items Added", bulk_add_success, 
+                         f"Added: {added_count}, Expected: {expected_count}")
+        
+        self.log_test("Shopping List Bulk Add", success, details)
+        
+        # Test get shopping list to verify items appear
+        success, response, details = self.test_endpoint('GET', 'shopping-list', 200)
+        
+        if success and response:
+            items = response if isinstance(response, list) else []
+            poulet_found = any(item.get('display_name', '').lower() == 'poulet' for item in items)
+            riz_found = any(item.get('display_name', '').lower() == 'riz' for item in items)
+            
+            self.log_test("Shopping List - Poulet Item", poulet_found, 
+                         f"Items found: {[item.get('display_name') for item in items]}")
+            self.log_test("Shopping List - Riz Item", riz_found, 
+                         f"Items found: {[item.get('display_name') for item in items]}")
+        
+        self.log_test("Shopping List Get (After Bulk Add)", success, details)
+
     def run_all_tests(self):
         """Run all API tests"""
         print("🚀 Starting Fat & Slim API Tests...")
