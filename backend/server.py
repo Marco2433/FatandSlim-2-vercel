@@ -877,7 +877,7 @@ Respond ONLY in JSON format with a 7-day meal plan:
     "shopping_list": ["string"],
     "tips": ["string"]
 }"""
-        ).with_model("openai", "gpt-5.2")
+        ).with_model("openai", "gpt-4o")
         
         prompt = f"""Create a weekly meal plan for:
 - Daily calorie target: {profile.get('daily_calorie_target', 2000)} kcal
@@ -1219,7 +1219,7 @@ Respond ONLY in JSON format:
     "tips": ["string"],
     "equipment_needed": ["string"]
 }"""
-        ).with_model("openai", "gpt-5.2")
+        ).with_model("openai", "gpt-4o")
         
         prompt = f"""Create a weekly workout program for:
 - Fitness level: {profile.get('fitness_level', 'beginner')}
