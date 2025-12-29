@@ -1572,9 +1572,9 @@ export default function NutritionPage() {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => addMealToDiary(meal, mealKey)}
+                                    onClick={() => openDatePickerForMeal(meal, mealKey)}
                                   >
-                                    <Plus className="w-3 h-3" />
+                                    <CalendarPlus className="w-3 h-3" />
                                   </Button>
                                 </div>
                               </div>
