@@ -1308,6 +1308,215 @@ export default function NutritionPage() {
             )}
           </TabsContent>
 
+          {/* Catalog Tab - Base de recettes */}
+          <TabsContent value="catalog" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="font-heading text-lg flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-secondary" />
+                  Catalogue de recettes
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {catalogStats ? `${catalogStats.total} recettes disponibles` : 'Chargement...'}
+                </p>
+              </CardHeader>
+              <CardContent>
+                {/* Nutri-Score Filter */}
+                <div className="flex gap-2 mb-4 flex-wrap">
+                  {['all', 'A', 'B', 'C', 'D'].map((score) => (
+                    <Button
+                      key={score}
+                      variant={catalogFilter === score ? 'default' : 'outline'}
+                      size="sm"
+                      className={`h-8 ${score !== 'all' ? getNutriScoreColor(score) + (catalogFilter === score ? '' : ' bg-opacity-20') : ''}`}
+                      onClick={() => {
+                        setCatalogFilter(score);
+                        fetchCatalogRecipes(score);
+                      }}
+                    >
+                      {score === 'all' ? 'Toutes' : `Nutri-Score ${score}`}
+                      {catalogStats && score !== 'all' && (
+                        <span className="ml-1 text-xs opacity-80">
+                          ({catalogStats.by_nutri_score?.[score] || 0})
+                        </span>
+                      )}
+                    </Button>
+                  ))}
+                </div>
+
+                {/* Stats by Score */}
+                {catalogStats && (
+                  <div className="grid grid-cols-4 gap-2 mb-4">
+                    {['A', 'B', 'C', 'D'].map((score) => (
+                      <div 
+                        key={score}
+                        className={`p-2 rounded-lg text-center text-white ${getNutriScoreColor(score)}`}
+                      >
+                        <p className="font-bold text-lg">{catalogStats.by_nutri_score?.[score] || 0}</p>
+                        <p className="text-xs opacity-90">Score {score}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Recipes List */}
+                {loadingCatalog ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  </div>
+                ) : catalogRecipes.length > 0 ? (
+                  <ScrollArea className="h-96">
+                    <div className="space-y-2">
+                      {catalogRecipes.map((recipe) => (
+                        <Card 
+                          key={recipe.id}
+                          className="cursor-pointer hover:border-primary/50 transition-colors"
+                          onClick={() => setSelectedRecipe(selectedRecipe?.id === recipe.id ? null : recipe)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="flex items-start gap-3">
+                              {recipe.image && (
+                                <img 
+                                  src={recipe.image} 
+                                  alt={recipe.name}
+                                  className="w-16 h-16 rounded-lg object-cover"
+                                  onError={(e) => e.target.style.display = 'none'}
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold text-sm truncate">{recipe.name}</p>
+                                  <span className={`w-5 h-5 rounded text-white text-xs flex items-center justify-center font-bold flex-shrink-0 ${getNutriScoreColor(recipe.nutri_score)}`}>
+                                    {recipe.nutri_score}
+                                  </span>
+                                </div>
+                                <div className="flex gap-2 text-xs text-muted-foreground mt-1">
+                                  <span>{recipe.calories} kcal</span>
+                                  <span>•</span>
+                                  <span>{recipe.prep_time}</span>
+                                  <span>•</span>
+                                  <span>{recipe.difficulty}</span>
+                                </div>
+                                
+                                {/* Expanded details */}
+                                {selectedRecipe?.id === recipe.id && (
+                                  <div className="mt-3 pt-3 border-t space-y-3">
+                                    <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                                      <div className="p-2 rounded bg-muted">
+                                        <p className="font-bold">{recipe.protein}g</p>
+                                        <p className="text-muted-foreground">Prot.</p>
+                                      </div>
+                                      <div className="p-2 rounded bg-muted">
+                                        <p className="font-bold">{recipe.carbs}g</p>
+                                        <p className="text-muted-foreground">Gluc.</p>
+                                      </div>
+                                      <div className="p-2 rounded bg-muted">
+                                        <p className="font-bold">{recipe.fat}g</p>
+                                        <p className="text-muted-foreground">Lip.</p>
+                                      </div>
+                                      <div className="p-2 rounded bg-muted">
+                                        <p className="font-bold">{recipe.servings}</p>
+                                        <p className="text-muted-foreground">Pers.</p>
+                                      </div>
+                                    </div>
+                                    
+                                    {recipe.ingredients && (
+                                      <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                          <p className="font-medium text-xs">📝 Ingrédients</p>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-6 text-xs"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              addIngredientsToShoppingList(recipe.ingredients);
+                                            }}
+                                          >
+                                            <ListPlus className="w-3 h-3 mr-1" />
+                                            Courses
+                                          </Button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1">
+                                          {recipe.ingredients.map((ing, j) => (
+                                            <Badge key={j} variant="outline" className="text-xs">
+                                              {ing.quantity} {ing.item}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {recipe.steps && (
+                                      <div>
+                                        <p className="font-medium text-xs mb-2">👨‍🍳 Préparation</p>
+                                        <ol className="space-y-1">
+                                          {recipe.steps.map((step, j) => (
+                                            <li key={j} className="text-xs text-muted-foreground flex gap-2">
+                                              <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center">
+                                                {j + 1}
+                                              </span>
+                                              <span>{step}</span>
+                                            </li>
+                                          ))}
+                                        </ol>
+                                      </div>
+                                    )}
+                                    
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-7 text-xs"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleFavoriteRecipe(recipe);
+                                        }}
+                                      >
+                                        {favoriteRecipes.some(f => f.recipe.name === recipe.name) ? (
+                                          <>
+                                            <Heart className="w-3 h-3 mr-1 fill-destructive text-destructive" />
+                                            Favori
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Heart className="w-3 h-3 mr-1" />
+                                            Ajouter
+                                          </>
+                                        )}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 text-xs"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          addRecipeToAgenda(recipe);
+                                        }}
+                                      >
+                                        <CalendarPlus className="w-3 h-3 mr-1" />
+                                        Agenda
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="text-center py-12">
+                    <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Aucune recette trouvée</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Favorites Tab */}
           <TabsContent value="favorites" className="space-y-4 mt-4">
             <Card>
