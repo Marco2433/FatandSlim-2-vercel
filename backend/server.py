@@ -330,12 +330,24 @@ async def get_profile(user: dict = Depends(get_current_user)):
 
 @api_router.post("/profile/onboarding")
 async def complete_onboarding(data: OnboardingData, user: dict = Depends(get_current_user)):
-    # Calculate BMI
-    height_m = data.height / 100
+    # Calculate BMI correctly: weight (kg) / height (m)²
+    height_m = data.height / 100  # Convert cm to meters
     bmi = round(data.weight / (height_m ** 2), 1)
     
-    # Calculate daily calorie target based on goal
-    bmr = 10 * data.weight + 6.25 * data.height - 5 * data.age
+    # Calculate ideal BMI range (18.5-24.9 is healthy)
+    ideal_bmi_min = 18.5
+    ideal_bmi_max = 24.9
+    ideal_weight_min = round(ideal_bmi_min * (height_m ** 2), 1)
+    ideal_weight_max = round(ideal_bmi_max * (height_m ** 2), 1)
+    ideal_bmi_target = 22.0  # Middle of healthy range
+    ideal_weight = round(ideal_bmi_target * (height_m ** 2), 1)
+    
+    # Calculate daily calorie target based on goal using Mifflin-St Jeor equation
+    if data.gender == "female":
+        bmr = 10 * data.weight + 6.25 * data.height - 5 * data.age - 161
+    else:
+        bmr = 10 * data.weight + 6.25 * data.height - 5 * data.age + 5
+    
     activity_multipliers = {
         "sedentary": 1.2,
         "light": 1.375,
@@ -345,28 +357,59 @@ async def complete_onboarding(data: OnboardingData, user: dict = Depends(get_cur
     }
     tdee = bmr * activity_multipliers.get(data.activity_level, 1.55)
     
+    # Adjust calorie target based on goal and health conditions
     calorie_target = tdee
     if data.goal == "lose_weight":
-        calorie_target = tdee - 500
+        calorie_target = tdee - 500  # ~0.5kg loss per week
     elif data.goal == "gain_muscle":
         calorie_target = tdee + 300
     
+    # Special adjustments for health conditions
+    if "diabetes" in data.health_conditions:
+        # Lower carbs for diabetics
+        carbs_ratio = 0.35
+    else:
+        carbs_ratio = 0.45
+    
+    # Protein calculation based on goal
+    if data.goal == "gain_muscle":
+        protein_per_kg = 2.0
+    elif data.goal == "lose_weight":
+        protein_per_kg = 1.8  # Higher protein for satiety
+    else:
+        protein_per_kg = 1.6
+    
     profile_doc = {
         "user_id": user["user_id"],
+        "gender": data.gender,
         "age": data.age,
         "height": data.height,
         "weight": data.weight,
         "target_weight": data.target_weight,
         "bmi": bmi,
+        "ideal_bmi": ideal_bmi_target,
+        "ideal_weight": ideal_weight,
+        "ideal_weight_range": {"min": ideal_weight_min, "max": ideal_weight_max},
         "goal": data.goal,
         "activity_level": data.activity_level,
         "dietary_preferences": data.dietary_preferences,
         "allergies": data.allergies,
         "fitness_level": data.fitness_level,
+        # New personalization fields
+        "health_conditions": data.health_conditions,
+        "food_likes": data.food_likes,
+        "food_dislikes": data.food_dislikes,
+        "time_constraint": data.time_constraint,
+        "budget": data.budget,
+        "cooking_skill": data.cooking_skill,
+        "meals_per_day": data.meals_per_day,
+        # Calculated targets
         "daily_calorie_target": round(calorie_target),
-        "daily_protein_target": round(data.weight * 1.6),
-        "daily_carbs_target": round(calorie_target * 0.45 / 4),
+        "daily_protein_target": round(data.weight * protein_per_kg),
+        "daily_carbs_target": round(calorie_target * carbs_ratio / 4),
         "daily_fat_target": round(calorie_target * 0.25 / 9),
+        "daily_fiber_target": 30 if data.gender == "male" else 25,
+        "daily_water_target": round(data.weight * 35),  # ml per kg
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
@@ -385,8 +428,18 @@ async def complete_onboarding(data: OnboardingData, user: dict = Depends(get_cur
     await db.weight_history.insert_one({
         "user_id": user["user_id"],
         "weight": data.weight,
-        "date": datetime.now(timezone.utc).isoformat(),
+        "bmi": bmi,
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "entry_id": f"weight_{uuid.uuid4().hex[:8]}"
+    })
+    
+    # Add initial BMI entry
+    await db.bmi_history.insert_one({
+        "user_id": user["user_id"],
+        "bmi": bmi,
+        "weight": data.weight,
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "entry_id": f"bmi_{uuid.uuid4().hex[:8]}"
     })
     
     return {"message": "Onboarding completed", "profile": profile_doc}
