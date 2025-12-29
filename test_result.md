@@ -102,34 +102,10 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Application Fat & Slim - Correction du calcul des calories avec l'algorithme Mifflin-St Jeor, amélioration de la page Nutrition avec agenda intelligent, génération de repas/recettes IA, photo de profil"
+user_problem_statement: "Corrections multiples pour Fat & Slim: traduction française, bug de session, favoris recettes, agenda, génération repas, messages motivation, graphique poids"
 
 backend:
-  - task: "Calcul des calories avec Mifflin-St Jeor"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-      - working: true
-        agent: "main"
-        comment: "Implémenté l'algorithme complet avec BMR, TDEE, facteurs d'activité plafonnés à 1.55, déficit 20% (15% si BMI>35 ou âge>50), garde-fous min/max calories. Testé avec curl et résultats corrects."
-        
-  - task: "API Notes Agenda"
-    implemented: true
-    working: "NA"
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: true
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Nouveaux endpoints: POST/GET/DELETE /api/agenda/notes"
-        
-  - task: "API Génération repas IA (daily/weekly)"
+  - task: "Messages de motivation personnalisés"
     implemented: true
     working: "NA"
     file: "/app/backend/server.py"
@@ -139,21 +115,9 @@ backend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Endpoint POST /api/meals/generate amélioré avec support daily/weekly, personnalisation profil complet"
-        
-  - task: "API Génération recettes IA"
-    implemented: true
-    working: "NA"
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Endpoint POST /api/recipes/generate pour générer recettes simples et économiques"
-        
-  - task: "API Recettes favorites"
+        comment: "Nouvel endpoint GET /api/motivation avec messages personnalisés selon profil, streak et progression"
+
+  - task: "Alternatives alimentaires en français"
     implemented: true
     working: "NA"
     file: "/app/backend/server.py"
@@ -163,34 +127,22 @@ backend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Endpoints POST/GET/DELETE /api/recipes/favorites"
-        
-  - task: "API Upload photo profil"
-    implemented: true
-    working: "NA"
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: true
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Endpoints POST/DELETE /api/profile/picture avec validation type/taille"
-        
-  - task: "API Ajouter repas IA au journal"
-    implemented: true
-    working: "NA"
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: true
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Endpoint POST /api/meals/add-to-diary"
+        comment: "Endpoint /api/food/recommend-alternatives traduit en français"
 
 frontend:
-  - task: "Page Nutrition avec onglet IA"
+  - task: "Bug session logout/login Google"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/context/AuthContext.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Ajout localStorage.clear() et sessionStorage.clear() dans logout pour éviter retour au profil précédent"
+
+  - task: "Onglet Favoris dans Nutrition"
     implemented: true
     working: "NA"
     file: "/app/frontend/src/pages/NutritionPage.jsx"
@@ -200,9 +152,9 @@ frontend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Refonte complète avec 3 onglets: Aujourd'hui, Agenda, IA. Génération repas journalier/hebdomadaire, génération recettes, gestion favoris"
-        
-  - task: "Agenda intelligent avec notes"
+        comment: "Nouvel onglet Favoris avec affichage des recettes favorites, possibilité d'ajouter à l'agenda"
+
+  - task: "Régénération repas/recettes IA"
     implemented: true
     working: "NA"
     file: "/app/frontend/src/pages/NutritionPage.jsx"
@@ -212,36 +164,48 @@ frontend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Agenda interactif avec possibilité d'ajouter/supprimer des notes par date"
-        
-  - task: "Photo de profil utilisateur"
+        comment: "Boutons 'Générer un nouveau plan' et 'Générer de nouvelles recettes' ajoutés"
+
+  - task: "Graphique poids temps réel"
     implemented: true
     working: "NA"
-    file: "/app/frontend/src/pages/ProfilePage.jsx"
+    file: "/app/frontend/src/pages/ProgressPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Mise à jour immédiate du state local lors de l'enregistrement du poids pour feedback temps réel"
+
+  - task: "Messages motivation dashboard"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/DashboardPage.jsx"
     stuck_count: 0
     priority: "medium"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Upload/suppression de photo de profil avec hover overlay"
+        comment: "Affichage message motivation personnalisé sur la page d'accueil"
 
 metadata:
   created_by: "main_agent"
-  version: "1.0"
-  test_sequence: 1
+  version: "2.0"
+  test_sequence: 2
   run_ui: true
 
 test_plan:
   current_focus:
-    - "Calcul des calories avec Mifflin-St Jeor"
-    - "Page Nutrition avec onglet IA"
-    - "Agenda intelligent avec notes"
-    - "Photo de profil utilisateur"
+    - "Régénération repas/recettes IA"
+    - "Onglet Favoris"
+    - "Messages motivation"
+    - "Graphique poids temps réel"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
-    message: "J'ai implémenté toutes les fonctionnalités demandées: 1) Correction du calcul des calories avec l'algorithme Mifflin-St Jeor complet (BMR, TDEE plafonné à 1.55, déficit 20%/15% selon BMI, garde-fous). 2) Page Nutrition refaite avec 3 onglets (Aujourd'hui, Agenda, IA). 3) Génération de repas IA (journalier/hebdomadaire). 4) Génération de recettes IA avec favoris. 5) Upload de photo de profil. Veuillez tester toutes ces fonctionnalités, en particulier le calcul des calories qui était le problème principal."
+    message: "J'ai corrigé tous les problèmes demandés: 1) Alternatives alimentaires en français 2) Bug session logout corrigé avec clear localStorage/sessionStorage 3) Nouvel onglet Favoris dans Nutrition 4) Boutons de régénération pour repas/recettes IA 5) Messages de motivation personnalisés sur dashboard 6) Graphique poids mise à jour temps réel. À tester: la régénération des repas IA et l'affichage des favoris."
