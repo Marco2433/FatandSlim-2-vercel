@@ -408,6 +408,116 @@ export default function DashboardPage() {
           </Card>
         )}
 
+        {/* AI Recipe Search */}
+        <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-secondary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="font-heading text-lg flex items-center gap-2">
+              <Search className="w-5 h-5 text-primary" />
+              Rechercher une recette IA
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Décrivez la recette que vous cherchez !
+            </p>
+            <Textarea
+              placeholder='Ex: "Recette avec crevettes et riz en 30 min, saine"'
+              value={recipeSearchQuery}
+              onChange={(e) => setRecipeSearchQuery(e.target.value)}
+              rows={2}
+              className="resize-none text-sm"
+            />
+            <Button 
+              onClick={searchRecipeByAI}
+              disabled={loadingSearch || !recipeSearchQuery.trim()}
+              className="w-full"
+              size="sm"
+            >
+              {loadingSearch ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Recherche...
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4 mr-2" />
+                  Trouver ma recette
+                </>
+              )}
+            </Button>
+            
+            {/* Search Result */}
+            {searchedRecipe && (
+              <div className="mt-3 p-3 rounded-xl border border-primary/30 bg-background space-y-3">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-semibold text-sm">{searchedRecipe.name}</h4>
+                  {searchedRecipe.nutri_score && (
+                    <span className={`w-5 h-5 rounded text-white text-xs flex items-center justify-center font-bold ${getNutriScoreColor(searchedRecipe.nutri_score)}`}>
+                      {searchedRecipe.nutri_score}
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2 text-xs text-muted-foreground">
+                  <span>{searchedRecipe.calories} kcal</span>
+                  <span>•</span>
+                  <span>{searchedRecipe.prep_time}</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => addRecipeToFavorites(searchedRecipe)}
+                  >
+                    <Heart className="w-3 h-3 mr-1" />
+                    Favoris
+                  </Button>
+                  {searchedRecipe.ingredients && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs"
+                      onClick={() => addIngredientsToShoppingList(searchedRecipe.ingredients)}
+                    >
+                      <ListPlus className="w-3 h-3 mr-1" />
+                      Courses
+                    </Button>
+                  )}
+                </div>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-xs p-0 h-auto"
+                  onClick={() => navigate('/nutrition')}
+                >
+                  Voir détails dans Nutrition →
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recipes Database Link */}
+        <Card 
+          className="cursor-pointer card-interactive"
+          onClick={() => navigate('/nutrition')}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-secondary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-heading font-semibold">Base de recettes</h3>
+                <p className="text-xs text-muted-foreground">
+                  + de 1000 recettes classées par Nutri-Score
+                </p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Daily Challenges */}
         {challenges?.daily && (
           <Card data-testid="challenges-card">
