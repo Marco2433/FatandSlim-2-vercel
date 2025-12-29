@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Zap,
   Apple,
-  Target
+  Target,
+  Sparkles
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -26,6 +27,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [dailySummary, setDailySummary] = useState(null);
   const [challenges, setChallenges] = useState(null);
+  const [motivation, setMotivation] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,14 +36,16 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const [statsRes, summaryRes, challengesRes] = await Promise.all([
+      const [statsRes, summaryRes, challengesRes, motivationRes] = await Promise.all([
         axios.get(`${API}/progress/stats`, { withCredentials: true }),
         axios.get(`${API}/food/daily-summary`, { withCredentials: true }),
         axios.get(`${API}/challenges`, { withCredentials: true }),
+        axios.get(`${API}/motivation`, { withCredentials: true }),
       ]);
       setStats(statsRes.data);
       setDailySummary(summaryRes.data);
       setChallenges(challengesRes.data);
+      setMotivation(motivationRes.data);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
