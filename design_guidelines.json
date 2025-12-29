@@ -1,0 +1,158 @@
+{
+  "identity": {
+    "name": "Fat and Slim",
+    "persona": "E1: The Anti-AI Designer",
+    "aesthetic": "Bio-Kinetic",
+    "description": "A dual-mode aesthetic that shifts between 'Organic Freshness' (Light Mode) for nutrition and 'Cyber Focus' (Dark Mode) for training. It avoids generic health app tropes by mixing high-precision data visualization with raw, gritty textures."
+  },
+  "typography": {
+    "font_family": {
+      "heading": "Manrope, sans-serif",
+      "body": "Inter, sans-serif",
+      "accent": "Bebas Neue, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "scale": {
+      "h1": "text-4xl md:text-6xl font-bold tracking-tight",
+      "h2": "text-3xl md:text-4xl font-semibold tracking-tight",
+      "h3": "text-2xl font-semibold",
+      "body": "text-base leading-relaxed",
+      "caption": "text-sm text-muted-foreground",
+      "hero_accent": "text-6xl md:text-8xl font-black uppercase tracking-tighter"
+    },
+    "usage": {
+      "headings": "Use Manrope for all standard headings. Use Bebas Neue ONLY for timer countdowns, intense workout stats, or 'GO' buttons.",
+      "body": "Inter for all readable text. Keep line-height loose (1.6) for readability."
+    }
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "DEFAULT": "#C2F970",
+        "foreground": "#0F172A",
+        "description": "Vibrant Lime - The core energy color. Works as 'Fresh' in light mode and 'Neon' in dark mode."
+      },
+      "secondary": {
+        "DEFAULT": "#7C3AED",
+        "foreground": "#FFFFFF",
+        "description": "Electric Purple - Reserved exclusively for AI features (Scanner, Smart Plans) and Premium upgrades."
+      },
+      "accent": {
+        "DEFAULT": "#F97316",
+        "foreground": "#FFFFFF",
+        "description": "Vitality Orange - Used for food/nutrition highlights and warnings."
+      },
+      "background": {
+        "light": "#F8FAFC",
+        "dark": "#0F172A",
+        "description": "Slate 50 for Light (Clean/Medical), Slate 900 for Dark (Focus/Night)."
+      },
+      "surface": {
+        "light": "#FFFFFF",
+        "dark": "#1E293B",
+        "description": "Card backgrounds. In dark mode, use slight transparency."
+      }
+    },
+    "gradients": {
+      "primary_glow": "bg-gradient-to-r from-[#C2F970] to-[#A3E635]",
+      "premium_shimmer": "bg-gradient-to-r from-[#7C3AED] via-[#C084FC] to-[#7C3AED]",
+      "dark_overlay": "bg-gradient-to-b from-transparent via-black/50 to-black"
+    }
+  },
+  "layout": {
+    "spacing": {
+      "container_padding": "p-4 md:p-8 lg:p-12",
+      "section_gap": "gap-8 md:gap-16",
+      "card_padding": "p-6"
+    },
+    "grids": {
+      "dashboard": "grid grid-cols-1 md:grid-cols-3 gap-4",
+      "bento_hero": "grid grid-cols-1 md:grid-cols-12 gap-4 auto-rows-[minmax(180px,auto)]",
+      "food_log": "flex flex-col gap-2"
+    },
+    "radius": {
+      "default": "rounded-2xl",
+      "button": "rounded-full",
+      "card": "rounded-xl"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:brightness-110 transition-all shadow-[0_4px_14px_0_rgba(194,249,112,0.39)]",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-[0_4px_14px_0_rgba(124,58,237,0.39)]",
+      "ghost": "hover:bg-accent hover:text-accent-foreground",
+      "fab": "fixed bottom-20 right-4 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center z-50"
+    },
+    "cards": {
+      "glass": "bg-white/10 backdrop-blur-md border border-white/20 shadow-xl",
+      "solid": "bg-card text-card-foreground border border-border shadow-sm",
+      "interactive": "hover:-translate-y-1 transition-transform duration-300 cursor-pointer"
+    },
+    "inputs": {
+      "default": "bg-background border-input focus:ring-2 focus:ring-primary/50 rounded-lg h-12"
+    },
+    "navigation": {
+      "mobile_bar": "fixed bottom-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-lg border-t border-border flex justify-around items-center z-50",
+      "desktop_sidebar": "hidden md:flex flex-col w-64 h-screen border-r border-border bg-card p-6"
+    }
+  },
+  "visual_enhancers": {
+    "textures": {
+      "noise": "bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none fixed inset-0 z-0",
+      "grid": "bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"
+    },
+    "motion": {
+      "page_transition": "initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}",
+      "hover_lift": "whileHover={{ y: -4 }}",
+      "tap_scale": "whileTap={{ scale: 0.95 }}"
+    }
+  },
+  "image_urls": {
+    "hero": {
+      "landing_main": "https://images.unsplash.com/photo-1760879946075-ddb8432a322d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDJ8MHwxfHNlYXJjaHwzfHxwZXJzb24lMjBydW5uaW5nJTIwb3V0ZG9vciUyMG1vcm5pbmd8ZW58MHx8fHwxNzY3MDExNTQ3fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Atmospheric runner on foggy path - represents the journey."
+    },
+    "nutrition": {
+      "salad_bowl": "https://images.unsplash.com/photo-1761315600943-d8a5bb0c499f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwxfHxoZWFsdGh5JTIwZm9vZCUyMGJvd2wlMjBmcmVzaCUyMGluZ3JlZGllbnRzJTIwb3ZlcmhlYWR8ZW58MHx8fHwxNzY3MDExNTMzfDA&ixlib=rb-4.1.0&q=85",
+      "ingredients": "https://images.unsplash.com/photo-1614648692330-eb129aeb6880?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwzfHxoZWFsdGh5JTIwZm9vZCUyMGJvd2wlMjBmcmVzaCUyMGluZ3JlZGllbnRzJTIwb3ZlcmhlYWR8ZW58MHx8fHwxNzY3MDExNTMzfDA&ixlib=rb-4.1.0&q=85",
+      "description": "Fresh, vibrant, overhead shots of healthy food."
+    },
+    "fitness": {
+      "gym_mood": "https://images.unsplash.com/photo-1740895307943-7878df384db1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwxfHxmaXRuZXNzJTIwd29ya291dCUyMGd5bSUyMGludGVuc2UlMjBsaWdodGluZ3xlbnwwfHx8fDE3NjcwMTE1NDZ8MA&ixlib=rb-4.1.0&q=85",
+      "yoga_calm": "https://images.unsplash.com/photo-1758599878772-fca5a727a9e0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwzfHx5b2dhJTIwc3RyZXRjaGluZyUyMGNhbG0lMjBob21lfGVufDB8fHx8MTc2NzAxMTU0OXww&ixlib=rb-4.1.0&q=85",
+      "description": "Contrast between intense gym lighting and calm home yoga."
+    },
+    "community": {
+      "group_run": "https://images.unsplash.com/photo-1762169786069-be5b81cd42b9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDJ8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBydW5uaW5nJTIwb3V0ZG9vciUyMG1vcm5pbmd8ZW58MHx8fHwxNzY3MDExNTQ3fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Social aspect of fitness."
+    }
+  },
+  "instructions_to_main_agent": {
+    "general": "You are building a PWA. Focus on mobile responsiveness first. Use the 'Bio-Kinetic' theme: Fresh/Organic for nutrition pages, Dark/Neon for workout pages.",
+    "layout_strategy": "Use the 'Bento Grid' for the dashboard. Do not use standard list views where a grid could be more visual.",
+    "components": "Customize Shadcn components. Do not use the default black/white styles. Inject the Primary Lime (#C2F970) into active states.",
+    "charts": "Use Recharts. Style them minimally. Remove grid lines where possible. Use the Primary and Secondary colors for data series.",
+    "scanner": "For the food scanner, create a camera overlay with a scanning animation (moving line). Use the 'Electric Purple' color here to signify AI.",
+    "gamification": "Make badges feel tangible. Use 3D-like shadows or gradients for them."
+  },
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: transition: all. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
+    "You MUST NOT center align the app container, ie do not add .App { text-align: center; } in the css file. This disrupts the human natural reading flow of text",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯📚🎭🎬🎪🎉🎊🎁🎀🎂🍰🎈🎨🎰💰💵💳🏦💎🪙💸🤑📊📈📉💹🔢🏆🥇 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+    "Main agent relies on these image URLs. Missing categories (especially sponsor logos) = main agent will use placeholder text which is FORBIDDEN",
+    "Prioritize using pre-existing components from src/components/ui when applicable",
+    "Create new components that match the style and conventions of existing components when needed",
+    "Examine existing components to understand the project's component patterns before creating new ones",
+    "Components MUST use named exports (export const ComponentName = ...)",
+    "Pages MUST use default exports (export default function PageName() {...})",
+    "Use sonner for toasts. Sonner component are located in /app/src/components/ui/sonner.tsx"
+  ]
+}
