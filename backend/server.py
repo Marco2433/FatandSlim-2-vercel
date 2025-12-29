@@ -1128,6 +1128,111 @@ Réponds UNIQUEMENT avec ce JSON:
     
     return result
 
+# ==================== AI RECIPE SEARCH ====================
+
+@api_router.post("/recipes/search")
+async def search_recipe_by_ai(data: dict, user: dict = Depends(get_current_user)):
+    """Search for a specific recipe using AI based on user query"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    import json
+    
+    query = data.get("query", "")
+    if not query:
+        raise HTTPException(status_code=400, detail="Query is required")
+    
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"recipe_search_{uuid.uuid4().hex[:8]}",
+            system_message=f"""Tu es un chef cuisinier français expert qui crée des recettes personnalisées.
+IMPORTANT: Réponds UNIQUEMENT en français et en JSON valide.
+
+Contexte utilisateur:
+- Objectif calorique: {profile.get('daily_calorie_target', 2000) if profile else 2000} kcal/jour
+- Objectif: {profile.get('goal', 'maintain') if profile else 'maintain'}
+- Préférences: {', '.join(profile.get('dietary_preferences', [])) if profile else 'Aucune'}
+- Allergies (À ÉVITER ABSOLUMENT): {', '.join(profile.get('allergies', [])) if profile else 'Aucune'}
+- Aliments aimés: {', '.join(profile.get('food_likes', [])) if profile else 'Variés'}
+- Aliments détestés (À ÉVITER): {', '.join(profile.get('food_dislikes', [])) if profile else 'Aucun'}
+
+Règles:
+1. Crée une recette qui correspond EXACTEMENT à la demande de l'utilisateur
+2. Respecte les contraintes mentionnées (temps, ingrédients, santé, etc.)
+3. Ne jamais utiliser les allergènes ou aliments détestés
+4. Recette détaillée avec étapes claires"""
+        ).with_model("openai", "gpt-4o")
+        
+        prompt = f"""L'utilisateur recherche: "{query}"
+
+Crée UNE recette qui correspond parfaitement à cette demande.
+
+Réponds UNIQUEMENT avec ce JSON (pas de texte avant ou après):
+{{
+    "name": "Nom de la recette en français",
+    "category": "breakfast|lunch|dinner|snack",
+    "calories": 400,
+    "protein": 25,
+    "carbs": 35,
+    "fat": 15,
+    "prep_time": "20 min",
+    "cook_time": "15 min",
+    "servings": 2,
+    "difficulty": "facile|moyen|difficile",
+    "cost": "économique|moyen|élevé",
+    "nutri_score": "A|B|C",
+    "ingredients": [
+        {{"item": "Ingrédient 1", "quantity": "200g"}},
+        {{"item": "Ingrédient 2", "quantity": "1 pièce"}}
+    ],
+    "steps": [
+        "Étape 1: Description claire de l'étape",
+        "Étape 2: Description claire de l'étape"
+    ],
+    "tips": "Un conseil utile pour cette recette"
+}}"""
+        
+        response = await chat.send_message(UserMessage(text=prompt))
+        
+        json_start = response.find('{')
+        json_end = response.rfind('}') + 1
+        recipe = json.loads(response[json_start:json_end])
+        
+        return {"recipe": recipe, "query": query}
+        
+    except Exception as e:
+        logger.error(f"AI recipe search error: {e}")
+        # Return a fallback recipe
+        return {
+            "recipe": {
+                "name": "Recette personnalisée",
+                "category": "lunch",
+                "calories": 400,
+                "protein": 25,
+                "carbs": 40,
+                "fat": 15,
+                "prep_time": "25 min",
+                "cook_time": "15 min",
+                "servings": 2,
+                "difficulty": "facile",
+                "cost": "économique",
+                "nutri_score": "B",
+                "ingredients": [
+                    {"item": "Ingrédient principal", "quantity": "200g"},
+                    {"item": "Légumes", "quantity": "150g"},
+                    {"item": "Assaisonnement", "quantity": "1 c.à.s"}
+                ],
+                "steps": [
+                    "Étape 1: Préparer les ingrédients",
+                    "Étape 2: Cuisiner selon les instructions",
+                    "Étape 3: Servir chaud"
+                ],
+                "tips": "Adaptez les quantités selon vos goûts"
+            },
+            "query": query
+        }
+
 @api_router.post("/recipes/favorites")
 async def add_favorite_recipe(data: dict, user: dict = Depends(get_current_user)):
     """Add a recipe to favorites"""
