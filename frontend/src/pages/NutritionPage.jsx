@@ -1298,7 +1298,7 @@ export default function NutritionPage() {
                               <div className="flex items-center gap-2">
                                 <p className="font-semibold">{fav.recipe.name}</p>
                                 {fav.recipe.nutri_score && (
-                                  <span className={`w-5 h-5 rounded text-white text-xs flex items-center justify-center font-bold ${getNutriScoreColor(fav.recipe.nutri_score)}`}>
+                                  <span className={`w-6 h-6 rounded text-white text-xs flex items-center justify-center font-bold ${getNutriScoreColor(fav.recipe.nutri_score)}`}>
                                     {fav.recipe.nutri_score}
                                   </span>
                                 )}
@@ -1306,7 +1306,7 @@ export default function NutritionPage() {
                               <div className="flex gap-2 text-xs text-muted-foreground mt-1">
                                 <span>{fav.recipe.calories} kcal</span>
                                 <span>•</span>
-                                <span>{fav.recipe.prep_time}</span>
+                                <span>{fav.recipe.prep_time || '15 min'}</span>
                                 {fav.recipe.difficulty && (
                                   <>
                                     <span>•</span>
@@ -1341,7 +1341,7 @@ export default function NutritionPage() {
                           
                           {/* Expanded recipe details */}
                           {selectedRecipe?.name === fav.recipe.name && (
-                            <div className="mt-4 pt-4 border-t space-y-3">
+                            <div className="mt-4 pt-4 border-t space-y-4">
                               <div className="grid grid-cols-4 gap-2 text-center text-xs">
                                 <div className="p-2 rounded bg-muted">
                                   <p className="font-bold">{fav.recipe.protein || 0}g</p>
@@ -1361,9 +1361,23 @@ export default function NutritionPage() {
                                 </div>
                               </div>
                               
-                              {fav.recipe.ingredients && (
+                              {fav.recipe.ingredients && fav.recipe.ingredients.length > 0 && (
                                 <div>
-                                  <p className="font-medium text-sm mb-2">📝 Ingrédients</p>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="font-medium text-sm">📝 Ingrédients</p>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        addIngredientsToShoppingList(fav.recipe.ingredients);
+                                      }}
+                                      className="text-xs h-7"
+                                    >
+                                      <ListPlus className="w-3 h-3 mr-1" />
+                                      Ajouter aux courses
+                                    </Button>
+                                  </div>
                                   <div className="flex flex-wrap gap-1">
                                     {fav.recipe.ingredients.map((ing, j) => (
                                       <Badge key={j} variant="outline" className="text-xs">
@@ -1374,13 +1388,16 @@ export default function NutritionPage() {
                                 </div>
                               )}
                               
-                              {fav.recipe.steps && (
+                              {fav.recipe.steps && fav.recipe.steps.length > 0 && (
                                 <div>
                                   <p className="font-medium text-sm mb-2">👨‍🍳 Préparation</p>
-                                  <ol className="space-y-1">
+                                  <ol className="space-y-2">
                                     {fav.recipe.steps.map((step, j) => (
-                                      <li key={j} className="text-xs text-muted-foreground">
-                                        {step}
+                                      <li key={j} className="text-sm text-muted-foreground flex gap-2">
+                                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-medium">
+                                          {j + 1}
+                                        </span>
+                                        <span>{step.replace(/^Étape \d+:\s*/i, '')}</span>
                                       </li>
                                     ))}
                                   </ol>
@@ -1388,8 +1405,8 @@ export default function NutritionPage() {
                               )}
                               
                               {fav.recipe.tips && (
-                                <div className="p-2 rounded bg-primary/5 border border-primary/20">
-                                  <p className="text-xs">💡 {fav.recipe.tips}</p>
+                                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                                  <p className="text-sm">💡 {fav.recipe.tips}</p>
                                 </div>
                               )}
                             </div>
