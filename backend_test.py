@@ -112,23 +112,58 @@ class FatSlimAPITester:
         success, response, details = self.test_endpoint('GET', 'profile', 200)
         self.log_test("Get Profile", success, details)
         
-        # Test onboarding completion
+        # Test onboarding completion with CRITICAL calorie calculation test
+        print("\n🔥 CRITICAL TEST: Calorie Calculation with Mifflin-St Jeor")
         onboarding_data = {
-            "age": 25,
-            "height": 175.0,
-            "weight": 70.0,
-            "target_weight": 65.0,
+            "gender": "female",
+            "age": 45,
+            "height": 155,
+            "weight": 148,
+            "target_weight": 70,
             "goal": "lose_weight",
-            "activity_level": "moderate",
-            "fitness_level": "intermediate",
-            "dietary_preferences": ["vegetarian"],
-            "allergies": ["nuts"]
+            "activity_level": "sedentary",
+            "dietary_preferences": [],
+            "allergies": [],
+            "fitness_level": "beginner",
+            "health_conditions": [],
+            "food_likes": [],
+            "food_dislikes": []
         }
         
         success, response, details = self.test_endpoint(
             'POST', 'profile/onboarding', 200,
             data=onboarding_data
         )
+        
+        # Verify calorie calculation results
+        if success and 'profile' in response:
+            profile = response['profile']
+            calorie_debug = profile.get('calorie_debug', {})
+            
+            expected_bmr = 2063  # Approximately
+            expected_tdee = 2475  # Approximately (BMR * 1.2)
+            expected_target = 2104  # Approximately (15% deficit for BMI > 35)
+            
+            actual_bmr = calorie_debug.get('bmr', 0)
+            actual_tdee = calorie_debug.get('tdee_maintenance', 0)
+            actual_target = calorie_debug.get('final_target', 0)
+            
+            bmr_ok = abs(actual_bmr - expected_bmr) < 100  # Allow 100 kcal tolerance
+            tdee_ok = abs(actual_tdee - expected_tdee) < 100
+            target_ok = abs(actual_target - expected_target) < 100
+            
+            calorie_test_success = bmr_ok and tdee_ok and target_ok
+            
+            calorie_details = f"BMR: {actual_bmr} (expected ~{expected_bmr}), TDEE: {actual_tdee} (expected ~{expected_tdee}), Target: {actual_target} (expected ~{expected_target})"
+            
+            self.log_test("CRITICAL: Calorie Calculation Accuracy", calorie_test_success, calorie_details)
+            
+            # Verify debug info is present
+            debug_fields_present = all(field in calorie_debug for field in ['bmr', 'activity_factor', 'tdee_maintenance', 'final_target'])
+            self.log_test("Calorie Debug Info Present", debug_fields_present, f"Debug fields: {list(calorie_debug.keys())}")
+        else:
+            self.log_test("CRITICAL: Calorie Calculation Accuracy", False, "No profile data returned")
+        
         self.log_test("Complete Onboarding", success, details)
         
         # Test profile update
