@@ -73,14 +73,14 @@
       "short_name": "Scanner",
       "description": "Analyser un aliment avec l'IA",
       "url": "/scanner",
-      "icons": [{ "src": "/icon-96x96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/api/pwa/icon-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "Mon suivi",
       "short_name": "Nutrition",
       "description": "Voir mon journal alimentaire",
       "url": "/nutrition",
-      "icons": [{ "src": "/icon-96x96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/api/pwa/icon-96x96.png", "sizes": "96x96" }]
     }
   ],
   "related_applications": [],
