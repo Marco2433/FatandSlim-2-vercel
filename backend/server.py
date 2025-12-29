@@ -532,10 +532,10 @@ Nutri-Score guidelines:
 - E: Unhealthy (fast food, high sugar/fat)"""
         ).with_model("openai", "gpt-5.2")
         
-        image_content = ImageContent(image_base64=image_base64)
+        file_content = FileContent(content_type=content_type, file_content_base64=image_base64)
         user_message = UserMessage(
             text="Analyze this food image carefully. Identify exactly what food/dish is shown and provide accurate nutritional information. Be specific and precise. Respond ONLY with valid JSON.",
-            image_contents=[image_content]
+            file_contents=[file_content]
         )
         
         response = await chat.send_message(user_message)
