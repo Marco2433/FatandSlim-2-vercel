@@ -190,23 +190,30 @@ export default function NutritionPage() {
       if (filter && filter !== 'all') {
         params.append('nutri_score', filter);
       }
-      const response = await axios.get(`${API}/recipes/all?${params}`, { withCredentials: true });
+      // This endpoint doesn't require auth
+      const response = await axios.get(`${API}/recipes/all?${params}`);
       setCatalogRecipes(response.data.recipes || []);
       setCatalogStats(response.data.stats);
     } catch (error) {
       console.error('Error fetching catalog:', error);
+      toast.error('Erreur lors du chargement du catalogue');
     } finally {
       setLoadingCatalog(false);
     }
   };
 
   const addToShoppingList = async (item, quantity = '') => {
+    if (!item || !item.trim()) {
+      toast.error('Nom de l\'article requis');
+      return;
+    }
     try {
-      await axios.post(`${API}/shopping-list`, { item, quantity }, { withCredentials: true });
+      await axios.post(`${API}/shopping-list`, { item: item.trim(), quantity }, { withCredentials: true });
       toast.success('Ajouté à la liste de courses');
       fetchShoppingList();
     } catch (error) {
-      toast.error('Erreur lors de l\'ajout');
+      console.error('Error adding to shopping list:', error);
+      toast.error('Erreur lors de l\'ajout: ' + (error.response?.data?.detail || 'Veuillez réessayer'));
     }
   };
 
