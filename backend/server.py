@@ -978,22 +978,44 @@ async def get_workout_logs(user: dict = Depends(get_current_user)):
 
 @api_router.post("/progress/weight")
 async def log_weight(entry: WeightEntry, user: dict = Depends(get_current_user)):
+    # Get profile for BMI calculation
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    height_m = (profile.get("height", 170) if profile else 170) / 100
+    bmi = round(entry.weight / (height_m ** 2), 1)
+    
+    date_str = entry.date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
     weight_doc = {
         "entry_id": f"weight_{uuid.uuid4().hex[:8]}",
         "user_id": user["user_id"],
         "weight": entry.weight,
-        "date": entry.date or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "bmi": bmi,
+        "date": date_str,
         "logged_at": datetime.now(timezone.utc).isoformat()
     }
     await db.weight_history.insert_one(weight_doc)
     
-    # Update profile current weight
+    # Also log BMI history
+    await db.bmi_history.insert_one({
+        "entry_id": f"bmi_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "bmi": bmi,
+        "weight": entry.weight,
+        "date": date_str,
+        "logged_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Update profile current weight and BMI
     await db.user_profiles.update_one(
         {"user_id": user["user_id"]},
-        {"$set": {"weight": entry.weight, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        {"$set": {
+            "weight": entry.weight, 
+            "bmi": bmi,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
     )
     
-    return {"message": "Weight logged", "entry_id": weight_doc["entry_id"]}
+    return {"message": "Weight logged", "entry_id": weight_doc["entry_id"], "bmi": bmi}
 
 @api_router.get("/progress/weight")
 async def get_weight_history(user: dict = Depends(get_current_user)):
@@ -1002,6 +1024,49 @@ async def get_weight_history(user: dict = Depends(get_current_user)):
         {"_id": 0}
     ).sort("date", 1).to_list(365)
     return history
+
+@api_router.get("/progress/bmi")
+async def get_bmi_history(user: dict = Depends(get_current_user)):
+    """Get BMI history with ideal BMI target"""
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    history = await db.bmi_history.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("date", 1).to_list(365)
+    
+    # If no BMI history, create from weight history
+    if not history:
+        weight_history = await db.weight_history.find(
+            {"user_id": user["user_id"]},
+            {"_id": 0}
+        ).sort("date", 1).to_list(365)
+        
+        height_m = (profile.get("height", 170) if profile else 170) / 100
+        history = [
+            {
+                "date": w.get("date"),
+                "bmi": round(w.get("weight", 70) / (height_m ** 2), 1),
+                "weight": w.get("weight")
+            } for w in weight_history
+        ]
+    
+    ideal_bmi = profile.get("ideal_bmi", 22.0) if profile else 22.0
+    current_bmi = profile.get("bmi", 0) if profile else 0
+    
+    return {
+        "history": history,
+        "current_bmi": current_bmi,
+        "ideal_bmi": ideal_bmi,
+        "ideal_weight": profile.get("ideal_weight") if profile else None,
+        "ideal_weight_range": profile.get("ideal_weight_range") if profile else None,
+        "bmi_categories": {
+            "underweight": {"max": 18.4, "label": "Insuffisance pondérale"},
+            "normal": {"min": 18.5, "max": 24.9, "label": "Poids normal"},
+            "overweight": {"min": 25, "max": 29.9, "label": "Surpoids"},
+            "obese": {"min": 30, "label": "Obésité"}
+        }
+    }
 
 @api_router.get("/progress/stats")
 async def get_stats(user: dict = Depends(get_current_user)):
