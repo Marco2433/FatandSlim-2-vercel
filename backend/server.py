@@ -844,7 +844,7 @@ async def delete_agenda_note(note_id: str, user: dict = Depends(get_current_user
 # ==================== MEAL PLANS ENDPOINTS ====================
 
 @api_router.post("/meals/generate")
-async def generate_meal_plan(user: dict = Depends(get_current_user)):
+async def generate_meal_plan(data: dict = {}, user: dict = Depends(get_current_user)):
     """Generate AI-powered meal plan based on user profile"""
     from emergentintegrations.llm.chat import LlmChat, UserMessage
     import json
