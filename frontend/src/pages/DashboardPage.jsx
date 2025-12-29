@@ -108,6 +108,30 @@ export default function DashboardPage() {
     return colors[score] || 'bg-gray-400';
   };
 
+  // AI Recipe Search
+  const searchRecipeByAI = async () => {
+    if (!recipeSearchQuery.trim()) {
+      toast.error('Veuillez entrer une description de recette');
+      return;
+    }
+    
+    setLoadingSearch(true);
+    setSearchedRecipe(null);
+    
+    try {
+      const response = await axios.post(`${API}/recipes/search`, { 
+        query: recipeSearchQuery 
+      }, { withCredentials: true });
+      setSearchedRecipe(response.data.recipe);
+      toast.success('Recette trouvée !');
+    } catch (error) {
+      console.error('Error searching recipe:', error);
+      toast.error('Erreur lors de la recherche');
+    } finally {
+      setLoadingSearch(false);
+    }
+  };
+
   const calorieProgress = dailySummary 
     ? Math.min(100, (dailySummary.consumed.calories / dailySummary.targets.calories) * 100)
     : 0;
