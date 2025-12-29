@@ -1507,6 +1507,20 @@ export default function NutritionPage() {
                                 <p className="text-xs">💡 {recipe.tips}</p>
                               </div>
                             )}
+                            
+                            {/* Add to agenda button */}
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="w-full mt-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addRecipeToAgenda(recipe);
+                              }}
+                            >
+                              <CalendarPlus className="w-4 h-4 mr-2" />
+                              Ajouter à l'agenda
+                            </Button>
                           </div>
                         )}
                       </CardContent>
@@ -1515,6 +1529,20 @@ export default function NutritionPage() {
                 })}
               </div>
             </ScrollArea>
+          )}
+          
+          {/* Regenerate button */}
+          {!loadingRecipes && recipes.length > 0 && (
+            <div className="pt-4 border-t">
+              <Button 
+                onClick={regenerateRecipes} 
+                className="w-full"
+                variant="outline"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Générer de nouvelles recettes
+              </Button>
+            </div>
           )}
         </DialogContent>
       </Dialog>
