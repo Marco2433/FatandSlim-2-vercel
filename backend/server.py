@@ -652,10 +652,54 @@ async def log_food(entry: FoodLogEntry, user: dict = Depends(get_current_user)):
         "entry_id": f"food_{uuid.uuid4().hex[:8]}",
         "user_id": user["user_id"],
         **entry.model_dump(),
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "logged_at": datetime.now(timezone.utc).isoformat()
     }
     await db.food_logs.insert_one(log_doc)
     return {"message": "Food logged", "entry_id": log_doc["entry_id"]}
+
+@api_router.put("/food/log/{entry_id}/note")
+async def update_food_note(entry_id: str, data: dict, user: dict = Depends(get_current_user)):
+    """Add or update note for a food entry"""
+    result = await db.food_logs.update_one(
+        {"entry_id": entry_id, "user_id": user["user_id"]},
+        {"$set": {"note": data.get("note", "")}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    return {"message": "Note updated"}
+
+@api_router.get("/food/diary")
+async def get_food_diary(month: Optional[str] = None, user: dict = Depends(get_current_user)):
+    """Get food diary grouped by date"""
+    if not month:
+        month = datetime.now(timezone.utc).strftime("%Y-%m")
+    
+    logs = await db.food_logs.find(
+        {"user_id": user["user_id"], "date": {"$regex": f"^{month}"}},
+        {"_id": 0}
+    ).sort("logged_at", -1).to_list(500)
+    
+    # Group by date
+    diary = {}
+    for log in logs:
+        date = log.get("date", log.get("logged_at", "")[:10])
+        if date not in diary:
+            diary[date] = {
+                "date": date,
+                "meals": [],
+                "total_calories": 0,
+                "total_protein": 0,
+                "total_carbs": 0,
+                "total_fat": 0
+            }
+        diary[date]["meals"].append(log)
+        diary[date]["total_calories"] += log.get("calories", 0) * log.get("quantity", 1)
+        diary[date]["total_protein"] += log.get("protein", 0) * log.get("quantity", 1)
+        diary[date]["total_carbs"] += log.get("carbs", 0) * log.get("quantity", 1)
+        diary[date]["total_fat"] += log.get("fat", 0) * log.get("quantity", 1)
+    
+    return sorted(diary.values(), key=lambda x: x["date"], reverse=True)
 
 @api_router.get("/food/logs")
 async def get_food_logs(date: Optional[str] = None, user: dict = Depends(get_current_user)):
