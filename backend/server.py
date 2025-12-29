@@ -930,6 +930,248 @@ async def get_meal_plans(user: dict = Depends(get_current_user)):
     ).sort("created_at", -1).to_list(10)
     return plans
 
+# ==================== AI RECIPES GENERATION ====================
+
+@api_router.post("/recipes/generate")
+async def generate_recipes(data: dict = {}, user: dict = Depends(get_current_user)):
+    """Generate AI-powered simple and affordable recipes"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    import json
+    
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    if not profile:
+        raise HTTPException(status_code=400, detail="Complete onboarding first")
+    
+    count = data.get("count", 10)
+    category = data.get("category", "all")  # all, breakfast, lunch, dinner, snack
+    
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"recipes_{uuid.uuid4().hex[:8]}",
+            system_message=f"""Tu es un chef cuisinier français spécialisé dans les recettes simples, économiques et saines.
+IMPORTANT: Réponds UNIQUEMENT en français et en JSON valide.
+
+Contexte utilisateur:
+- Objectif calorique: {profile.get('daily_calorie_target', 2000)} kcal/jour
+- Objectif: {profile.get('goal', 'maintain')}
+- Préférences: {', '.join(profile.get('dietary_preferences', [])) or 'Aucune'}
+- Allergies (À ÉVITER): {', '.join(profile.get('allergies', [])) or 'Aucune'}
+- Aliments aimés: {', '.join(profile.get('food_likes', [])) or 'Variés'}
+- Aliments détestés (À ÉVITER): {', '.join(profile.get('food_dislikes', [])) or 'Aucun'}
+- Budget: {profile.get('budget', 'moyen')}
+- Compétences: {profile.get('cooking_skill', 'intermédiaire')}
+
+Règles:
+1. Recettes SIMPLES (max 8 étapes)
+2. Ingrédients ÉCONOMIQUES et faciles à trouver
+3. Temps de préparation < 30 min
+4. Ne jamais utiliser les aliments détestés ou allergènes
+5. Favoriser les aliments aimés"""
+        ).with_model("openai", "gpt-4o")
+        
+        category_filter = f"pour {category}" if category != "all" else "variées (petit-déjeuner, déjeuner, dîner, collation)"
+        
+        prompt = f"""Génère {count} recettes exclusives, simples et économiques {category_filter}.
+
+Réponds UNIQUEMENT avec ce JSON:
+{{
+    "recipes": [
+        {{
+            "id": "recipe_1",
+            "name": "Nom de la recette",
+            "category": "breakfast|lunch|dinner|snack",
+            "calories": 350,
+            "protein": 20,
+            "carbs": 40,
+            "fat": 12,
+            "prep_time": "15 min",
+            "cook_time": "10 min",
+            "servings": 2,
+            "difficulty": "facile",
+            "cost": "économique",
+            "ingredients": [
+                {{"item": "Ingrédient 1", "quantity": "200g"}},
+                {{"item": "Ingrédient 2", "quantity": "1 pièce"}}
+            ],
+            "steps": [
+                "Étape 1: ...",
+                "Étape 2: ..."
+            ],
+            "tips": "Conseil pour cette recette",
+            "nutri_score": "A"
+        }}
+    ]
+}}"""
+        
+        response = await chat.send_message(UserMessage(text=prompt))
+        
+        json_start = response.find('{')
+        json_end = response.rfind('}') + 1
+        result = json.loads(response[json_start:json_end])
+        
+    except Exception as e:
+        logger.error(f"AI recipes error: {e}")
+        result = {
+            "recipes": [
+                {
+                    "id": f"recipe_{i+1}",
+                    "name": f"Recette simple {i+1}",
+                    "category": ["breakfast", "lunch", "dinner", "snack"][i % 4],
+                    "calories": 350 + (i * 50),
+                    "protein": 15 + (i * 2),
+                    "carbs": 40,
+                    "fat": 12,
+                    "prep_time": "15 min",
+                    "cook_time": "10 min",
+                    "servings": 2,
+                    "difficulty": "facile",
+                    "cost": "économique",
+                    "ingredients": [{"item": "Ingrédient", "quantity": "200g"}],
+                    "steps": ["Préparer les ingrédients", "Cuisiner", "Servir"],
+                    "tips": "Recette rapide et économique",
+                    "nutri_score": "B"
+                } for i in range(min(count, 5))
+            ]
+        }
+    
+    return result
+
+@api_router.post("/recipes/favorites")
+async def add_favorite_recipe(data: dict, user: dict = Depends(get_current_user)):
+    """Add a recipe to favorites"""
+    recipe = data.get("recipe")
+    if not recipe:
+        raise HTTPException(status_code=400, detail="Recipe data required")
+    
+    fav_doc = {
+        "favorite_id": f"fav_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "recipe": recipe,
+        "added_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Check if already in favorites
+    existing = await db.favorite_recipes.find_one({
+        "user_id": user["user_id"], 
+        "recipe.name": recipe.get("name")
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Recipe already in favorites")
+    
+    await db.favorite_recipes.insert_one(fav_doc)
+    return {"message": "Recipe added to favorites", "favorite_id": fav_doc["favorite_id"]}
+
+@api_router.get("/recipes/favorites")
+async def get_favorite_recipes(user: dict = Depends(get_current_user)):
+    """Get all favorite recipes"""
+    favorites = await db.favorite_recipes.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("added_at", -1).to_list(100)
+    return favorites
+
+@api_router.delete("/recipes/favorites/{favorite_id}")
+async def remove_favorite_recipe(favorite_id: str, user: dict = Depends(get_current_user)):
+    result = await db.favorite_recipes.delete_one({"favorite_id": favorite_id, "user_id": user["user_id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    return {"message": "Recipe removed from favorites"}
+
+# ==================== PROFILE PICTURE UPLOAD ====================
+
+@api_router.post("/profile/picture")
+async def upload_profile_picture(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    """Upload a profile picture"""
+    # Check file type
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    # Read and encode as base64
+    contents = await file.read()
+    
+    # Limit size to 2MB
+    if len(contents) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image too large (max 2MB)")
+    
+    image_base64 = base64.b64encode(contents).decode()
+    picture_data = f"data:{file.content_type};base64,{image_base64}"
+    
+    # Update user profile
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"picture": picture_data}}
+    )
+    
+    await db.user_profiles.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"picture": picture_data}},
+        upsert=True
+    )
+    
+    return {"message": "Profile picture updated", "picture": picture_data}
+
+@api_router.delete("/profile/picture")
+async def delete_profile_picture(user: dict = Depends(get_current_user)):
+    """Delete profile picture"""
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"picture": None}}
+    )
+    
+    await db.user_profiles.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"picture": None}}
+    )
+    
+    return {"message": "Profile picture deleted"}
+
+# ==================== ADD MEAL FROM AI PLAN TO DIARY ====================
+
+@api_router.post("/meals/add-to-diary")
+async def add_meal_to_diary(data: dict, user: dict = Depends(get_current_user)):
+    """Add a meal from AI plan to food diary"""
+    meal = data.get("meal")
+    meal_type = data.get("meal_type", "snack")
+    date = data.get("date", datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+    
+    if not meal:
+        raise HTTPException(status_code=400, detail="Meal data required")
+    
+    log_doc = {
+        "entry_id": f"food_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "food_name": meal.get("name", "Repas"),
+        "calories": meal.get("calories", 0),
+        "protein": meal.get("protein", 0),
+        "carbs": meal.get("carbs", 0),
+        "fat": meal.get("fat", 0),
+        "quantity": 1,
+        "meal_type": meal_type,
+        "source": "ai_plan",
+        "date": date,
+        "logged_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.food_logs.insert_one(log_doc)
+    
+    # Also save to agenda notes
+    await db.agenda_notes.update_one(
+        {"user_id": user["user_id"], "date": date, "type": "meal_plan"},
+        {"$set": {
+            "user_id": user["user_id"],
+            "date": date,
+            "type": "meal_plan",
+            "content": f"Repas IA: {meal.get('name')}",
+            "meal_data": meal,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
+    )
+    
+    return {"message": "Meal added to diary", "entry_id": log_doc["entry_id"]}
+
 # ==================== WORKOUTS ENDPOINTS ====================
 
 @api_router.post("/workouts/generate")
