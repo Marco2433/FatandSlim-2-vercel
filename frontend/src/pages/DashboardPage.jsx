@@ -289,6 +289,88 @@ export default function DashboardPage() {
           </Card>
         )}
 
+        {/* Daily Recipes - Recettes du jour */}
+        {dailyRecipes.length > 0 && (
+          <Card data-testid="daily-recipes-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="font-heading text-lg flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-secondary" />
+                Recettes du jour
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {dailyRecipes.map((recipe) => (
+                <div 
+                  key={recipe.id}
+                  className="flex gap-3 p-3 rounded-xl border border-border hover:border-primary/30 transition-colors"
+                >
+                  {/* Recipe Image */}
+                  <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                    <img 
+                      src={recipe.image} 
+                      alt={recipe.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400';
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Recipe Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-semibold text-sm truncate">{recipe.name}</h4>
+                      <span className={`w-5 h-5 rounded text-white text-xs flex items-center justify-center font-bold flex-shrink-0 ${getNutriScoreColor(recipe.nutri_score)}`}>
+                        {recipe.nutri_score}
+                      </span>
+                    </div>
+                    
+                    <div className="flex gap-2 text-xs text-muted-foreground mb-2">
+                      <span>{recipe.calories} kcal</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {recipe.prep_time}
+                      </span>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => addRecipeToFavorites(recipe)}
+                      >
+                        <Heart className="w-3 h-3 mr-1" />
+                        Favoris
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        onClick={() => addIngredientsToShoppingList(recipe.ingredients)}
+                      >
+                        <ShoppingCart className="w-3 h-3 mr-1" />
+                        Courses
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate('/nutrition')}
+              >
+                Voir plus de recettes
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Daily Challenges */}
         {challenges?.daily && (
           <Card data-testid="challenges-card">
