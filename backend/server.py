@@ -438,13 +438,21 @@ async def complete_onboarding(data: OnboardingData, user: dict = Depends(get_cur
         "budget": data.budget,
         "cooking_skill": data.cooking_skill,
         "meals_per_day": data.meals_per_day,
-        # Calculated targets
+        # Calculated targets with debug info
         "daily_calorie_target": round(calorie_target),
         "daily_protein_target": round(data.weight * protein_per_kg),
         "daily_carbs_target": round(calorie_target * carbs_ratio / 4),
         "daily_fat_target": round(calorie_target * 0.25 / 9),
         "daily_fiber_target": 30 if data.gender == "male" else 25,
         "daily_water_target": round(data.weight * 35),  # ml per kg
+        # Debug values for transparency
+        "calorie_debug": {
+            "bmr": round(bmr),
+            "activity_factor": activity_factor,
+            "tdee_maintenance": round(tdee),
+            "goal_applied": data.goal,
+            "final_target": round(calorie_target)
+        },
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
