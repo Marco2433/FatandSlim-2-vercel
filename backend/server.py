@@ -973,6 +973,44 @@ Réponds UNIQUEMENT avec ce JSON (tous les textes en français):
     }
     await db.meal_plans.insert_one(plan_doc)
     
+    # Add images to meals based on meal type and keywords
+    meal_images = {
+        "breakfast": [
+            "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400",  # porridge
+            "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400",  # eggs
+            "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400",  # smoothie bowl
+            "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400",  # avocado toast
+            "https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=400",  # breakfast
+        ],
+        "lunch": [
+            "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400",  # salad
+            "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400",  # wrap
+            "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",  # bowl
+            "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",  # burger
+            "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400",  # healthy
+        ],
+        "dinner": [
+            "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",  # salmon
+            "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400",  # soup
+            "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400",  # chicken
+            "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400",  # stir fry
+            "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400",  # pizza
+        ],
+    }
+    
+    import random
+    
+    # Add images to the meal plan
+    if "meals" in meal_plan:
+        for meal_type, meal in meal_plan["meals"].items():
+            if meal and meal_type in meal_images:
+                meal["image"] = random.choice(meal_images[meal_type])
+    elif "days" in meal_plan:
+        for day in meal_plan["days"]:
+            for meal_type, meal in day.get("meals", {}).items():
+                if meal and meal_type in meal_images:
+                    meal["image"] = random.choice(meal_images[meal_type])
+    
     return {"plan_id": plan_doc["plan_id"], "type": plan_doc["type"], "meal_plan": meal_plan}
 
 @api_router.get("/meals/plans")
