@@ -1717,16 +1717,44 @@ async def get_pwa_icon_512():
         return FileResponse(icon_path, media_type="image/png")
     raise HTTPException(status_code=404, detail="Icon not found")
 
-@api_router.get("/pwa/icon-maskable-192x192.png")
+@api_router.get("/pwa/icon-192x192-maskable.png")
 async def get_pwa_maskable_192():
-    icon_path = FRONTEND_PUBLIC_DIR / "icon-maskable-192x192.png"
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-192x192-maskable.png"
     if icon_path.exists():
         return FileResponse(icon_path, media_type="image/png")
     raise HTTPException(status_code=404, detail="Icon not found")
 
-@api_router.get("/pwa/icon-maskable-512x512.png")
+@api_router.get("/pwa/icon-512x512-maskable.png")
 async def get_pwa_maskable_512():
-    icon_path = FRONTEND_PUBLIC_DIR / "icon-maskable-512x512.png"
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-512x512-maskable.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+@api_router.get("/pwa/icon-48x48.png")
+async def get_pwa_icon_48():
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-48x48.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+@api_router.get("/pwa/icon-72x72.png")
+async def get_pwa_icon_72():
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-72x72.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+@api_router.get("/pwa/icon-96x96.png")
+async def get_pwa_icon_96():
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-96x96.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+@api_router.get("/pwa/icon-144x144.png")
+async def get_pwa_icon_144():
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-144x144.png"
     if icon_path.exists():
         return FileResponse(icon_path, media_type="image/png")
     raise HTTPException(status_code=404, detail="Icon not found")
