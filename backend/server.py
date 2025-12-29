@@ -1624,6 +1624,113 @@ async def get_challenges(user: dict = Depends(get_current_user)):
 # Include router
 app.include_router(api_router)
 
+# ==================== STATIC FILES FOR PWA (ICONS, MANIFEST) ====================
+# Serve PWA static files directly to bypass React Router redirect
+
+@app.get("/icon-192x192.png")
+async def get_icon_192():
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-192x192.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+@app.get("/icon-512x512.png")
+async def get_icon_512():
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-512x512.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+@app.get("/icon-maskable-192x192.png")
+async def get_icon_maskable_192():
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-maskable-192x192.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+@app.get("/icon-maskable-512x512.png")
+async def get_icon_maskable_512():
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-maskable-512x512.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+@app.get("/pwa-manifest.json")
+async def get_manifest():
+    """Serve manifest with correct icons URLs pointing to backend"""
+    manifest_data = {
+        "name": "Fat & Slim",
+        "short_name": "Fat&Slim",
+        "description": "Application de coaching sportif et nutritionnel intelligent avec IA",
+        "start_url": "/",
+        "display": "fullscreen",
+        "orientation": "portrait",
+        "background_color": "#000000",
+        "theme_color": "#F472B6",
+        "lang": "fr",
+        "scope": "/",
+        "icons": [
+            {
+                "src": "/api/pwa/icon-192x192.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any"
+            },
+            {
+                "src": "/api/pwa/icon-512x512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any"
+            },
+            {
+                "src": "/api/pwa/icon-maskable-192x192.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "maskable"
+            },
+            {
+                "src": "/api/pwa/icon-maskable-512x512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "maskable"
+            }
+        ],
+        "categories": ["health", "fitness", "lifestyle"],
+        "screenshots": [],
+        "related_applications": [],
+        "prefer_related_applications": False
+    }
+    return JSONResponse(content=manifest_data, media_type="application/manifest+json")
+
+# PWA icons via API route (accessible via /api/pwa/*)
+@api_router.get("/pwa/icon-192x192.png")
+async def get_pwa_icon_192():
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-192x192.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+@api_router.get("/pwa/icon-512x512.png")
+async def get_pwa_icon_512():
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-512x512.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+@api_router.get("/pwa/icon-maskable-192x192.png")
+async def get_pwa_maskable_192():
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-maskable-192x192.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+@api_router.get("/pwa/icon-maskable-512x512.png")
+async def get_pwa_maskable_512():
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-maskable-512x512.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
