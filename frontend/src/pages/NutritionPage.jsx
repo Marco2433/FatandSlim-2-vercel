@@ -426,6 +426,30 @@ export default function NutritionPage() {
     generateRecipes();
   };
 
+  // Search recipe by AI
+  const searchRecipeByAI = async () => {
+    if (!recipeSearchQuery.trim()) {
+      toast.error('Veuillez entrer une description de recette');
+      return;
+    }
+    
+    setLoadingSearch(true);
+    setSearchedRecipe(null);
+    
+    try {
+      const response = await axios.post(`${API}/recipes/search`, { 
+        query: recipeSearchQuery 
+      }, { withCredentials: true });
+      setSearchedRecipe(response.data.recipe);
+      toast.success('Recette trouvée !');
+    } catch (error) {
+      console.error('Error searching recipe:', error);
+      toast.error('Erreur lors de la recherche. Veuillez réessayer.');
+    } finally {
+      setLoadingSearch(false);
+    }
+  };
+
   const toggleFavoriteRecipe = async (recipe, e) => {
     if (e) e.stopPropagation();
     const isFavorite = favoriteRecipes.some(f => f.recipe.name === recipe.name);
