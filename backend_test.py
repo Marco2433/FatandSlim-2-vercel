@@ -608,6 +608,9 @@ class FatSlimAPITester:
         self.test_progress_endpoints()
         self.test_gamification_endpoints()
         
+        # Test the new features specifically requested in the review
+        self.test_new_features_endpoints()
+        
         # Test logout
         success, response, details = self.test_endpoint('POST', 'auth/logout', 200)
         self.log_test("User Logout", success, details)
