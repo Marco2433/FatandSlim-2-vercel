@@ -915,12 +915,13 @@ Create balanced, delicious meals that are easy to prepare. Return JSON only."""
     plan_doc = {
         "plan_id": f"plan_{uuid.uuid4().hex[:8]}",
         "user_id": user["user_id"],
+        "type": data.get("type", "weekly"),
         "meal_plan": meal_plan,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.meal_plans.insert_one(plan_doc)
     
-    return {"plan_id": plan_doc["plan_id"], "meal_plan": meal_plan}
+    return {"plan_id": plan_doc["plan_id"], "type": plan_doc["type"], "meal_plan": meal_plan}
 
 @api_router.get("/meals/plans")
 async def get_meal_plans(user: dict = Depends(get_current_user)):
