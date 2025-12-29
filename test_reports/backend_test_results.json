@@ -1,140 +1,236 @@
 {
-  "timestamp": "2025-12-29T15:53:52.426147",
-  "total_tests": 22,
-  "passed_tests": 22,
+  "timestamp": "2025-12-29T17:07:41.584600",
+  "total_tests": 38,
+  "passed_tests": 38,
   "success_rate": 100.0,
   "results": [
     {
       "test": "User Registration",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:47:45.580960"
+      "timestamp": "2025-12-29T17:02:27.219955"
     },
     {
       "test": "User Login",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:47:45.851986"
+      "timestamp": "2025-12-29T17:02:27.455352"
     },
     {
       "test": "Get Current User",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:47:45.864020"
+      "timestamp": "2025-12-29T17:02:27.468212"
     },
     {
       "test": "Get Profile",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:47:45.875517"
+      "timestamp": "2025-12-29T17:02:27.482481"
+    },
+    {
+      "test": "CRITICAL: Calorie Calculation Accuracy",
+      "success": true,
+      "details": "BMR: 2063 (expected ~2063), TDEE: 2475 (expected ~2475), Target: 2104 (expected ~2104)",
+      "timestamp": "2025-12-29T17:02:27.497356"
+    },
+    {
+      "test": "Calorie Debug Info Present",
+      "success": true,
+      "details": "Debug fields: ['bmr', 'activity_factor', 'tdee_maintenance', 'goal_applied', 'final_target']",
+      "timestamp": "2025-12-29T17:02:27.497373"
     },
     {
       "test": "Complete Onboarding",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:47:45.926278"
+      "timestamp": "2025-12-29T17:02:27.497376"
     },
     {
       "test": "Update Profile",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:47:45.938586"
+      "timestamp": "2025-12-29T17:02:27.506475"
     },
     {
-      "test": "Log Food Entry",
+      "test": "Create Agenda Note",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:47:45.990967"
+      "timestamp": "2025-12-29T17:02:27.568827"
     },
     {
-      "test": "Get Food Logs",
+      "test": "Get Agenda Notes",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:47:46.000913"
+      "timestamp": "2025-12-29T17:02:27.577801"
     },
     {
-      "test": "Get Daily Summary",
+      "test": "Delete Agenda Note",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:47:46.010930"
+      "timestamp": "2025-12-29T17:02:27.626858"
     },
     {
-      "test": "Food Image Analysis",
+      "test": "Generate Daily Meal Plan - Structure",
       "success": true,
-      "details": "Status: 200",
-      "timestamp": "2025-12-29T15:47:49.383765"
+      "details": "Meals present: ['breakfast', 'lunch', 'dinner', 'snacks']",
+      "timestamp": "2025-12-29T17:05:31.988847"
     },
     {
-      "test": "Generate Meal Plan",
+      "test": "Generate Daily Meal Plan",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:50:50.914628"
+      "timestamp": "2025-12-29T17:05:31.988857"
+    },
+    {
+      "test": "Generate Weekly Meal Plan",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T17:06:30.760649"
     },
     {
       "test": "Get Meal Plans",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:50:50.927076"
+      "timestamp": "2025-12-29T17:06:30.775688"
+    },
+    {
+      "test": "Generate Recipes - Structure",
+      "success": true,
+      "details": "Recipe fields: ['id', 'name', 'category', 'calories', 'protein', 'carbs', 'fat', 'prep_time', 'cook_time', 'servings', 'difficulty', 'cost', 'ingredients', 'steps', 'tips', 'nutri_score']",
+      "timestamp": "2025-12-29T17:06:43.744944"
+    },
+    {
+      "test": "Generate AI Recipes",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T17:06:43.744955"
+    },
+    {
+      "test": "Add Recipe to Favorites",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T17:06:43.770061"
+    },
+    {
+      "test": "Get Favorite Recipes",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T17:06:43.784038"
+    },
+    {
+      "test": "Remove Favorite Recipe",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T17:06:43.793952"
+    },
+    {
+      "test": "Upload Profile Picture - Data",
+      "success": true,
+      "details": "Picture data format check",
+      "timestamp": "2025-12-29T17:06:43.846266"
+    },
+    {
+      "test": "Upload Profile Picture",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2025-12-29T17:06:43.846277"
+    },
+    {
+      "test": "Delete Profile Picture",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T17:06:43.858122"
+    },
+    {
+      "test": "Add AI Meal to Diary",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T17:06:43.882887"
+    },
+    {
+      "test": "Log Food Entry",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T17:06:43.895929"
+    },
+    {
+      "test": "Get Food Logs",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T17:06:43.904496"
+    },
+    {
+      "test": "Get Daily Summary",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T17:06:43.914771"
+    },
+    {
+      "test": "Food Image Analysis",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "2025-12-29T17:06:47.384987"
     },
     {
       "test": "Generate Workout Program",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:53:52.194489"
+      "timestamp": "2025-12-29T17:07:41.262545"
     },
     {
       "test": "Get Workout Programs",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:53:52.207945"
+      "timestamp": "2025-12-29T17:07:41.274239"
     },
     {
       "test": "Log Workout",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:53:52.228575"
+      "timestamp": "2025-12-29T17:07:41.336831"
     },
     {
       "test": "Get Workout Logs",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:53:52.240963"
+      "timestamp": "2025-12-29T17:07:41.387155"
     },
     {
       "test": "Log Weight Entry",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:53:52.254073"
+      "timestamp": "2025-12-29T17:07:41.437665"
     },
     {
       "test": "Get Weight History",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:53:52.303962"
+      "timestamp": "2025-12-29T17:07:41.488990"
     },
     {
       "test": "Get Progress Stats",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:53:52.314381"
+      "timestamp": "2025-12-29T17:07:41.502682"
     },
     {
       "test": "Get Badges",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:53:52.365807"
+      "timestamp": "2025-12-29T17:07:41.522953"
     },
     {
       "test": "Get Challenges",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:53:52.375614"
+      "timestamp": "2025-12-29T17:07:41.572699"
     },
     {
       "test": "User Logout",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2025-12-29T15:53:52.426051"
+      "timestamp": "2025-12-29T17:07:41.584479"
     }
   ]
 }
