@@ -931,23 +931,37 @@ Réponds UNIQUEMENT avec ce JSON (tous les textes en français):
         meal_plan = json.loads(response[json_start:json_end])
     except Exception as e:
         logger.error(f"AI meal plan error: {e}")
-        # Return a fallback meal plan
-        meal_plan = {
-            "days": [
-                {
-                    "day": day,
-                    "meals": {
-                        "breakfast": {"name": "Petit-déjeuner équilibré", "calories": 400, "protein": 20, "carbs": 50, "fat": 15, "recipe": "Préparation simple et rapide"},
-                        "lunch": {"name": "Déjeuner complet", "calories": 600, "protein": 35, "carbs": 60, "fat": 20, "recipe": "Repas équilibré"},
-                        "dinner": {"name": "Dîner léger", "calories": 500, "protein": 30, "carbs": 45, "fat": 18, "recipe": "Préparation facile"},
-                        "snacks": [{"name": "Collation saine", "calories": 150}]
-                    },
-                    "total_calories": 1650
-                } for day in ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
-            ],
-            "shopping_list": ["Fruits frais", "Légumes variés", "Protéines maigres", "Céréales complètes"],
-            "tips": ["Buvez 2L d'eau par jour", "Mangez lentement", "Préparez vos repas à l'avance"]
-        }
+        # Return a fallback meal plan in French
+        if plan_type == "daily":
+            meal_plan = {
+                "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                "meals": {
+                    "breakfast": {"name": "Porridge aux fruits rouges", "calories": 350, "protein": 12, "carbs": 55, "fat": 8, "recipe": "Cuire les flocons d'avoine avec du lait, ajouter les fruits frais", "prep_time": "10 min", "ingredients": ["Flocons d'avoine", "Lait", "Fruits rouges", "Miel"]},
+                    "lunch": {"name": "Salade de quinoa au poulet", "calories": 500, "protein": 35, "carbs": 40, "fat": 18, "recipe": "Mélanger le quinoa cuit avec le poulet grillé et les légumes", "prep_time": "20 min", "ingredients": ["Quinoa", "Blanc de poulet", "Tomates", "Concombre", "Huile d'olive"]},
+                    "dinner": {"name": "Soupe de légumes et pain complet", "calories": 400, "protein": 15, "carbs": 50, "fat": 12, "recipe": "Faire revenir les légumes et mixer avec du bouillon", "prep_time": "15 min", "ingredients": ["Carottes", "Poireaux", "Pommes de terre", "Bouillon", "Pain complet"]}
+                },
+                "total_calories": 1250,
+                "shopping_list": ["Flocons d'avoine", "Fruits rouges", "Quinoa", "Poulet", "Légumes frais", "Pain complet"],
+                "tips": ["Buvez 2L d'eau par jour"]
+            }
+        else:
+            days_fr = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+            meal_plan = {
+                "days": [
+                    {
+                        "day": day,
+                        "meals": {
+                            "breakfast": {"name": "Petit-déjeuner équilibré", "calories": 400, "protein": 20, "carbs": 50, "fat": 15, "recipe": "Préparation simple et rapide", "prep_time": "10 min", "ingredients": ["Céréales", "Lait", "Fruits"]},
+                            "lunch": {"name": "Déjeuner complet", "calories": 600, "protein": 35, "carbs": 60, "fat": 20, "recipe": "Repas équilibré avec protéines et légumes", "prep_time": "20 min", "ingredients": ["Protéine au choix", "Légumes", "Féculents"]},
+                            "dinner": {"name": "Dîner léger", "calories": 500, "protein": 30, "carbs": 45, "fat": 18, "recipe": "Préparation facile et digeste", "prep_time": "15 min", "ingredients": ["Poisson ou volaille", "Légumes verts", "Riz"]}
+                        },
+                        "total_calories": 1500
+                    } for day in days_fr
+                ],
+                "shopping_list": ["Fruits frais", "Légumes variés", "Protéines maigres", "Céréales complètes", "Produits laitiers"],
+                "tips": ["Buvez 2L d'eau par jour", "Mangez lentement", "Préparez vos repas à l'avance"],
+                "estimated_weekly_cost": "50-70€"
+            }
     
     # Save meal plan
     plan_doc = {
