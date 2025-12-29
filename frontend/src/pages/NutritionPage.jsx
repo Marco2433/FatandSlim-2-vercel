@@ -1023,6 +1023,161 @@ export default function NutritionPage() {
 
           {/* AI Tab */}
           <TabsContent value="ai" className="space-y-4 mt-4">
+            {/* AI Recipe Search */}
+            <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-secondary/5">
+              <CardHeader>
+                <CardTitle className="font-heading text-lg flex items-center gap-2">
+                  <Search className="w-5 h-5 text-primary" />
+                  Rechercher une recette
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Décrivez la recette que vous cherchez et l'IA la créera pour vous !
+                </p>
+                <Textarea
+                  placeholder='Ex: "Trouve moi une recette avec des crevettes et du riz faites en 30 minutes maximum, saine et bon pour la santé"'
+                  value={recipeSearchQuery}
+                  onChange={(e) => setRecipeSearchQuery(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+                <Button 
+                  onClick={searchRecipeByAI}
+                  disabled={loadingSearch || !recipeSearchQuery.trim()}
+                  className="w-full rounded-full"
+                >
+                  {loadingSearch ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Recherche en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-4 h-4 mr-2" />
+                      Trouver ma recette
+                    </>
+                  )}
+                </Button>
+                
+                {/* Search Result */}
+                {searchedRecipe && (
+                  <Card className="mt-4 border-primary/50">
+                    <CardContent className="p-4 space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-lg">{searchedRecipe.name}</h3>
+                            {searchedRecipe.nutri_score && (
+                              <span className={`w-6 h-6 rounded text-white text-xs flex items-center justify-center font-bold ${getNutriScoreColor(searchedRecipe.nutri_score)}`}>
+                                {searchedRecipe.nutri_score}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-2 text-sm text-muted-foreground mt-1">
+                            <span>{searchedRecipe.calories} kcal</span>
+                            <span>•</span>
+                            <span>{searchedRecipe.prep_time}</span>
+                            <span>•</span>
+                            <span>{searchedRecipe.difficulty}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => toggleFavoriteRecipe(searchedRecipe)}
+                            title="Ajouter aux favoris"
+                          >
+                            {favoriteRecipes.some(f => f.recipe.name === searchedRecipe.name) ? (
+                              <Heart className="w-4 h-4 text-destructive fill-destructive" />
+                            ) : (
+                              <Heart className="w-4 h-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => addRecipeToAgenda(searchedRecipe)}
+                            title="Ajouter à l'agenda"
+                          >
+                            <CalendarPlus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                        <div className="p-2 rounded bg-muted">
+                          <p className="font-bold">{searchedRecipe.protein || 0}g</p>
+                          <p className="text-muted-foreground">Protéines</p>
+                        </div>
+                        <div className="p-2 rounded bg-muted">
+                          <p className="font-bold">{searchedRecipe.carbs || 0}g</p>
+                          <p className="text-muted-foreground">Glucides</p>
+                        </div>
+                        <div className="p-2 rounded bg-muted">
+                          <p className="font-bold">{searchedRecipe.fat || 0}g</p>
+                          <p className="text-muted-foreground">Lipides</p>
+                        </div>
+                        <div className="p-2 rounded bg-muted">
+                          <p className="font-bold">{searchedRecipe.servings || 2}</p>
+                          <p className="text-muted-foreground">Portions</p>
+                        </div>
+                      </div>
+                      
+                      {searchedRecipe.ingredients && searchedRecipe.ingredients.length > 0 && (
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-medium text-sm">📝 Ingrédients</p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addIngredientsToShoppingList(searchedRecipe.ingredients)}
+                              className="text-xs"
+                            >
+                              <ListPlus className="w-3 h-3 mr-1" />
+                              Ajouter aux courses
+                            </Button>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {searchedRecipe.ingredients.map((ing, j) => (
+                              <Badge key={j} variant="outline" className="text-xs">
+                                {ing.quantity} {ing.item}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {searchedRecipe.steps && searchedRecipe.steps.length > 0 && (
+                        <div>
+                          <p className="font-medium text-sm mb-2">👨‍🍳 Préparation</p>
+                          <ol className="space-y-2">
+                            {searchedRecipe.steps.map((step, j) => (
+                              <li key={j} className="text-sm text-muted-foreground flex gap-2">
+                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-medium">
+                                  {j + 1}
+                                </span>
+                                <span>{step.replace(/^Étape \d+:\s*/i, '')}</span>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      )}
+                      
+                      {searchedRecipe.tips && (
+                        <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                          <p className="text-sm">💡 {searchedRecipe.tips}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </CardContent>
+            </Card>
+
             {/* AI Meal Plan Generation */}
             <Card>
               <CardHeader>
