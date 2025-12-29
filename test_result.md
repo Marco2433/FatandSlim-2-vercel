@@ -95,3 +95,6 @@ agent_communication:
   - agent: "main"
     message: "J'ai implémenté les 3 fonctionnalités demandées par l'utilisateur: 1) Recherche de recettes par IA avec un champ texte libre dans l'onglet IA, 2) Bouton 'Ajouter aux courses' dans les favoris pour ajouter tous les ingrédients d'une recette à la liste de courses, 3) La liste de courses est persistante (MongoDB). Les APIs backend ont été testées avec succès via curl. Il faut maintenant tester le frontend via l'interface utilisateur."
 
+
+  - agent: "main"
+    message: "Implémentations réalisées: 1) Base de données de 1000 recettes (extensible à 30k) avec nutri-score A-D 2) Endpoint /api/recipes/search pour recherche IA 3) Recherche IA ajoutée sur Dashboard et Nutrition 4) Nouvel onglet Catalogue avec filtres par nutri-score 5) 6 recettes du jour au lieu de 3 6) Boutons 'Ajouter aux courses' sur toutes les recettes. À tester: recherche IA, catalogue, ajout aux courses depuis favoris."
