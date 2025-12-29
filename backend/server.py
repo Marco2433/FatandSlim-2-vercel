@@ -92,6 +92,11 @@ class FoodLogEntry(BaseModel):
     unit: str = "portion"
     meal_type: str = "snack"
     image_url: Optional[str] = None
+    nutri_score: Optional[str] = None
+    note: Optional[str] = None
+    sugar: Optional[float] = 0
+    sodium: Optional[float] = 0
+    fiber: Optional[float] = 0
 
 class WorkoutLog(BaseModel):
     workout_name: str
