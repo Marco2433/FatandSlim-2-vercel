@@ -463,68 +463,185 @@ async def update_profile(data: dict, user: dict = Depends(get_current_user)):
 
 @api_router.post("/food/analyze")
 async def analyze_food(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
-    """Analyze food image using AI vision"""
+    """Analyze food image using AI vision with user profile context"""
     from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
     import json
     
+    # Get user profile for personalized analysis
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
     contents = await file.read()
     image_base64 = base64.b64encode(contents).decode()
+    
+    # Build context from user profile
+    health_context = ""
+    if profile:
+        conditions = profile.get("health_conditions", [])
+        allergies = profile.get("allergies", [])
+        dislikes = profile.get("food_dislikes", [])
+        if conditions:
+            health_context += f"\nUser health conditions: {', '.join(conditions)}"
+        if allergies:
+            health_context += f"\nUser allergies: {', '.join(allergies)}"
+        if dislikes:
+            health_context += f"\nUser dislikes: {', '.join(dislikes)}"
     
     try:
         chat = LlmChat(
             api_key=EMERGENT_LLM_KEY,
             session_id=f"food_analysis_{uuid.uuid4().hex[:8]}",
-            system_message="""You are a nutrition expert AI. Analyze the food image and provide:
-1. Food name/description
-2. Estimated calories (per serving)
-3. Estimated protein (g)
-4. Estimated carbs (g)
-5. Estimated fat (g)
-6. Nutri-Score (A-E based on nutritional quality)
-7. Health tips
+            system_message=f"""You are an expert nutritionist AI that analyzes food images with high precision.
 
-Respond ONLY in JSON format:
-{
-    "food_name": "string",
-    "calories": number,
-    "protein": number,
-    "carbs": number,
-    "fat": number,
-    "nutri_score": "A-E",
-    "serving_size": "string",
-    "health_tips": ["string"],
-    "ingredients_detected": ["string"]
-}"""
+IMPORTANT INSTRUCTIONS:
+1. Carefully examine the image to identify the EXACT food/dish shown
+2. If you see multiple items, list them all
+3. Provide ACCURATE nutritional estimates based on typical serving sizes
+4. Be specific about the food name (e.g., "Grilled Salmon with Vegetables" not just "Food")
+5. Consider cooking methods visible (fried, grilled, steamed, etc.)
+6. Estimate portion size from the image context
+
+{health_context}
+
+You MUST respond with a valid JSON object containing these exact fields:
+{{
+    "food_name": "Specific name of the dish/food in French",
+    "food_name_en": "English name",
+    "calories": <number between 50-1500>,
+    "protein": <number in grams>,
+    "carbs": <number in grams>,
+    "fat": <number in grams>,
+    "fiber": <number in grams>,
+    "sugar": <number in grams>,
+    "sodium": <number in mg>,
+    "nutri_score": "<A, B, C, D, or E>",
+    "serving_size": "estimated portion size",
+    "health_tips": ["tip1", "tip2"],
+    "ingredients_detected": ["ingredient1", "ingredient2"],
+    "is_healthy": <true or false>,
+    "warnings": ["warning if applicable for user's health conditions"]
+}}
+
+Nutri-Score guidelines:
+- A: Very healthy (vegetables, fruits, lean proteins)
+- B: Good choice (whole grains, fish)
+- C: Moderate (some processed foods)
+- D: Less healthy (fried foods, sugary items)
+- E: Unhealthy (fast food, high sugar/fat)"""
         ).with_model("openai", "gpt-5.2")
         
         image_content = ImageContent(image_base64=image_base64)
         user_message = UserMessage(
-            text="Analyze this food image and provide nutritional information in JSON format.",
+            text="Analyze this food image carefully. Identify exactly what food/dish is shown and provide accurate nutritional information. Be specific and precise. Respond ONLY with valid JSON.",
             image_contents=[image_content]
         )
         
         response = await chat.send_message(user_message)
+        logger.info(f"AI Response: {response[:500]}")
         
         # Parse JSON from response
         json_start = response.find('{')
         json_end = response.rfind('}') + 1
         if json_start != -1 and json_end > json_start:
             result = json.loads(response[json_start:json_end])
+            # Ensure all required fields exist
+            result.setdefault("food_name", "Aliment détecté")
+            result.setdefault("calories", 200)
+            result.setdefault("protein", 10)
+            result.setdefault("carbs", 25)
+            result.setdefault("fat", 8)
+            result.setdefault("fiber", 3)
+            result.setdefault("sugar", 5)
+            result.setdefault("sodium", 300)
+            result.setdefault("nutri_score", "C")
+            result.setdefault("serving_size", "1 portion")
+            result.setdefault("health_tips", [])
+            result.setdefault("ingredients_detected", [])
+            result.setdefault("is_healthy", True)
+            result.setdefault("warnings", [])
         else:
-            raise ValueError("No JSON in response")
+            raise ValueError("No JSON found in response")
+            
     except Exception as e:
-        logger.error(f"AI food analysis error: {e}")
-        # Return default values if AI fails
+        logger.error(f"AI food analysis error: {str(e)}")
         result = {
-            "food_name": "Aliment non reconnu",
-            "calories": 250,
-            "protein": 10,
-            "carbs": 30,
-            "fat": 10,
-            "nutri_score": "C",
-            "serving_size": "1 portion",
-            "health_tips": ["Essayez avec une photo plus claire", "Assurez-vous que l'aliment est bien visible"],
-            "ingredients_detected": []
+            "food_name": "Analyse en cours...",
+            "calories": 0,
+            "protein": 0,
+            "carbs": 0,
+            "fat": 0,
+            "fiber": 0,
+            "sugar": 0,
+            "sodium": 0,
+            "nutri_score": "?",
+            "serving_size": "Non déterminé",
+            "health_tips": ["Veuillez réessayer avec une photo plus nette", "Assurez-vous que l'aliment est bien visible et éclairé"],
+            "ingredients_detected": [],
+            "is_healthy": True,
+            "warnings": [],
+            "error": str(e)
+        }
+    
+    return result
+
+@api_router.post("/food/recommend-alternatives")
+async def recommend_alternatives(entry: dict, user: dict = Depends(get_current_user)):
+    """Get AI recommendations for healthier alternatives"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    import json
+    
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    health_context = ""
+    if profile:
+        conditions = profile.get("health_conditions", [])
+        preferences = profile.get("dietary_preferences", [])
+        likes = profile.get("food_likes", [])
+        dislikes = profile.get("food_dislikes", [])
+        if conditions:
+            health_context += f"Health conditions: {', '.join(conditions)}. "
+        if preferences:
+            health_context += f"Dietary preferences: {', '.join(preferences)}. "
+        if likes:
+            health_context += f"Food likes: {', '.join(likes)}. "
+        if dislikes:
+            health_context += f"Food dislikes (AVOID): {', '.join(dislikes)}. "
+    
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"food_recommend_{uuid.uuid4().hex[:8]}",
+            system_message=f"""You are a nutrition expert. Suggest healthier alternatives for foods.
+{health_context}
+
+Respond in JSON:
+{{
+    "analysis": "Brief analysis of why this food might not be ideal",
+    "alternatives": [
+        {{"name": "Alternative 1", "calories": number, "benefit": "Why it's better"}},
+        {{"name": "Alternative 2", "calories": number, "benefit": "Why it's better"}},
+        {{"name": "Alternative 3", "calories": number, "benefit": "Why it's better"}}
+    ],
+    "tips": ["Tip for healthier eating"]
+}}"""
+        ).with_model("openai", "gpt-5.2")
+        
+        prompt = f"""The user ate: {entry.get('food_name')}
+Nutritional info: {entry.get('calories')} calories, {entry.get('protein')}g protein, {entry.get('carbs')}g carbs, {entry.get('fat')}g fat
+Nutri-Score: {entry.get('nutri_score', 'Unknown')}
+
+Suggest 3 healthier alternatives that the user might enjoy based on their preferences."""
+        
+        response = await chat.send_message(UserMessage(text=prompt))
+        
+        json_start = response.find('{')
+        json_end = response.rfind('}') + 1
+        result = json.loads(response[json_start:json_end])
+    except Exception as e:
+        logger.error(f"Recommendation error: {e}")
+        result = {
+            "analysis": "Analyse indisponible",
+            "alternatives": [],
+            "tips": ["Privilégiez les aliments frais et non transformés"]
         }
     
     return result
