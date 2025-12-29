@@ -42,18 +42,20 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const [statsRes, summaryRes, challengesRes, motivationRes, recipesRes] = await Promise.all([
+      // Fetch data in parallel but handle failures independently
+      const [statsRes, summaryRes, challengesRes, motivationRes, recipesRes] = await Promise.allSettled([
         axios.get(`${API}/progress/stats`, { withCredentials: true }),
         axios.get(`${API}/food/daily-summary`, { withCredentials: true }),
         axios.get(`${API}/challenges`, { withCredentials: true }),
         axios.get(`${API}/motivation`, { withCredentials: true }),
         axios.get(`${API}/recipes/daily`, { withCredentials: true }),
       ]);
-      setStats(statsRes.data);
-      setDailySummary(summaryRes.data);
-      setChallenges(challengesRes.data);
-      setMotivation(motivationRes.data);
-      setDailyRecipes(recipesRes.data?.recipes || []);
+      
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
+      if (summaryRes.status === 'fulfilled') setDailySummary(summaryRes.value.data);
+      if (challengesRes.status === 'fulfilled') setChallenges(challengesRes.value.data);
+      if (motivationRes.status === 'fulfilled') setMotivation(motivationRes.value.data);
+      if (recipesRes.status === 'fulfilled') setDailyRecipes(recipesRes.value.data?.recipes || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
