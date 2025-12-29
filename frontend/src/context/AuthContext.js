@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -19,12 +19,20 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isProcessingAuth, setIsProcessingAuth] = useState(false);
 
   useEffect(() => {
+    // Check if there's a session_id in URL - if so, don't check auth yet
+    // The AuthCallback will handle it
+    if (window.location.hash?.includes('session_id=')) {
+      setLoading(false);
+      setIsProcessingAuth(true);
+      return;
+    }
     checkAuth();
   }, []);
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const response = await axios.get(`${API}/auth/me`, {
         withCredentials: true
@@ -34,8 +42,9 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
     } finally {
       setLoading(false);
+      setIsProcessingAuth(false);
     }
-  };
+  }, []);
 
   const login = async (email, password) => {
     const response = await axios.post(`${API}/auth/login`, 
@@ -62,12 +71,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   const processSession = async (sessionId) => {
-    const response = await axios.post(`${API}/auth/session`,
-      { session_id: sessionId },
-      { withCredentials: true }
-    );
-    setUser(response.data);
-    return response.data;
+    setIsProcessingAuth(true);
+    try {
+      const response = await axios.post(`${API}/auth/session`,
+        { session_id: sessionId },
+        { withCredentials: true }
+      );
+      setUser(response.data);
+      setIsProcessingAuth(false);
+      return response.data;
+    } catch (error) {
+      setIsProcessingAuth(false);
+      throw error;
+    }
   };
 
   const logout = async () => {
@@ -87,6 +103,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider value={{
       user,
       loading,
+      isProcessingAuth,
       login,
       register,
       loginWithGoogle,
