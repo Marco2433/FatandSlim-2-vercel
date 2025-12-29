@@ -152,6 +152,67 @@ export default function NutritionPage() {
     }
   };
 
+  const fetchShoppingList = async () => {
+    try {
+      const response = await axios.get(`${API}/shopping-list`, { withCredentials: true });
+      setShoppingList(response.data);
+    } catch (error) {
+      console.error('Error fetching shopping list:', error);
+    }
+  };
+
+  const addToShoppingList = async (item, quantity = '') => {
+    try {
+      await axios.post(`${API}/shopping-list`, { item, quantity }, { withCredentials: true });
+      toast.success('Ajouté à la liste de courses');
+      fetchShoppingList();
+    } catch (error) {
+      toast.error('Erreur lors de l\'ajout');
+    }
+  };
+
+  const addIngredientsToShoppingList = async (ingredients) => {
+    try {
+      const items = ingredients.map(i => ({ item: i.item, quantity: i.quantity }));
+      await axios.post(`${API}/shopping-list/bulk`, { items }, { withCredentials: true });
+      toast.success(`${items.length} ingrédients ajoutés à la liste de courses`);
+      fetchShoppingList();
+    } catch (error) {
+      toast.error('Erreur lors de l\'ajout');
+    }
+  };
+
+  const toggleShoppingItem = async (itemId, checked) => {
+    try {
+      await axios.put(`${API}/shopping-list/${itemId}`, { checked }, { withCredentials: true });
+      setShoppingList(prev => prev.map(item => 
+        item.item_id === itemId ? { ...item, checked } : item
+      ));
+    } catch (error) {
+      toast.error('Erreur lors de la mise à jour');
+    }
+  };
+
+  const deleteShoppingItem = async (itemId) => {
+    try {
+      await axios.delete(`${API}/shopping-list/${itemId}`, { withCredentials: true });
+      setShoppingList(prev => prev.filter(item => item.item_id !== itemId));
+      toast.success('Supprimé de la liste');
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
+  };
+
+  const clearCheckedItems = async () => {
+    try {
+      await axios.delete(`${API}/shopping-list`, { withCredentials: true });
+      setShoppingList(prev => prev.filter(item => !item.checked));
+      toast.success('Articles cochés supprimés');
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
+  };
+
   const handleAddFood = async () => {
     if (!newFood.food_name || !newFood.calories) {
       toast.error('Nom et calories requis');
