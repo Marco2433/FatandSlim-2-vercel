@@ -1,0 +1,140 @@
+{
+  "timestamp": "2025-12-29T17:15:09.859478",
+  "total_tests": 18,
+  "passed_tests": 18,
+  "success_rate": 100.0,
+  "results": [
+    {
+      "test": "User Registration & Auth",
+      "success": true,
+      "details": "User ID: user_9e29d7c83556",
+      "data": null,
+      "timestamp": "2025-12-29T17:08:44.812152"
+    },
+    {
+      "test": "Calorie Calculation Accuracy",
+      "success": true,
+      "details": "BMR: 2063 (expected ~2063), TDEE: 2475 (expected ~2475), Target: 2104 (expected ~2104)",
+      "data": {
+        "bmr": 2063,
+        "activity_factor": 1.2,
+        "tdee_maintenance": 2475,
+        "goal_applied": "lose_weight",
+        "final_target": 2104
+      },
+      "timestamp": "2025-12-29T17:08:44.826839"
+    },
+    {
+      "test": "Calorie Debug Fields",
+      "success": true,
+      "details": "Fields: ['bmr', 'activity_factor', 'tdee_maintenance', 'goal_applied', 'final_target']",
+      "data": null,
+      "timestamp": "2025-12-29T17:08:44.826871"
+    },
+    {
+      "test": "Create Agenda Note",
+      "success": true,
+      "details": "Note ID: note_7fdb9f39",
+      "data": null,
+      "timestamp": "2025-12-29T17:08:44.877794"
+    },
+    {
+      "test": "Get Agenda Notes",
+      "success": true,
+      "details": "",
+      "data": null,
+      "timestamp": "2025-12-29T17:08:44.887157"
+    },
+    {
+      "test": "Delete Agenda Note",
+      "success": true,
+      "details": "",
+      "data": null,
+      "timestamp": "2025-12-29T17:08:44.900589"
+    },
+    {
+      "test": "Daily Meal Plan Structure",
+      "success": true,
+      "details": "Meals: ['breakfast', 'lunch', 'dinner', 'snacks']",
+      "data": null,
+      "timestamp": "2025-12-29T17:11:42.193981"
+    },
+    {
+      "test": "Generate Daily Meal Plan",
+      "success": true,
+      "details": "",
+      "data": null,
+      "timestamp": "2025-12-29T17:11:42.194007"
+    },
+    {
+      "test": "Generate Weekly Meal Plan",
+      "success": true,
+      "details": "",
+      "data": null,
+      "timestamp": "2025-12-29T17:14:43.513943"
+    },
+    {
+      "test": "Recipe Structure Valid",
+      "success": true,
+      "details": "Fields: ['id', 'name', 'category', 'calories', 'protein', 'carbs', 'fat', 'prep_time', 'cook_time', 'servings', 'difficulty', 'cost', 'ingredients', 'steps', 'tips', 'nutri_score']",
+      "data": null,
+      "timestamp": "2025-12-29T17:15:09.711032"
+    },
+    {
+      "test": "Generate Recipes",
+      "success": true,
+      "details": "",
+      "data": null,
+      "timestamp": "2025-12-29T17:15:09.711059"
+    },
+    {
+      "test": "Add Recipe to Favorites",
+      "success": true,
+      "details": "Favorite ID: fav_796ba80a",
+      "data": null,
+      "timestamp": "2025-12-29T17:15:09.724511"
+    },
+    {
+      "test": "Get Favorite Recipes",
+      "success": true,
+      "details": "",
+      "data": null,
+      "timestamp": "2025-12-29T17:15:09.775536"
+    },
+    {
+      "test": "Remove Favorite Recipe",
+      "success": true,
+      "details": "",
+      "data": null,
+      "timestamp": "2025-12-29T17:15:09.786309"
+    },
+    {
+      "test": "Upload Profile Picture",
+      "success": true,
+      "details": "",
+      "data": null,
+      "timestamp": "2025-12-29T17:15:09.838401"
+    },
+    {
+      "test": "Picture Data Format",
+      "success": true,
+      "details": "",
+      "data": null,
+      "timestamp": "2025-12-29T17:15:09.838426"
+    },
+    {
+      "test": "Delete Profile Picture",
+      "success": true,
+      "details": "",
+      "data": null,
+      "timestamp": "2025-12-29T17:15:09.850223"
+    },
+    {
+      "test": "Add Meal to Diary",
+      "success": true,
+      "details": "Entry ID: food_ea17c488",
+      "data": null,
+      "timestamp": "2025-12-29T17:15:09.859331"
+    }
+  ]
+}
