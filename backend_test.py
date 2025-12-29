@@ -467,8 +467,12 @@ class FatSlimAPITester:
         
         # Test all other endpoints
         self.test_profile_endpoints()
-        self.test_food_endpoints()
+        self.test_agenda_notes_endpoints()
         self.test_meal_plans_endpoints()
+        self.test_recipes_endpoints()
+        self.test_profile_picture_endpoints()
+        self.test_add_meal_to_diary_endpoint()
+        self.test_food_endpoints()
         self.test_workout_endpoints()
         self.test_progress_endpoints()
         self.test_gamification_endpoints()
