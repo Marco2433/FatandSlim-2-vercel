@@ -261,6 +261,8 @@ export default function NutritionPage() {
 
   // AI Meal Plan Generation
   const generateMealPlan = async (type) => {
+    // Reset state before generating new plan
+    setAiMealPlan(null);
     setLoadingMealPlan(true);
     setMealPlanType(type);
     setAiMealDialogOpen(true);
@@ -270,10 +272,16 @@ export default function NutritionPage() {
       setAiMealPlan(response.data);
     } catch (error) {
       console.error('Error generating meal plan:', error);
-      toast.error('Erreur lors de la génération');
+      toast.error('Erreur lors de la génération. Veuillez réessayer.');
+      setAiMealPlan(null);
     } finally {
       setLoadingMealPlan(false);
     }
+  };
+
+  // Regenerate meal plan
+  const regenerateMealPlan = () => {
+    generateMealPlan(mealPlanType);
   };
 
   const addMealToDiary = async (meal, mealType) => {
