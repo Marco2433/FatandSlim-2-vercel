@@ -183,6 +183,23 @@ export default function NutritionPage() {
     }
   };
 
+  const fetchCatalogRecipes = async (filter = catalogFilter) => {
+    setLoadingCatalog(true);
+    try {
+      const params = new URLSearchParams({ limit: '50' });
+      if (filter && filter !== 'all') {
+        params.append('nutri_score', filter);
+      }
+      const response = await axios.get(`${API}/recipes/all?${params}`, { withCredentials: true });
+      setCatalogRecipes(response.data.recipes || []);
+      setCatalogStats(response.data.stats);
+    } catch (error) {
+      console.error('Error fetching catalog:', error);
+    } finally {
+      setLoadingCatalog(false);
+    }
+  };
+
   const addToShoppingList = async (item, quantity = '') => {
     try {
       await axios.post(`${API}/shopping-list`, { item, quantity }, { withCredentials: true });
