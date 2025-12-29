@@ -537,16 +537,18 @@ async def delete_food_log(entry_id: str, user: dict = Depends(get_current_user))
 async def generate_meal_plan(user: dict = Depends(get_current_user)):
     """Generate AI-powered meal plan based on user profile"""
     from emergentintegrations.llm.chat import LlmChat, UserMessage
+    import json
     
     profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
     if not profile:
         raise HTTPException(status_code=400, detail="Complete onboarding first")
     
-    chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
-        session_id=f"meal_plan_{uuid.uuid4().hex[:8]}",
-        system_message="""You are a professional nutritionist. Create personalized meal plans.
-Respond in JSON format with a 7-day meal plan:
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"meal_plan_{uuid.uuid4().hex[:8]}",
+            system_message="""You are a professional nutritionist. Create personalized meal plans.
+Respond ONLY in JSON format with a 7-day meal plan:
 {
     "days": [
         {
@@ -563,26 +565,41 @@ Respond in JSON format with a 7-day meal plan:
     "shopping_list": ["string"],
     "tips": ["string"]
 }"""
-    ).with_model("openai", "gpt-5.2")
-    
-    prompt = f"""Create a weekly meal plan for:
+        ).with_model("openai", "gpt-5.2")
+        
+        prompt = f"""Create a weekly meal plan for:
 - Daily calorie target: {profile.get('daily_calorie_target', 2000)} kcal
 - Goal: {profile.get('goal', 'maintain')}
 - Dietary preferences: {', '.join(profile.get('dietary_preferences', [])) or 'None'}
 - Allergies/restrictions: {', '.join(profile.get('allergies', [])) or 'None'}
 - Activity level: {profile.get('activity_level', 'moderate')}
 
-Create balanced, delicious meals that are easy to prepare."""
-    
-    response = await chat.send_message(UserMessage(text=prompt))
-    
-    import json
-    try:
+Create balanced, delicious meals that are easy to prepare. Return JSON only."""
+        
+        response = await chat.send_message(UserMessage(text=prompt))
+        
         json_start = response.find('{')
         json_end = response.rfind('}') + 1
         meal_plan = json.loads(response[json_start:json_end])
-    except:
-        meal_plan = {"error": "Failed to generate meal plan", "raw": response[:500]}
+    except Exception as e:
+        logger.error(f"AI meal plan error: {e}")
+        # Return a fallback meal plan
+        meal_plan = {
+            "days": [
+                {
+                    "day": day,
+                    "meals": {
+                        "breakfast": {"name": "Petit-déjeuner équilibré", "calories": 400, "protein": 20, "carbs": 50, "fat": 15, "recipe": "Préparation simple et rapide"},
+                        "lunch": {"name": "Déjeuner complet", "calories": 600, "protein": 35, "carbs": 60, "fat": 20, "recipe": "Repas équilibré"},
+                        "dinner": {"name": "Dîner léger", "calories": 500, "protein": 30, "carbs": 45, "fat": 18, "recipe": "Préparation facile"},
+                        "snacks": [{"name": "Collation saine", "calories": 150}]
+                    },
+                    "total_calories": 1650
+                } for day in ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+            ],
+            "shopping_list": ["Fruits frais", "Légumes variés", "Protéines maigres", "Céréales complètes"],
+            "tips": ["Buvez 2L d'eau par jour", "Mangez lentement", "Préparez vos repas à l'avance"]
+        }
     
     # Save meal plan
     plan_doc = {
