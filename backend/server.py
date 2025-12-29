@@ -798,6 +798,49 @@ async def delete_food_log(entry_id: str, user: dict = Depends(get_current_user))
         raise HTTPException(status_code=404, detail="Entry not found")
     return {"message": "Entry deleted"}
 
+# ==================== AGENDA NOTES ENDPOINTS ====================
+
+@api_router.post("/agenda/notes")
+async def create_agenda_note(data: dict, user: dict = Depends(get_current_user)):
+    """Create or update a note for a specific date"""
+    note_doc = {
+        "note_id": f"note_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "date": data.get("date", datetime.now(timezone.utc).strftime("%Y-%m-%d")),
+        "content": data.get("content", ""),
+        "type": data.get("type", "general"),  # general, meal_plan, reminder
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Upsert - update if exists for same date, else insert
+    await db.agenda_notes.update_one(
+        {"user_id": user["user_id"], "date": note_doc["date"], "type": note_doc["type"]},
+        {"$set": note_doc},
+        upsert=True
+    )
+    
+    return {"message": "Note saved", "note": note_doc}
+
+@api_router.get("/agenda/notes")
+async def get_agenda_notes(month: Optional[str] = None, user: dict = Depends(get_current_user)):
+    """Get all notes for a month"""
+    if not month:
+        month = datetime.now(timezone.utc).strftime("%Y-%m")
+    
+    notes = await db.agenda_notes.find(
+        {"user_id": user["user_id"], "date": {"$regex": f"^{month}"}},
+        {"_id": 0}
+    ).to_list(100)
+    
+    return notes
+
+@api_router.delete("/agenda/notes/{note_id}")
+async def delete_agenda_note(note_id: str, user: dict = Depends(get_current_user)):
+    result = await db.agenda_notes.delete_one({"note_id": note_id, "user_id": user["user_id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return {"message": "Note deleted"}
+
 # ==================== MEAL PLANS ENDPOINTS ====================
 
 @api_router.post("/meals/generate")
