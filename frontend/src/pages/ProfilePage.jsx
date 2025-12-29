@@ -152,16 +152,62 @@ export default function ProfilePage() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-2xl font-bold">
-                {user?.name?.charAt(0) || 'U'}
+              {/* Profile Picture with Upload */}
+              <div className="relative group">
+                {profile?.picture || user?.picture ? (
+                  <img 
+                    src={profile?.picture || user?.picture} 
+                    alt="Profile" 
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-2xl font-bold">
+                    {user?.name?.charAt(0) || 'U'}
+                  </div>
+                )}
+                
+                {/* Upload overlay */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingPicture}
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  {uploadingPicture ? (
+                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  ) : (
+                    <Camera className="w-5 h-5 text-white" />
+                  )}
+                </button>
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePictureUpload}
+                />
               </div>
+              
               <div className="flex-1">
                 <h2 className="font-heading text-xl font-bold">{user?.name}</h2>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
-              <Button variant="outline" size="sm" className="rounded-full">
-                <Settings className="w-4 h-4" />
-              </Button>
+              
+              <div className="flex flex-col gap-1">
+                <Button variant="outline" size="sm" className="rounded-full">
+                  <Settings className="w-4 h-4" />
+                </Button>
+                {(profile?.picture || user?.picture) && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="rounded-full text-destructive hover:text-destructive"
+                    onClick={handleDeletePicture}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
