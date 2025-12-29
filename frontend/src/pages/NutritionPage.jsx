@@ -482,18 +482,22 @@ export default function NutritionPage() {
       <main className="p-4 space-y-6 pb-24">
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="today" className="flex items-center gap-2">
-              <Apple className="w-4 h-4" />
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="today" className="flex items-center gap-1 text-xs">
+              <Apple className="w-3 h-3" />
               Aujourd'hui
             </TabsTrigger>
-            <TabsTrigger value="diary" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+            <TabsTrigger value="diary" className="flex items-center gap-1 text-xs">
+              <Calendar className="w-3 h-3" />
               Agenda
             </TabsTrigger>
-            <TabsTrigger value="ai" className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
+            <TabsTrigger value="ai" className="flex items-center gap-1 text-xs">
+              <Sparkles className="w-3 h-3" />
               IA
+            </TabsTrigger>
+            <TabsTrigger value="favorites" className="flex items-center gap-1 text-xs">
+              <Heart className="w-3 h-3" />
+              Favoris
             </TabsTrigger>
           </TabsList>
 
