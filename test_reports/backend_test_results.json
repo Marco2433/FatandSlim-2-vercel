@@ -1,0 +1,140 @@
+{
+  "timestamp": "2025-12-29T12:56:04.500381",
+  "total_tests": 22,
+  "passed_tests": 20,
+  "success_rate": 90.9090909090909,
+  "results": [
+    {
+      "test": "User Registration",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:52:00.033769"
+    },
+    {
+      "test": "User Login",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:52:00.307391"
+    },
+    {
+      "test": "Get Current User",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:52:00.318743"
+    },
+    {
+      "test": "Get Profile",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:52:00.329961"
+    },
+    {
+      "test": "Complete Onboarding",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:52:00.401329"
+    },
+    {
+      "test": "Update Profile",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:52:00.410566"
+    },
+    {
+      "test": "Log Food Entry",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:52:00.483133"
+    },
+    {
+      "test": "Get Food Logs",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:52:00.492569"
+    },
+    {
+      "test": "Get Daily Summary",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:52:00.542956"
+    },
+    {
+      "test": "Food Image Analysis",
+      "success": false,
+      "details": "Status: 520",
+      "timestamp": "2025-12-29T12:52:02.696634"
+    },
+    {
+      "test": "Generate Meal Plan",
+      "success": false,
+      "details": "Status: 520, Expected: 200",
+      "timestamp": "2025-12-29T12:55:04.462738"
+    },
+    {
+      "test": "Get Meal Plans",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:55:04.476008"
+    },
+    {
+      "test": "Generate Workout Program",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:56:04.327986"
+    },
+    {
+      "test": "Get Workout Programs",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:56:04.340165"
+    },
+    {
+      "test": "Log Workout",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:56:04.375418"
+    },
+    {
+      "test": "Get Workout Logs",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:56:04.387954"
+    },
+    {
+      "test": "Log Weight Entry",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:56:04.398304"
+    },
+    {
+      "test": "Get Weight History",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:56:04.407361"
+    },
+    {
+      "test": "Get Progress Stats",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:56:04.458409"
+    },
+    {
+      "test": "Get Badges",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:56:04.481658"
+    },
+    {
+      "test": "Get Challenges",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:56:04.491146"
+    },
+    {
+      "test": "User Logout",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2025-12-29T12:56:04.500259"
+    }
+  ]
+}
