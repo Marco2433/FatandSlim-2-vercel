@@ -15,6 +15,15 @@ import jwt
 import bcrypt
 import httpx
 
+# Import recipes database
+from recipes_database import (
+    SAMPLE_RECIPES, 
+    get_daily_recipes, 
+    get_recipes_by_nutri_score,
+    get_recipes_stats,
+    generate_single_recipe
+)
+
 ROOT_DIR = Path(__file__).parent
 FRONTEND_PUBLIC_DIR = ROOT_DIR.parent / 'frontend' / 'public'
 load_dotenv(ROOT_DIR / '.env')
