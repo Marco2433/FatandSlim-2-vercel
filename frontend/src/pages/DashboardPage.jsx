@@ -61,6 +61,40 @@ export default function DashboardPage() {
     }
   };
 
+  const addRecipeToFavorites = async (recipe) => {
+    try {
+      await axios.post(`${API}/recipes/favorites`, { recipe }, { withCredentials: true });
+      toast.success('Recette ajoutée aux favoris !');
+    } catch (error) {
+      if (error.response?.status === 400) {
+        toast.error('Recette déjà dans les favoris');
+      } else {
+        toast.error('Erreur lors de l\'ajout');
+      }
+    }
+  };
+
+  const addIngredientsToShoppingList = async (ingredients) => {
+    try {
+      const items = ingredients.map(i => ({ item: i.item, quantity: i.quantity }));
+      await axios.post(`${API}/shopping-list/bulk`, { items }, { withCredentials: true });
+      toast.success(`${items.length} ingrédients ajoutés à la liste de courses !`);
+    } catch (error) {
+      toast.error('Erreur lors de l\'ajout');
+    }
+  };
+
+  const getNutriScoreColor = (score) => {
+    const colors = {
+      'A': 'bg-green-500',
+      'B': 'bg-lime-500',
+      'C': 'bg-yellow-500',
+      'D': 'bg-orange-500',
+      'E': 'bg-red-500',
+    };
+    return colors[score] || 'bg-gray-400';
+  };
+
   const calorieProgress = dailySummary 
     ? Math.min(100, (dailySummary.consumed.calories / dailySummary.targets.calories) * 100)
     : 0;
