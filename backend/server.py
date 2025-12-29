@@ -72,6 +72,15 @@ class OnboardingData(BaseModel):
     dietary_preferences: List[str] = []
     allergies: List[str] = []
     fitness_level: str
+    # New fields
+    gender: Optional[str] = "male"
+    health_conditions: List[str] = []
+    food_likes: List[str] = []
+    food_dislikes: List[str] = []
+    time_constraint: Optional[str] = "moderate"
+    budget: Optional[str] = "medium"
+    cooking_skill: Optional[str] = "intermediate"
+    meals_per_day: Optional[int] = 3
 
 class FoodLogEntry(BaseModel):
     food_name: str
