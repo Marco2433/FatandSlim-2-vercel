@@ -82,18 +82,33 @@ export default function DashboardPage() {
       if (error.response?.status === 400) {
         toast.error('Recette déjà dans les favoris');
       } else {
-        toast.error('Erreur lors de l\'ajout');
+        console.error('Error adding to favorites:', error);
+        toast.error('Erreur lors de l\'ajout: ' + (error.response?.data?.detail || 'Veuillez réessayer'));
       }
     }
   };
 
   const addIngredientsToShoppingList = async (ingredients) => {
+    if (!ingredients || ingredients.length === 0) {
+      toast.error('Aucun ingrédient à ajouter');
+      return;
+    }
     try {
-      const items = ingredients.map(i => ({ item: i.item, quantity: i.quantity }));
-      await axios.post(`${API}/shopping-list/bulk`, { items }, { withCredentials: true });
-      toast.success(`${items.length} ingrédients ajoutés à la liste de courses !`);
+      const items = ingredients.map(i => ({ 
+        item: i.item || i.name || String(i), 
+        quantity: i.quantity || '' 
+      })).filter(i => i.item && i.item.trim());
+      
+      if (items.length === 0) {
+        toast.error('Aucun ingrédient valide');
+        return;
+      }
+      
+      const response = await axios.post(`${API}/shopping-list/bulk`, { items }, { withCredentials: true });
+      toast.success(`${response.data.added_count || items.length} ingrédients ajoutés à la liste de courses !`);
     } catch (error) {
-      toast.error('Erreur lors de l\'ajout');
+      console.error('Error adding ingredients:', error);
+      toast.error('Erreur lors de l\'ajout: ' + (error.response?.data?.detail || 'Veuillez réessayer'));
     }
   };
 
@@ -120,13 +135,18 @@ export default function DashboardPage() {
     
     try {
       const response = await axios.post(`${API}/recipes/search`, { 
-        query: recipeSearchQuery 
+        query: recipeSearchQuery.trim()
       }, { withCredentials: true });
-      setSearchedRecipe(response.data.recipe);
-      toast.success('Recette trouvée !');
+      
+      if (response.data.recipe) {
+        setSearchedRecipe(response.data.recipe);
+        toast.success('Recette trouvée !');
+      } else {
+        toast.error('Aucune recette générée');
+      }
     } catch (error) {
       console.error('Error searching recipe:', error);
-      toast.error('Erreur lors de la recherche');
+      toast.error('Erreur lors de la recherche: ' + (error.response?.data?.detail || 'Veuillez réessayer'));
     } finally {
       setLoadingSearch(false);
     }
