@@ -70,6 +70,39 @@ export default function ProgressPage() {
       toast.success(`Poids enregistré ! IMC: ${response.data.bmi}`);
       setWeightDialogOpen(false);
       setNewWeight('');
+      
+      // Immediately update local state for real-time feedback
+      const newEntry = {
+        date: new Date().toISOString().split('T')[0],
+        weight: parseFloat(newWeight),
+        bmi: response.data.bmi
+      };
+      
+      // Add to weight history
+      setWeightHistory(prev => [...prev, newEntry]);
+      
+      // Update stats immediately
+      if (stats) {
+        const newStats = {
+          ...stats,
+          current_weight: parseFloat(newWeight),
+          bmi: response.data.bmi,
+          weight_change: stats.weight_change + (parseFloat(newWeight) - stats.current_weight)
+        };
+        setStats(newStats);
+      }
+      
+      // Update BMI data
+      if (bmiData) {
+        const newBmiData = {
+          ...bmiData,
+          current_bmi: response.data.bmi,
+          history: [...(bmiData.history || []), { date: newEntry.date, bmi: response.data.bmi }]
+        };
+        setBmiData(newBmiData);
+      }
+      
+      // Also fetch fresh data from server
       fetchData();
     } catch (error) {
       toast.error('Erreur lors de l\'enregistrement');
