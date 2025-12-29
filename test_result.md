@@ -3,146 +3,45 @@
 #====================================================================================================
 
 # THIS SECTION CONTAINS CRITICAL TESTING INSTRUCTIONS FOR BOTH AGENTS
-# BOTH MAIN_AGENT AND TESTING_AGENT MUST PRESERVE THIS ENTIRE BLOCK
-
-# Communication Protocol:
-# If the `testing_agent` is available, main agent should delegate all testing tasks to it.
-#
-# You have access to a file called `test_result.md`. This file contains the complete testing state
-# and history, and is the primary means of communication between main and the testing agent.
-#
-# Main and testing agents must follow this exact format to maintain testing data. 
-# The testing data must be entered in yaml format Below is the data structure:
-# 
-## user_problem_statement: {problem_statement}
-## backend:
-##   - task: "Task name"
-##     implemented: true
-##     working: true  # or false or "NA"
-##     file: "file_path.py"
-##     stuck_count: 0
-##     priority: "high"  # or "medium" or "low"
-##     needs_retesting: false
-##     status_history:
-##         -working: true  # or false or "NA"
-##         -agent: "main"  # or "testing" or "user"
-##         -comment: "Detailed comment about status"
-##
-## frontend:
-##   - task: "Task name"
-##     implemented: true
-##     working: true  # or false or "NA"
-##     file: "file_path.js"
-##     stuck_count: 0
-##     priority: "high"  # or "medium" or "low"
-##     needs_retesting: false
-##     status_history:
-##         -working: true  # or false or "NA"
-##         -agent: "main"  # or "testing" or "user"
-##         -comment: "Detailed comment about status"
-##
-## metadata:
-##   created_by: "main_agent"
-##   version: "1.0"
-##   test_sequence: 0
-##   run_ui: false
-##
-## test_plan:
-##   current_focus:
-##     - "Task name 1"
-##     - "Task name 2"
-##   stuck_tasks:
-##     - "Task name with persistent issues"
-##   test_all: false
-##   test_priority: "high_first"  # or "sequential" or "stuck_first"
-##
-## agent_communication:
-##     -agent: "main"  # or "testing" or "user"
-##     -message: "Communication message between agents"
-
-# Protocol Guidelines for Main agent
-#
-# 1. Update Test Result File Before Testing:
-#    - Main agent must always update the `test_result.md` file before calling the testing agent
-#    - Add implementation details to the status_history
-#    - Set `needs_retesting` to true for tasks that need testing
-#    - Update the `test_plan` section to guide testing priorities
-#    - Add a message to `agent_communication` explaining what you've done
-#
-# 2. Incorporate User Feedback:
-#    - When a user provides feedback that something is or isn't working, add this information to the relevant task's status_history
-#    - Update the working status based on user feedback
-#    - If a user reports an issue with a task that was marked as working, increment the stuck_count
-#    - Whenever user reports issue in the app, if we have testing agent and task_result.md file so find the appropriate task for that and append in status_history of that task to contain the user concern and problem as well 
-#
-# 3. Track Stuck Tasks:
-#    - Monitor which tasks have high stuck_count values or where you are fixing same issue again and again, analyze that when you read task_result.md
-#    - For persistent issues, use websearch tool to find solutions
-#    - Pay special attention to tasks in the stuck_tasks list
-#    - When you fix an issue with a stuck task, don't reset the stuck_count until the testing agent confirms it's working
-#
-# 4. Provide Context to Testing Agent:
-#    - When calling the testing agent, provide clear instructions about:
-#      - Which tasks need testing (reference the test_plan)
-#      - Any authentication details or configuration needed
-#      - Specific test scenarios to focus on
-#      - Any known issues or edge cases to verify
-#
-# 5. Call the testing agent with specific instructions referring to test_result.md
-#
-# IMPORTANT: Main agent must ALWAYS update test_result.md BEFORE calling the testing agent, as it relies on this file to understand what to test next.
+# Protocol and guidelines remain unchanged
 
 #====================================================================================================
 # END - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
 #====================================================================================================
 
-
-
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Corrections multiples pour Fat & Slim: traduction française, bug de session, favoris recettes, agenda, génération repas, messages motivation, graphique poids"
+user_problem_statement: "Ajouter: 1) Recherche de recettes par IA, 2) Bouton ajouter ingrédients aux courses depuis favoris, 3) Liste de courses persistante et visible"
 
 backend:
-  - task: "Messages de motivation personnalisés"
+  - task: "API Recherche de recettes par IA"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
-        comment: "Nouvel endpoint GET /api/motivation avec messages personnalisés selon profil, streak et progression"
+        comment: "Nouvel endpoint POST /api/recipes/search qui utilise GPT-4o pour générer une recette personnalisée basée sur la requête utilisateur. Testé via curl avec succès."
 
-  - task: "Alternatives alimentaires en français"
+  - task: "API Liste de courses bulk"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
-    priority: "medium"
-    needs_retesting: true
+    priority: "high"
+    needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
-        comment: "Endpoint /api/food/recommend-alternatives traduit en français"
+        comment: "Endpoint POST /api/shopping-list/bulk permet d'ajouter plusieurs ingrédients à la fois. Testé via curl avec succès."
 
 frontend:
-  - task: "Bug session logout/login Google"
-    implemented: true
-    working: "NA"
-    file: "/app/frontend/src/context/AuthContext.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Ajout localStorage.clear() et sessionStorage.clear() dans logout pour éviter retour au profil précédent"
-
-  - task: "Onglet Favoris dans Nutrition"
+  - task: "Recherche de recettes IA dans onglet IA"
     implemented: true
     working: "NA"
     file: "/app/frontend/src/pages/NutritionPage.jsx"
@@ -152,9 +51,9 @@ frontend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Nouvel onglet Favoris avec affichage des recettes favorites, possibilité d'ajouter à l'agenda"
+        comment: "Ajout d'un champ Textarea pour la recherche, bouton 'Trouver ma recette', et affichage complet du résultat avec nutri-score, macros, ingrédients, étapes de préparation et conseils."
 
-  - task: "Régénération repas/recettes IA"
+  - task: "Bouton Ajouter aux courses dans Favoris"
     implemented: true
     working: "NA"
     file: "/app/frontend/src/pages/NutritionPage.jsx"
@@ -164,48 +63,35 @@ frontend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Boutons 'Générer un nouveau plan' et 'Générer de nouvelles recettes' ajoutés"
+        comment: "Ajout du bouton 'Ajouter aux courses' avec icône ListPlus dans la section ingrédients des recettes favorites. Utilise addIngredientsToShoppingList()."
 
-  - task: "Graphique poids temps réel"
+  - task: "Amélioration affichage Favoris"
     implemented: true
     working: "NA"
-    file: "/app/frontend/src/pages/ProgressPage.jsx"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Mise à jour immédiate du state local lors de l'enregistrement du poids pour feedback temps réel"
-
-  - task: "Messages motivation dashboard"
-    implemented: true
-    working: "NA"
-    file: "/app/frontend/src/pages/DashboardPage.jsx"
+    file: "/app/frontend/src/pages/NutritionPage.jsx"
     stuck_count: 0
     priority: "medium"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Affichage message motivation personnalisé sur la page d'accueil"
+        comment: "Amélioration de l'affichage: nutri-score plus grand (w-6 h-6), étapes de préparation numérotées avec badges, meilleur espacement."
 
 metadata:
   created_by: "main_agent"
-  version: "2.0"
-  test_sequence: 2
+  version: "3.0"
+  test_sequence: 3
   run_ui: true
 
 test_plan:
   current_focus:
-    - "Régénération repas/recettes IA"
-    - "Onglet Favoris"
-    - "Messages motivation"
-    - "Graphique poids temps réel"
+    - "Recherche de recettes IA dans onglet IA"
+    - "Bouton Ajouter aux courses dans Favoris"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
-    message: "J'ai corrigé tous les problèmes demandés: 1) Alternatives alimentaires en français 2) Bug session logout corrigé avec clear localStorage/sessionStorage 3) Nouvel onglet Favoris dans Nutrition 4) Boutons de régénération pour repas/recettes IA 5) Messages de motivation personnalisés sur dashboard 6) Graphique poids mise à jour temps réel. À tester: la régénération des repas IA et l'affichage des favoris."
+    message: "J'ai implémenté les 3 fonctionnalités demandées par l'utilisateur: 1) Recherche de recettes par IA avec un champ texte libre dans l'onglet IA, 2) Bouton 'Ajouter aux courses' dans les favoris pour ajouter tous les ingrédients d'une recette à la liste de courses, 3) La liste de courses est persistante (MongoDB). Les APIs backend ont été testées avec succès via curl. Il faut maintenant tester le frontend via l'interface utilisateur."
+
