@@ -218,13 +218,29 @@ export default function NutritionPage() {
   };
 
   const addIngredientsToShoppingList = async (ingredients) => {
+    if (!ingredients || ingredients.length === 0) {
+      toast.error('Aucun ingrédient à ajouter');
+      return;
+    }
     try {
-      const items = ingredients.map(i => ({ item: i.item, quantity: i.quantity }));
-      await axios.post(`${API}/shopping-list/bulk`, { items }, { withCredentials: true });
-      toast.success(`${items.length} ingrédients ajoutés à la liste de courses`);
+      const items = ingredients.map(i => ({ 
+        item: i.item || i.name || String(i), 
+        quantity: i.quantity || '' 
+      })).filter(i => i.item && i.item.trim());
+      
+      if (items.length === 0) {
+        toast.error('Aucun ingrédient valide');
+        return;
+      }
+      
+      const response = await axios.post(`${API}/shopping-list/bulk`, { items }, { withCredentials: true });
+      toast.success(`${response.data.added_count || items.length} ingrédients ajoutés à la liste de courses`);
       fetchShoppingList();
+      // Switch to shopping tab to show the result
+      setActiveTab('shopping');
     } catch (error) {
-      toast.error('Erreur lors de l\'ajout');
+      console.error('Error adding ingredients:', error);
+      toast.error('Erreur lors de l\'ajout: ' + (error.response?.data?.detail || 'Veuillez réessayer'));
     }
   };
 
