@@ -25,10 +25,11 @@ import { Toaster } from "@/components/ui/sonner";
 import BottomNav from "@/components/BottomNav";
 
 const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isProcessingAuth } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  // Show loading while checking auth or processing OAuth
+  if (loading || isProcessingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse flex flex-col items-center gap-4">
@@ -52,9 +53,10 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const PublicRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isProcessingAuth } = useAuth();
 
-  if (loading) {
+  // Show loading while checking auth or processing OAuth
+  if (loading || isProcessingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse flex flex-col items-center gap-4">
