@@ -612,27 +612,35 @@ export default function NutritionPage() {
       <main className="p-4 space-y-6 pb-24">
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="today" className="flex items-center gap-1 text-xs px-2">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="today" className="flex items-center gap-1 text-xs px-1">
               <Apple className="w-3 h-3" />
               <span className="hidden sm:inline">Aujourd'hui</span>
               <span className="sm:hidden">Jour</span>
             </TabsTrigger>
-            <TabsTrigger value="diary" className="flex items-center gap-1 text-xs px-2">
+            <TabsTrigger value="diary" className="flex items-center gap-1 text-xs px-1">
               <Calendar className="w-3 h-3" />
-              Agenda
+              <span className="hidden sm:inline">Agenda</span>
+              <span className="sm:hidden">📅</span>
             </TabsTrigger>
-            <TabsTrigger value="ai" className="flex items-center gap-1 text-xs px-2">
+            <TabsTrigger value="ai" className="flex items-center gap-1 text-xs px-1">
               <Sparkles className="w-3 h-3" />
               IA
             </TabsTrigger>
-            <TabsTrigger value="favorites" className="flex items-center gap-1 text-xs px-2">
-              <Heart className="w-3 h-3" />
-              Favoris
+            <TabsTrigger value="catalog" className="flex items-center gap-1 text-xs px-1">
+              <BookOpen className="w-3 h-3" />
+              <span className="hidden sm:inline">Recettes</span>
+              <span className="sm:hidden">📖</span>
             </TabsTrigger>
-            <TabsTrigger value="shopping" className="flex items-center gap-1 text-xs px-2">
+            <TabsTrigger value="favorites" className="flex items-center gap-1 text-xs px-1">
+              <Heart className="w-3 h-3" />
+              <span className="hidden sm:inline">Favoris</span>
+              <span className="sm:hidden">❤️</span>
+            </TabsTrigger>
+            <TabsTrigger value="shopping" className="flex items-center gap-1 text-xs px-1">
               <ShoppingCart className="w-3 h-3" />
-              Courses
+              <span className="hidden sm:inline">Courses</span>
+              <span className="sm:hidden">🛒</span>
             </TabsTrigger>
           </TabsList>
 
