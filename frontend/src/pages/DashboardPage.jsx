@@ -41,6 +41,11 @@ export default function DashboardPage() {
   const [motivation, setMotivation] = useState(null);
   const [dailyRecipes, setDailyRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // AI Recipe Search state
+  const [recipeSearchQuery, setRecipeSearchQuery] = useState('');
+  const [searchedRecipe, setSearchedRecipe] = useState(null);
+  const [loadingSearch, setLoadingSearch] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
