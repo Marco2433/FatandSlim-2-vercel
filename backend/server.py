@@ -855,6 +855,9 @@ async def generate_meal_plan(data: dict = {}, user: dict = Depends(get_current_u
     if not profile:
         raise HTTPException(status_code=400, detail="Complete onboarding first")
     
+    # Get plan type: daily or weekly
+    plan_type = data.get("type", "weekly")
+    
     try:
         chat = LlmChat(
             api_key=EMERGENT_LLM_KEY,
