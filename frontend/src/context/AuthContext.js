@@ -3,6 +3,9 @@ import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+// Configure axios defaults for cookie handling
+axios.defaults.withCredentials = true;
+
 const AuthContext = createContext(null);
 
 export const useAuth = () => {
