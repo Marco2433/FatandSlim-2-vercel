@@ -4,13 +4,18 @@
   "description": "Application de coaching sportif et nutritionnel avec IA - Perdez du poids, mangez mieux, améliorez votre forme",
   "start_url": "/",
   "scope": "/",
-  "display": "standalone",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
   "background_color": "#000000",
   "theme_color": "#F472B6",
   "orientation": "portrait",
   "lang": "fr",
   "dir": "ltr",
   "categories": ["health", "fitness", "lifestyle"],
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "icons": [
     {
       "src": "/icon-48x48.png",
@@ -59,22 +64,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshot-wide.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Dashboard Fat & Slim"
-    },
-    {
-      "src": "/screenshot-narrow.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Application mobile Fat & Slim"
     }
   ],
   "shortcuts": [
