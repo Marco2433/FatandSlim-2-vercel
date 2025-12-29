@@ -300,6 +300,9 @@ export default function NutritionPage() {
 
   // AI Recipes Generation
   const generateRecipes = async () => {
+    // Reset state before generating
+    setRecipes([]);
+    setSelectedRecipe(null);
     setLoadingRecipes(true);
     setRecipesDialogOpen(true);
     
@@ -308,27 +311,100 @@ export default function NutritionPage() {
       setRecipes(response.data.recipes || []);
     } catch (error) {
       console.error('Error generating recipes:', error);
-      toast.error('Erreur lors de la génération');
+      toast.error('Erreur lors de la génération. Veuillez réessayer.');
     } finally {
       setLoadingRecipes(false);
     }
   };
 
-  const toggleFavoriteRecipe = async (recipe) => {
+  // Regenerate recipes
+  const regenerateRecipes = () => {
+    generateRecipes();
+  };
+
+  const toggleFavoriteRecipe = async (recipe, e) => {
+    if (e) e.stopPropagation();
     const isFavorite = favoriteRecipes.some(f => f.recipe.name === recipe.name);
     
     try {
       if (isFavorite) {
         const fav = favoriteRecipes.find(f => f.recipe.name === recipe.name);
         await axios.delete(`${API}/recipes/favorites/${fav.favorite_id}`, { withCredentials: true });
+        // Update local state immediately
+        setFavoriteRecipes(prev => prev.filter(f => f.recipe.name !== recipe.name));
         toast.success('Recette retirée des favoris');
       } else {
-        await axios.post(`${API}/recipes/favorites`, { recipe }, { withCredentials: true });
+        const response = await axios.post(`${API}/recipes/favorites`, { recipe }, { withCredentials: true });
+        // Update local state immediately
+        setFavoriteRecipes(prev => [...prev, { favorite_id: response.data.favorite_id, recipe }]);
         toast.success('Recette ajoutée aux favoris');
       }
+    } catch (error) {
+      if (error.response?.status === 400) {
+        toast.error('Cette recette est déjà dans vos favoris');
+      } else {
+        toast.error('Erreur lors de la mise à jour');
+      }
+    }
+  };
+
+  // Add recipe to agenda
+  const addRecipeToAgenda = async (recipe, date) => {
+    try {
+      await axios.post(`${API}/agenda/notes`, {
+        date: date || selectedDate,
+        content: `🍽️ Recette planifiée: ${recipe.name} (${recipe.calories} kcal)`,
+        type: 'meal_plan'
+      }, { withCredentials: true });
+      toast.success('Recette ajoutée à l\'agenda');
+      fetchAgendaNotes();
+    } catch (error) {
+      toast.error('Erreur lors de l\'ajout');
+    }
+  };
+
+  // Add all meals of the day to favorites
+  const addAllMealsToFavorites = async (meals) => {
+    try {
+      const mealList = Object.values(meals).filter(m => m && m.name);
+      for (const meal of mealList) {
+        const isFavorite = favoriteRecipes.some(f => f.recipe.name === meal.name);
+        if (!isFavorite) {
+          await axios.post(`${API}/recipes/favorites`, { recipe: meal }, { withCredentials: true });
+        }
+      }
+      toast.success(`${mealList.length} repas ajoutés aux favoris`);
       fetchFavoriteRecipes();
     } catch (error) {
-      toast.error('Erreur lors de la mise à jour');
+      toast.error('Erreur lors de l\'ajout');
+    }
+  };
+
+  // Add weekly plan to agenda
+  const addWeeklyPlanToAgenda = async (days) => {
+    try {
+      const today = new Date();
+      for (let i = 0; i < days.length; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        const dateStr = date.toISOString().slice(0, 10);
+        const day = days[i];
+        
+        const meals = Object.entries(day.meals || {})
+          .filter(([_, m]) => m && m.name)
+          .map(([type, m]) => `${mealTypes.find(t => t.value === type)?.emoji || '🍽️'} ${m.name}`)
+          .join(', ');
+        
+        await axios.post(`${API}/agenda/notes`, {
+          date: dateStr,
+          content: `📅 ${day.day}: ${meals}`,
+          type: 'meal_plan'
+        }, { withCredentials: true });
+      }
+      toast.success('Plan hebdomadaire ajouté à l\'agenda');
+      fetchAgendaNotes();
+    } catch (error) {
+      toast.error('Erreur lors de l\'ajout');
     }
   };
 
