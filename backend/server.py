@@ -1114,11 +1114,18 @@ async def get_stats(user: dict = Depends(get_current_user)):
     # Get this week's data
     today = datetime.now(timezone.utc)
     week_start = (today - timedelta(days=today.weekday())).strftime("%Y-%m-%d")
+    today_str = today.strftime("%Y-%m-%d")
     
     food_logs = await db.food_logs.find(
         {"user_id": user["user_id"], "logged_at": {"$gte": week_start}},
         {"_id": 0}
     ).to_list(500)
+    
+    # Today's food logs only
+    today_food_logs = await db.food_logs.find(
+        {"user_id": user["user_id"], "date": today_str},
+        {"_id": 0}
+    ).to_list(100)
     
     workout_logs = await db.workout_logs.find(
         {"user_id": user["user_id"], "logged_at": {"$gte": week_start}},
@@ -1135,12 +1142,30 @@ async def get_stats(user: dict = Depends(get_current_user)):
     total_workouts_week = len(workout_logs)
     total_workout_minutes = sum(log.get("duration_minutes", 0) for log in workout_logs)
     
+    # Today's calories consumed
+    calories_consumed_today = sum(log.get("calories", 0) * log.get("quantity", 1) for log in today_food_logs)
+    
     current_weight = profile.get("weight", 0) if profile else 0
     target_weight = profile.get("target_weight", 0) if profile else 0
     start_weight = weight_history[-1]["weight"] if weight_history else current_weight
     
+    # Get calorie targets from profile
+    calorie_target = profile.get("daily_calorie_target", 2000) if profile else 2000
+    calorie_debug = profile.get("calorie_debug", {}) if profile else {}
+    tdee_maintenance = calorie_debug.get("tdee_maintenance", calorie_target)
+    
+    # Calculate remaining calories
+    calories_remaining = max(0, calorie_target - calories_consumed_today)
+    
     # Get streak
     streak = await get_streak(user["user_id"])
+    
+    # Health disclaimer for high BMI or age
+    bmi = profile.get("bmi", 0) if profile else 0
+    age = profile.get("age", 0) if profile else 0
+    health_disclaimer = None
+    if bmi > 35 or age > 50:
+        health_disclaimer = "Les recommandations sont des estimations basées sur des formules reconnues. En cas d'obésité ou de pathologie, un avis médical est recommandé."
     
     return {
         "current_weight": current_weight,
@@ -1153,9 +1178,17 @@ async def get_stats(user: dict = Depends(get_current_user)):
             "workout_minutes": total_workout_minutes,
             "avg_daily_calories": round(total_calories_week / 7)
         },
+        # Clear separation of calorie concepts (MANDATORY FOR UX)
+        "calories": {
+            "maintenance": round(tdee_maintenance),  # TDEE - calories to maintain weight
+            "target": round(calorie_target),         # Recommended based on goal
+            "consumed_today": round(calories_consumed_today),
+            "remaining_today": round(calories_remaining)
+        },
+        "calorie_debug": calorie_debug,  # BMR, activity factor, TDEE for transparency
         "streak": streak,
         "daily_targets": {
-            "calories": profile.get("daily_calorie_target", 2000) if profile else 2000,
+            "calories": calorie_target,
             "protein": profile.get("daily_protein_target", 100) if profile else 100,
             "carbs": profile.get("daily_carbs_target", 250) if profile else 250,
             "fat": profile.get("daily_fat_target", 65) if profile else 65
@@ -1163,7 +1196,8 @@ async def get_stats(user: dict = Depends(get_current_user)):
         "ideal_bmi": profile.get("ideal_bmi", 22.0) if profile else 22.0,
         "ideal_weight": profile.get("ideal_weight") if profile else None,
         "ideal_weight_range": profile.get("ideal_weight_range") if profile else None,
-        "health_conditions": profile.get("health_conditions", []) if profile else []
+        "health_conditions": profile.get("health_conditions", []) if profile else [],
+        "health_disclaimer": health_disclaimer
     }
 
 async def update_streak(user_id: str):
