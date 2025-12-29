@@ -398,14 +398,16 @@ async def update_profile(data: dict, user: dict = Depends(get_current_user)):
 async def analyze_food(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
     """Analyze food image using AI vision"""
     from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+    import json
     
     contents = await file.read()
     image_base64 = base64.b64encode(contents).decode()
     
-    chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
-        session_id=f"food_analysis_{uuid.uuid4().hex[:8]}",
-        system_message="""You are a nutrition expert AI. Analyze the food image and provide:
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"food_analysis_{uuid.uuid4().hex[:8]}",
+            system_message="""You are a nutrition expert AI. Analyze the food image and provide:
 1. Food name/description
 2. Estimated calories (per serving)
 3. Estimated protein (g)
@@ -414,7 +416,7 @@ async def analyze_food(file: UploadFile = File(...), user: dict = Depends(get_cu
 6. Nutri-Score (A-E based on nutritional quality)
 7. Health tips
 
-Respond in JSON format:
+Respond ONLY in JSON format:
 {
     "food_name": "string",
     "calories": number,
@@ -426,28 +428,39 @@ Respond in JSON format:
     "health_tips": ["string"],
     "ingredients_detected": ["string"]
 }"""
-    ).with_model("openai", "gpt-5.2")
-    
-    image_content = ImageContent(image_base64=image_base64)
-    user_message = UserMessage(
-        text="Analyze this food image and provide nutritional information.",
-        image_contents=[image_content]
-    )
-    
-    response = await chat.send_message(user_message)
-    
-    # Parse JSON from response
-    import json
-    try:
-        # Try to extract JSON from response
+        ).with_model("openai", "gpt-5.2")
+        
+        image_content = ImageContent(image_base64=image_base64)
+        user_message = UserMessage(
+            text="Analyze this food image and provide nutritional information in JSON format.",
+            image_contents=[image_content]
+        )
+        
+        response = await chat.send_message(user_message)
+        
+        # Parse JSON from response
         json_start = response.find('{')
         json_end = response.rfind('}') + 1
         if json_start != -1 and json_end > json_start:
             result = json.loads(response[json_start:json_end])
         else:
-            result = {
-                "food_name": "Unknown food",
-                "calories": 200,
+            raise ValueError("No JSON in response")
+    except Exception as e:
+        logger.error(f"AI food analysis error: {e}")
+        # Return default values if AI fails
+        result = {
+            "food_name": "Aliment non reconnu",
+            "calories": 250,
+            "protein": 10,
+            "carbs": 30,
+            "fat": 10,
+            "nutri_score": "C",
+            "serving_size": "1 portion",
+            "health_tips": ["Essayez avec une photo plus claire", "Assurez-vous que l'aliment est bien visible"],
+            "ingredients_detected": []
+        }
+    
+    return result
                 "protein": 10,
                 "carbs": 20,
                 "fat": 8,
