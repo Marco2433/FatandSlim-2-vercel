@@ -347,32 +347,62 @@ async def complete_onboarding(data: OnboardingData, user: dict = Depends(get_cur
     ideal_bmi_target = 22.0  # Middle of healthy range
     ideal_weight = round(ideal_bmi_target * (height_m ** 2), 1)
     
-    # Calculate daily calorie target based on goal using Mifflin-St Jeor equation
+    # ==================== CALORIE CALCULATION (ROBUST ALGORITHM) ====================
+    # Step 1: Calculate BMR using Mifflin-St Jeor equation
     if data.gender == "female":
-        bmr = 10 * data.weight + 6.25 * data.height - 5 * data.age - 161
+        bmr = (10 * data.weight) + (6.25 * data.height) - (5 * data.age) - 161
     else:
-        bmr = 10 * data.weight + 6.25 * data.height - 5 * data.age + 5
+        bmr = (10 * data.weight) + (6.25 * data.height) - (5 * data.age) + 5
     
+    # Step 2: Activity factor - CAPPED at 1.55 for wellness apps
     activity_multipliers = {
         "sedentary": 1.2,
         "light": 1.375,
         "moderate": 1.55,
-        "active": 1.725,
-        "very_active": 1.9
+        "active": 1.55,      # CAPPED - never exceed 1.55
+        "very_active": 1.55  # CAPPED - never exceed 1.55
     }
-    tdee = bmr * activity_multipliers.get(data.activity_level, 1.55)
     
-    # Adjust calorie target based on goal and health conditions
-    calorie_target = tdee
+    # Apply lower activity factor for high BMI or older users (safety guard)
+    activity_factor = activity_multipliers.get(data.activity_level, 1.2)
+    if bmi > 35 or data.age > 50:
+        activity_factor = min(activity_factor, 1.375)  # Reduced for safety
+    
+    # Step 3: Calculate TDEE (Total Daily Energy Expenditure)
+    tdee = bmr * activity_factor
+    
+    # Step 4: Apply deficit/surplus based on goal
     if data.goal == "lose_weight":
-        calorie_target = tdee - 500  # ~0.5kg loss per week
+        # Default 20% deficit, softer 15% for high BMI/age
+        if bmi > 35 or data.age > 50:
+            deficit_multiplier = 0.85  # 15% deficit (safer)
+        else:
+            deficit_multiplier = 0.80  # 20% deficit (standard)
+        calorie_target = tdee * deficit_multiplier
     elif data.goal == "gain_muscle":
-        calorie_target = tdee + 300
+        calorie_target = tdee * 1.10  # 10% surplus
+    else:
+        calorie_target = tdee  # Maintenance
+    
+    # Step 5: Apply safety caps (MANDATORY)
+    if data.gender == "female":
+        calorie_target = min(calorie_target, 3500)  # Max for women
+        calorie_target = max(calorie_target, 1200)  # Min safe for women
+    else:
+        calorie_target = min(calorie_target, 4000)  # Max for men
+        calorie_target = max(calorie_target, 1500)  # Min safe for men
+    
+    # Log debug info
+    logger.info(f"Calorie Calculation Debug - User: {user['user_id']}")
+    logger.info(f"  Gender: {data.gender}, Age: {data.age}, Height: {data.height}cm, Weight: {data.weight}kg")
+    logger.info(f"  BMR: {round(bmr)} kcal")
+    logger.info(f"  Activity Factor: {activity_factor} (Level: {data.activity_level})")
+    logger.info(f"  TDEE: {round(tdee)} kcal")
+    logger.info(f"  Goal: {data.goal}, Final Target: {round(calorie_target)} kcal")
     
     # Special adjustments for health conditions
     if "diabetes" in data.health_conditions:
-        # Lower carbs for diabetics
-        carbs_ratio = 0.35
+        carbs_ratio = 0.35  # Lower carbs for diabetics
     else:
         carbs_ratio = 0.45
     
