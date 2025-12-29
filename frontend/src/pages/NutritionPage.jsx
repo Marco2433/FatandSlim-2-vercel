@@ -1516,7 +1516,19 @@ export default function NutritionPage() {
                     {aiMealPlan.meal_plan.shopping_list && (
                       <Card>
                         <CardHeader className="pb-2">
-                          <CardTitle className="text-sm">🛒 Liste de courses</CardTitle>
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm">🛒 Liste de courses</CardTitle>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => addIngredientsToShoppingList(
+                                aiMealPlan.meal_plan.shopping_list.map(item => ({ item, quantity: '' }))
+                              )}
+                            >
+                              <ShoppingCart className="w-3 h-3 mr-1" />
+                              Tout ajouter
+                            </Button>
+                          </div>
                         </CardHeader>
                         <CardContent>
                           <div className="flex flex-wrap gap-2">
