@@ -111,16 +111,19 @@ export default function NutritionPage() {
       fetchDiary();
       fetchAgendaNotes();
     }
+    if (activeTab === 'shopping') {
+      fetchShoppingList();
+    }
   }, [activeTab, currentMonth]);
 
   const fetchData = async () => {
     try {
-      const [summaryRes, logsRes] = await Promise.all([
+      const [summaryRes, logsRes] = await Promise.allSettled([
         axios.get(`${API}/food/daily-summary`, { withCredentials: true }),
         axios.get(`${API}/food/logs`, { withCredentials: true })
       ]);
-      setDailySummary(summaryRes.data);
-      setFoodLogs(logsRes.data);
+      if (summaryRes.status === 'fulfilled') setDailySummary(summaryRes.value.data);
+      if (logsRes.status === 'fulfilled') setFoodLogs(logsRes.value.data);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
