@@ -1120,7 +1120,11 @@ async def get_stats(user: dict = Depends(get_current_user)):
             "protein": profile.get("daily_protein_target", 100) if profile else 100,
             "carbs": profile.get("daily_carbs_target", 250) if profile else 250,
             "fat": profile.get("daily_fat_target", 65) if profile else 65
-        }
+        },
+        "ideal_bmi": profile.get("ideal_bmi", 22.0) if profile else 22.0,
+        "ideal_weight": profile.get("ideal_weight") if profile else None,
+        "ideal_weight_range": profile.get("ideal_weight_range") if profile else None,
+        "health_conditions": profile.get("health_conditions", []) if profile else []
     }
 
 async def update_streak(user_id: str):
