@@ -83,6 +83,11 @@ export default function NutritionPage() {
   const [favoriteRecipes, setFavoriteRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   
+  // AI Recipe Search state
+  const [recipeSearchQuery, setRecipeSearchQuery] = useState('');
+  const [searchedRecipe, setSearchedRecipe] = useState(null);
+  const [loadingSearch, setLoadingSearch] = useState(false);
+  
   // Shopping list state
   const [shoppingList, setShoppingList] = useState([]);
   
