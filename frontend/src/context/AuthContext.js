@@ -92,7 +92,13 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     }
+    // Clear all local storage and session storage
+    localStorage.clear();
+    sessionStorage.clear();
+    // Clear user state
     setUser(null);
+    // Force reload to clear any cached data
+    window.location.href = '/';
   };
 
   const updateUser = (updates) => {
