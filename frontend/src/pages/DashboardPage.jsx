@@ -123,6 +123,25 @@ export default function DashboardPage() {
             </span>
           </div>
         )}
+        
+        {/* Motivation Message */}
+        {motivation && (
+          <Card className="mt-4 bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">{motivation.message}</p>
+                  {motivation.bonus && (
+                    <p className="text-sm text-muted-foreground mt-1">{motivation.bonus}</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </header>
 
       <main className="px-4 space-y-6 pb-24">
