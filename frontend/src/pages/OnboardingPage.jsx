@@ -218,9 +218,10 @@ export default function OnboardingPage() {
               >
                 <div className="grid gap-3">
                   {goals.map((goal) => (
-                    <Label
+                    <div
                       key={goal.value}
-                      htmlFor={goal.value}
+                      onClick={() => setFormData({ ...formData, goal: goal.value })}
+                      data-testid={`goal-${goal.value}`}
                       className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
                         formData.goal === goal.value 
                           ? 'border-primary bg-primary/5' 
@@ -230,7 +231,7 @@ export default function OnboardingPage() {
                       <RadioGroupItem value={goal.value} id={goal.value} />
                       <goal.icon className="w-5 h-5 text-primary" />
                       <span className="font-medium">{goal.label}</span>
-                    </Label>
+                    </div>
                   ))}
                 </div>
               </RadioGroup>
@@ -269,9 +270,10 @@ export default function OnboardingPage() {
               >
                 <div className="grid gap-3">
                   {activityLevels.map((level) => (
-                    <Label
+                    <div
                       key={level.value}
-                      htmlFor={level.value}
+                      onClick={() => setFormData({ ...formData, activity_level: level.value })}
+                      data-testid={`activity-${level.value}`}
                       className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
                         formData.activity_level === level.value 
                           ? 'border-primary bg-primary/5' 
@@ -283,7 +285,7 @@ export default function OnboardingPage() {
                         <span className="font-medium">{level.label}</span>
                         <p className="text-sm text-muted-foreground">{level.description}</p>
                       </div>
-                    </Label>
+                    </div>
                   ))}
                 </div>
               </RadioGroup>
@@ -310,9 +312,10 @@ export default function OnboardingPage() {
               >
                 <div className="grid gap-3">
                   {fitnessLevels.map((level) => (
-                    <Label
+                    <div
                       key={level.value}
-                      htmlFor={`fitness-${level.value}`}
+                      onClick={() => setFormData({ ...formData, fitness_level: level.value })}
+                      data-testid={`fitness-${level.value}`}
                       className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
                         formData.fitness_level === level.value 
                           ? 'border-primary bg-primary/5' 
@@ -324,7 +327,7 @@ export default function OnboardingPage() {
                         <span className="font-medium">{level.label}</span>
                         <p className="text-sm text-muted-foreground">{level.description}</p>
                       </div>
-                    </Label>
+                    </div>
                   ))}
                 </div>
               </RadioGroup>
