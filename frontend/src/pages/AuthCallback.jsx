@@ -22,25 +22,24 @@ export default function AuthCallback() {
 
         if (!sessionId) {
           toast.error('Session invalide');
-          navigate('/login');
+          navigate('/login', { replace: true });
           return;
         }
 
         const user = await processSession(sessionId);
         toast.success('Connexion réussie !');
         
-        // Clear the hash from URL
-        window.history.replaceState(null, '', window.location.pathname);
-        
+        // Use window.location for a clean navigation after OAuth
+        // This ensures the page fully reloads with the new auth state
         if (!user.onboarding_completed) {
-          navigate('/onboarding', { state: { user } });
+          window.location.replace('/onboarding');
         } else {
-          navigate('/dashboard', { state: { user } });
+          window.location.replace('/dashboard');
         }
       } catch (error) {
         console.error('Auth callback error:', error);
         toast.error('Erreur d\'authentification');
-        navigate('/login');
+        navigate('/login', { replace: true });
       }
     };
 
