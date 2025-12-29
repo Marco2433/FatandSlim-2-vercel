@@ -1225,7 +1225,7 @@ export default function NutritionPage() {
               <p className="text-xs text-muted-foreground">L'IA prépare vos repas personnalisés</p>
             </div>
           ) : aiMealPlan?.meal_plan ? (
-            <ScrollArea className="max-h-[60vh]">
+            <ScrollArea className="max-h-[55vh]">
               <div className="space-y-4 pr-4">
                 {mealPlanType === 'daily' && aiMealPlan.meal_plan.meals ? (
                   // Daily plan
@@ -1234,6 +1234,7 @@ export default function NutritionPage() {
                       const meal = aiMealPlan.meal_plan.meals[mealKey];
                       if (!meal) return null;
                       const mealType = mealTypes.find(t => t.value === mealKey);
+                      const isFav = favoriteRecipes.some(f => f.recipe.name === meal.name);
                       return (
                         <Card key={mealKey}>
                           <CardContent className="p-4">
@@ -1242,14 +1243,24 @@ export default function NutritionPage() {
                                 <span>{mealType?.emoji}</span>
                                 <span className="font-medium">{mealType?.label}</span>
                               </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => addMealToDiary(meal, mealKey)}
-                              >
-                                <Plus className="w-3 h-3 mr-1" />
-                                Ajouter
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => toggleFavoriteRecipe(meal)}
+                                  className={isFav ? "text-destructive" : ""}
+                                >
+                                  <Heart className={`w-3 h-3 ${isFav ? "fill-current" : ""}`} />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => addMealToDiary(meal, mealKey)}
+                                >
+                                  <Plus className="w-3 h-3 mr-1" />
+                                  Ajouter
+                                </Button>
+                              </div>
                             </div>
                             <p className="font-semibold">{meal.name}</p>
                             <div className="flex gap-2 text-xs text-muted-foreground mt-1">
@@ -1288,48 +1299,99 @@ export default function NutritionPage() {
                         </CardContent>
                       </Card>
                     )}
+                    {/* Action buttons for daily plan */}
+                    <div className="flex gap-2 pt-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => addAllMealsToFavorites(aiMealPlan.meal_plan.meals)}
+                      >
+                        <Heart className="w-4 h-4 mr-2" />
+                        Tout en favoris
+                      </Button>
+                    </div>
                   </>
                 ) : aiMealPlan.meal_plan.days ? (
                   // Weekly plan
-                  aiMealPlan.meal_plan.days.map((day, dayIndex) => (
-                    <Card key={dayIndex}>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">{day.day}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        {['breakfast', 'lunch', 'dinner'].map((mealKey) => {
-                          const meal = day.meals?.[mealKey];
-                          if (!meal) return null;
-                          const mealType = mealTypes.find(t => t.value === mealKey);
-                          return (
-                            <div key={mealKey} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm">{mealType?.emoji}</span>
-                                  <span className="text-sm font-medium">{meal.name}</span>
+                  <>
+                    {aiMealPlan.meal_plan.days.map((day, dayIndex) => (
+                      <Card key={dayIndex}>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">{day.day}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          {['breakfast', 'lunch', 'dinner'].map((mealKey) => {
+                            const meal = day.meals?.[mealKey];
+                            if (!meal) return null;
+                            const mealType = mealTypes.find(t => t.value === mealKey);
+                            return (
+                              <div key={mealKey} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm">{mealType?.emoji}</span>
+                                    <span className="text-sm font-medium">{meal.name}</span>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">{meal.calories} kcal</span>
                                 </div>
-                                <span className="text-xs text-muted-foreground">{meal.calories} kcal</span>
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => toggleFavoriteRecipe(meal)}
+                                  >
+                                    <Heart className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => addMealToDiary(meal, mealKey)}
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </Button>
+                                </div>
                               </div>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => addMealToDiary(meal, mealKey)}
-                              >
-                                <Plus className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          );
-                        })}
-                        <div className="text-xs text-muted-foreground text-right">
-                          Total: {day.total_calories} kcal
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
+                            );
+                          })}
+                          <div className="text-xs text-muted-foreground text-right">
+                            Total: {day.total_calories} kcal
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {/* Action buttons for weekly plan */}
+                    <div className="flex gap-2 pt-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => addWeeklyPlanToAgenda(aiMealPlan.meal_plan.days)}
+                      >
+                        <CalendarPlus className="w-4 h-4 mr-2" />
+                        Ajouter à l'agenda
+                      </Button>
+                    </div>
+                  </>
                 ) : null}
               </div>
             </ScrollArea>
-          ) : null}
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Aucun plan généré</p>
+            </div>
+          )}
+          
+          {/* Regenerate button */}
+          {!loadingMealPlan && (
+            <div className="pt-4 border-t">
+              <Button 
+                onClick={regenerateMealPlan} 
+                className="w-full"
+                variant="outline"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Générer un nouveau plan
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
