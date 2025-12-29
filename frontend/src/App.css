@@ -1,34 +1,179 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* App-specific styles */
+
+.App {
+  min-height: 100vh;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+/* Page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(10px);
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease-out, transform 300ms ease-out;
 }
 
-.App-link {
-    color: #61dafb;
+.page-exit {
+  opacity: 1;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+.page-exit-active {
+  opacity: 0;
+  transition: opacity 200ms ease-in;
+}
+
+/* Bento grid for dashboard */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1rem;
+  grid-auto-rows: minmax(120px, auto);
+}
+
+@media (max-width: 768px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bento-item-large {
+  grid-column: span 8;
+}
+
+.bento-item-medium {
+  grid-column: span 6;
+}
+
+.bento-item-small {
+  grid-column: span 4;
+}
+
+@media (max-width: 768px) {
+  .bento-item-large,
+  .bento-item-medium,
+  .bento-item-small {
+    grid-column: span 1;
+  }
+}
+
+/* Scanner overlay */
+.scanner-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scanner-frame {
+  width: 280px;
+  height: 280px;
+  border: 3px solid #7C3AED;
+  border-radius: 24px;
+  position: relative;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+
+.scanner-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #7C3AED, transparent);
+  animation: scan 2s ease-in-out infinite;
+}
+
+@keyframes scan {
+  0%, 100% { top: 0; }
+  50% { top: calc(100% - 2px); }
+}
+
+/* Nutri-score badge */
+.nutri-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Progress ring */
+.progress-ring {
+  transform: rotate(-90deg);
+}
+
+.progress-ring-circle {
+  transition: stroke-dashoffset 0.5s ease-out;
+}
+
+/* Card hover effects */
+.card-interactive {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.card-interactive:hover {
+  transform: translateY(-4px);
+}
+
+/* Badge 3D effect */
+.badge-3d {
+  background: linear-gradient(145deg, #C2F970 0%, #A3E635 100%);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+}
+
+.badge-3d-locked {
+  background: linear-gradient(145deg, #374151 0%, #1f2937 100%);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    inset 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+/* Macro progress bars */
+.macro-bar {
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: hsl(var(--muted));
+}
+
+.macro-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
+}
+
+/* Workout card */
+.workout-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.workout-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #C2F970, #7C3AED);
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .mobile-full {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    border-radius: 0;
+  }
 }
