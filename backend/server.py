@@ -1622,6 +1622,98 @@ async def get_challenges(user: dict = Depends(get_current_user)):
     
     return {"daily": daily_challenges, "weekly": []}
 
+# ==================== MOTIVATION MESSAGES ====================
+
+@api_router.get("/motivation")
+async def get_motivation_message(user: dict = Depends(get_current_user)):
+    """Get personalized daily motivation message based on user profile"""
+    import random
+    
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    # Get current stats
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    food_count = await db.food_logs.count_documents({"user_id": user["user_id"], "date": today})
+    
+    # Get streak
+    streak_data = await get_streak(user["user_id"])
+    streak = streak_data.get("current", 0)
+    
+    # Get weight progress
+    weight_history = await db.weight_history.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("date", -1).to_list(2)
+    
+    weight_lost = 0
+    if weight_history and len(weight_history) > 1:
+        weight_lost = weight_history[-1].get("weight", 0) - weight_history[0].get("weight", 0)
+    
+    # Personalization based on profile
+    goal = profile.get("goal", "lose_weight") if profile else "lose_weight"
+    name = user.get("name", "").split()[0] if user.get("name") else "Champion"
+    
+    # Use day of year as seed for consistent daily message
+    day_of_year = datetime.now(timezone.utc).timetuple().tm_yday
+    random.seed(day_of_year + hash(user["user_id"]))
+    
+    # Messages based on goal and context
+    messages_lose_weight = [
+        f"💪 {name}, chaque petit pas compte ! Continue comme ça !",
+        f"🌟 Tu es sur la bonne voie, {name} ! Ta discipline paie !",
+        f"🔥 {name}, rappelle-toi pourquoi tu as commencé. Tu peux le faire !",
+        f"✨ Aujourd'hui est un nouveau jour pour progresser, {name} !",
+        f"🏆 {name}, ton corps te remerciera pour tes efforts d'aujourd'hui !",
+        f"💎 La persévérance est ta meilleure alliée, {name} !",
+        f"🚀 {name}, tu es plus fort(e) que tes excuses !",
+        f"🌈 Chaque repas sain est une victoire, {name} !",
+        f"⭐ {name}, tu mérites d'être fier(e) de toi !",
+        f"🎯 Reste concentré(e) sur ton objectif, {name} !",
+    ]
+    
+    messages_gain_muscle = [
+        f"💪 {name}, les muscles se construisent jour après jour !",
+        f"🏋️ Force et détermination, {name} ! Tu progresses !",
+        f"🔥 {name}, chaque entraînement te rapproche de ton objectif !",
+        f"⚡ {name}, ton corps se transforme, continue !",
+        f"🦁 {name}, libère ta puissance intérieure aujourd'hui !",
+    ]
+    
+    messages_maintain = [
+        f"😊 {name}, tu maintiens un excellent équilibre !",
+        f"🌟 Continue comme ça, {name} ! La constance est la clé !",
+        f"✨ {name}, ton mode de vie sain t'inspire !",
+        f"🎉 Bravo {name} pour ton engagement au quotidien !",
+    ]
+    
+    # Select messages based on goal
+    if goal == "gain_muscle":
+        base_messages = messages_gain_muscle
+    elif goal == "maintain":
+        base_messages = messages_maintain
+    else:
+        base_messages = messages_lose_weight
+    
+    message = random.choice(base_messages)
+    
+    # Add contextual bonus messages
+    bonus = None
+    if streak >= 7:
+        bonus = f"🔥 Incroyable ! {streak} jours de suite !"
+    elif streak >= 3:
+        bonus = f"⚡ Belle série de {streak} jours !"
+    elif weight_lost < 0:  # Lost weight (negative change)
+        bonus = f"📉 Tu as perdu {abs(round(weight_lost, 1))} kg ! Continue !"
+    elif food_count >= 3:
+        bonus = "✅ Tu as bien suivi tes repas aujourd'hui !"
+    
+    return {
+        "message": message,
+        "bonus": bonus,
+        "streak": streak,
+        "day_of_year": day_of_year
+    }
+
 # Include router
 app.include_router(api_router)
 
