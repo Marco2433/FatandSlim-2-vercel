@@ -530,7 +530,7 @@ Nutri-Score guidelines:
 - C: Moderate (some processed foods)
 - D: Less healthy (fried foods, sugary items)
 - E: Unhealthy (fast food, high sugar/fat)"""
-        ).with_model("openai", "gpt-5.2")
+        ).with_model("openai", "gpt-4o")
         
         file_content = FileContent(content_type=content_type, file_content_base64=image_base64)
         user_message = UserMessage(
