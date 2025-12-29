@@ -983,6 +983,151 @@ export default function NutritionPage() {
               </Card>
             )}
           </TabsContent>
+
+          {/* Favorites Tab */}
+          <TabsContent value="favorites" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading text-lg flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-destructive fill-destructive" />
+                  Mes recettes favorites
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {favoriteRecipes.length > 0 ? (
+                  <div className="space-y-3">
+                    {favoriteRecipes.map((fav) => (
+                      <Card 
+                        key={fav.favorite_id}
+                        className="cursor-pointer hover:border-primary/50 transition-colors"
+                        onClick={() => setSelectedRecipe(selectedRecipe?.name === fav.recipe.name ? null : fav.recipe)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold">{fav.recipe.name}</p>
+                                {fav.recipe.nutri_score && (
+                                  <span className={`w-5 h-5 rounded text-white text-xs flex items-center justify-center font-bold ${getNutriScoreColor(fav.recipe.nutri_score)}`}>
+                                    {fav.recipe.nutri_score}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex gap-2 text-xs text-muted-foreground mt-1">
+                                <span>{fav.recipe.calories} kcal</span>
+                                <span>•</span>
+                                <span>{fav.recipe.prep_time}</span>
+                                {fav.recipe.difficulty && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{fav.recipe.difficulty}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  addRecipeToAgenda(fav.recipe);
+                                }}
+                                title="Ajouter à l'agenda"
+                              >
+                                <CalendarPlus className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={(e) => toggleFavoriteRecipe(fav.recipe, e)}
+                              >
+                                <HeartOff className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Expanded recipe details */}
+                          {selectedRecipe?.name === fav.recipe.name && (
+                            <div className="mt-4 pt-4 border-t space-y-3">
+                              <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                                <div className="p-2 rounded bg-muted">
+                                  <p className="font-bold">{fav.recipe.protein || 0}g</p>
+                                  <p className="text-muted-foreground">Protéines</p>
+                                </div>
+                                <div className="p-2 rounded bg-muted">
+                                  <p className="font-bold">{fav.recipe.carbs || 0}g</p>
+                                  <p className="text-muted-foreground">Glucides</p>
+                                </div>
+                                <div className="p-2 rounded bg-muted">
+                                  <p className="font-bold">{fav.recipe.fat || 0}g</p>
+                                  <p className="text-muted-foreground">Lipides</p>
+                                </div>
+                                <div className="p-2 rounded bg-muted">
+                                  <p className="font-bold">{fav.recipe.servings || 2}</p>
+                                  <p className="text-muted-foreground">Portions</p>
+                                </div>
+                              </div>
+                              
+                              {fav.recipe.ingredients && (
+                                <div>
+                                  <p className="font-medium text-sm mb-2">📝 Ingrédients</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {fav.recipe.ingredients.map((ing, j) => (
+                                      <Badge key={j} variant="outline" className="text-xs">
+                                        {ing.quantity} {ing.item}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {fav.recipe.steps && (
+                                <div>
+                                  <p className="font-medium text-sm mb-2">👨‍🍳 Préparation</p>
+                                  <ol className="space-y-1">
+                                    {fav.recipe.steps.map((step, j) => (
+                                      <li key={j} className="text-xs text-muted-foreground">
+                                        {step}
+                                      </li>
+                                    ))}
+                                  </ol>
+                                </div>
+                              )}
+                              
+                              {fav.recipe.tips && (
+                                <div className="p-2 rounded bg-primary/5 border border-primary/20">
+                                  <p className="text-xs">💡 {fav.recipe.tips}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Heart className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Aucune recette favorite</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Générez des recettes dans l'onglet IA et ajoutez-les en favoris
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => setActiveTab('ai')}
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Générer des recettes
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
 
