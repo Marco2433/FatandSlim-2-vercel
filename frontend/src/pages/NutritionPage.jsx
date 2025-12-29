@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   Apple, 
@@ -25,7 +27,16 @@ import {
   Edit,
   Sparkles,
   AlertTriangle,
-  Check
+  Check,
+  Clock,
+  ChefHat,
+  Heart,
+  HeartOff,
+  Utensils,
+  CalendarPlus,
+  StickyNote,
+  Loader2,
+  BookOpen
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -43,14 +54,33 @@ export default function NutritionPage() {
   const [dailySummary, setDailySummary] = useState(null);
   const [foodLogs, setFoodLogs] = useState([]);
   const [diary, setDiary] = useState([]);
+  const [agendaNotes, setAgendaNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [recommendDialogOpen, setRecommendDialogOpen] = useState(false);
+  const [aiMealDialogOpen, setAiMealDialogOpen] = useState(false);
+  const [recipesDialogOpen, setRecipesDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [recommendations, setRecommendations] = useState(null);
   const [loadingRecommend, setLoadingRecommend] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  
+  // AI Meal Plan state
+  const [aiMealPlan, setAiMealPlan] = useState(null);
+  const [loadingMealPlan, setLoadingMealPlan] = useState(false);
+  const [mealPlanType, setMealPlanType] = useState('daily');
+  
+  // AI Recipes state
+  const [recipes, setRecipes] = useState([]);
+  const [loadingRecipes, setLoadingRecipes] = useState(false);
+  const [favoriteRecipes, setFavoriteRecipes] = useState([]);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  
+  // Note state
+  const [newNote, setNewNote] = useState({ date: '', content: '' });
+  
   const [newFood, setNewFood] = useState({
     food_name: '',
     calories: '',
@@ -64,11 +94,13 @@ export default function NutritionPage() {
 
   useEffect(() => {
     fetchData();
+    fetchFavoriteRecipes();
   }, []);
 
   useEffect(() => {
     if (activeTab === 'diary') {
       fetchDiary();
+      fetchAgendaNotes();
     }
   }, [activeTab, currentMonth]);
 
@@ -93,6 +125,24 @@ export default function NutritionPage() {
       setDiary(response.data);
     } catch (error) {
       console.error('Error fetching diary:', error);
+    }
+  };
+
+  const fetchAgendaNotes = async () => {
+    try {
+      const response = await axios.get(`${API}/agenda/notes?month=${currentMonth}`, { withCredentials: true });
+      setAgendaNotes(response.data);
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+    }
+  };
+
+  const fetchFavoriteRecipes = async () => {
+    try {
+      const response = await axios.get(`${API}/recipes/favorites`, { withCredentials: true });
+      setFavoriteRecipes(response.data);
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
     }
   };
 
@@ -125,7 +175,6 @@ export default function NutritionPage() {
       });
       fetchData();
       
-      // Check if unhealthy and suggest alternatives
       if (parseFloat(newFood.calories) > 500 || parseFloat(newFood.fat) > 25) {
         getRecommendations({
           food_name: newFood.food_name,
@@ -165,6 +214,36 @@ export default function NutritionPage() {
     }
   };
 
+  const handleSaveAgendaNote = async () => {
+    if (!newNote.content.trim()) {
+      toast.error('Le contenu de la note est requis');
+      return;
+    }
+    
+    try {
+      await axios.post(`${API}/agenda/notes`, {
+        date: newNote.date || selectedDate,
+        content: newNote.content,
+        type: 'general'
+      }, { withCredentials: true });
+      toast.success('Note enregistrée');
+      setNewNote({ date: '', content: '' });
+      fetchAgendaNotes();
+    } catch (error) {
+      toast.error('Erreur lors de l\'enregistrement');
+    }
+  };
+
+  const handleDeleteAgendaNote = async (noteId) => {
+    try {
+      await axios.delete(`${API}/agenda/notes/${noteId}`, { withCredentials: true });
+      toast.success('Note supprimée');
+      fetchAgendaNotes();
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
+  };
+
   const getRecommendations = async (foodEntry) => {
     setLoadingRecommend(true);
     setRecommendDialogOpen(true);
@@ -177,6 +256,71 @@ export default function NutritionPage() {
       setRecommendations({ analysis: 'Erreur', alternatives: [], tips: [] });
     } finally {
       setLoadingRecommend(false);
+    }
+  };
+
+  // AI Meal Plan Generation
+  const generateMealPlan = async (type) => {
+    setLoadingMealPlan(true);
+    setMealPlanType(type);
+    setAiMealDialogOpen(true);
+    
+    try {
+      const response = await axios.post(`${API}/meals/generate`, { type }, { withCredentials: true });
+      setAiMealPlan(response.data);
+    } catch (error) {
+      console.error('Error generating meal plan:', error);
+      toast.error('Erreur lors de la génération');
+    } finally {
+      setLoadingMealPlan(false);
+    }
+  };
+
+  const addMealToDiary = async (meal, mealType) => {
+    try {
+      await axios.post(`${API}/meals/add-to-diary`, {
+        meal,
+        meal_type: mealType,
+        date: selectedDate
+      }, { withCredentials: true });
+      toast.success(`${meal.name} ajouté au journal`);
+      fetchData();
+    } catch (error) {
+      toast.error('Erreur lors de l\'ajout');
+    }
+  };
+
+  // AI Recipes Generation
+  const generateRecipes = async () => {
+    setLoadingRecipes(true);
+    setRecipesDialogOpen(true);
+    
+    try {
+      const response = await axios.post(`${API}/recipes/generate`, { count: 10 }, { withCredentials: true });
+      setRecipes(response.data.recipes || []);
+    } catch (error) {
+      console.error('Error generating recipes:', error);
+      toast.error('Erreur lors de la génération');
+    } finally {
+      setLoadingRecipes(false);
+    }
+  };
+
+  const toggleFavoriteRecipe = async (recipe) => {
+    const isFavorite = favoriteRecipes.some(f => f.recipe.name === recipe.name);
+    
+    try {
+      if (isFavorite) {
+        const fav = favoriteRecipes.find(f => f.recipe.name === recipe.name);
+        await axios.delete(`${API}/recipes/favorites/${fav.favorite_id}`, { withCredentials: true });
+        toast.success('Recette retirée des favoris');
+      } else {
+        await axios.post(`${API}/recipes/favorites`, { recipe }, { withCredentials: true });
+        toast.success('Recette ajoutée aux favoris');
+      }
+      fetchFavoriteRecipes();
+    } catch (error) {
+      toast.error('Erreur lors de la mise à jour');
     }
   };
 
@@ -200,6 +344,10 @@ export default function NutritionPage() {
       'E': 'bg-red-500',
     };
     return colors[score] || 'bg-gray-400';
+  };
+
+  const getNotesForDate = (date) => {
+    return agendaNotes.filter(n => n.date === date);
   };
 
   if (loading) {
@@ -250,7 +398,7 @@ export default function NutritionPage() {
       <main className="p-4 space-y-6 pb-24">
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="today" className="flex items-center gap-2">
               <Apple className="w-4 h-4" />
               Aujourd'hui
@@ -258,6 +406,10 @@ export default function NutritionPage() {
             <TabsTrigger value="diary" className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               Agenda
+            </TabsTrigger>
+            <TabsTrigger value="ai" className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              IA
             </TabsTrigger>
           </TabsList>
 
@@ -447,6 +599,9 @@ export default function NutritionPage() {
                                 {log.nutri_score}
                               </span>
                             )}
+                            {log.source === 'ai_plan' && (
+                              <Badge variant="secondary" className="text-xs">IA</Badge>
+                            )}
                             {isUnhealthy(log) && (
                               <button
                                 onClick={() => getRecommendations(log)}
@@ -537,54 +692,207 @@ export default function NutritionPage() {
               </Button>
             </div>
 
+            {/* Add Note Section */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="font-heading text-base flex items-center gap-2">
+                  <StickyNote className="w-4 h-4" />
+                  Ajouter une note
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Input
+                  type="date"
+                  value={newNote.date || selectedDate}
+                  onChange={(e) => setNewNote({ ...newNote, date: e.target.value })}
+                />
+                <Textarea
+                  placeholder="Écrire une note pour cette date..."
+                  value={newNote.content}
+                  onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                  rows={2}
+                />
+                <Button onClick={handleSaveAgendaNote} size="sm" className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Enregistrer la note
+                </Button>
+              </CardContent>
+            </Card>
+
             {/* Diary Entries */}
             {diary.length > 0 ? (
-              diary.map((day) => (
-                <Card key={day.date}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="font-heading text-base flex items-center justify-between">
-                      <span>
-                        {new Date(day.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })}
-                      </span>
-                      <span className="text-sm font-normal text-muted-foreground">
-                        {Math.round(day.total_calories)} kcal
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {day.meals.map((meal, i) => (
-                        <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
-                          <div className="flex items-center gap-2">
-                            <span>{mealTypes.find(t => t.value === meal.meal_type)?.emoji || '🍽️'}</span>
-                            <span className="text-sm">{meal.food_name}</span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">{meal.calories} kcal</span>
+              diary.map((day) => {
+                const dayNotes = getNotesForDate(day.date);
+                return (
+                  <Card key={day.date}>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="font-heading text-base flex items-center justify-between">
+                        <span>
+                          {new Date(day.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })}
+                        </span>
+                        <span className="text-sm font-normal text-muted-foreground">
+                          {Math.round(day.total_calories)} kcal
+                        </span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Notes for this day */}
+                      {dayNotes.length > 0 && (
+                        <div className="mb-3 space-y-2">
+                          {dayNotes.map((note) => (
+                            <div key={note.note_id} className="flex items-start justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">
+                              <div className="flex items-start gap-2">
+                                <StickyNote className="w-4 h-4 text-primary mt-0.5" />
+                                <p className="text-sm">{note.content}</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => handleDeleteAgendaNote(note.note_id)}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                    <div className="mt-3 pt-3 border-t grid grid-cols-3 gap-2 text-center text-xs">
-                      <div>
-                        <p className="text-muted-foreground">Protéines</p>
-                        <p className="font-medium">{Math.round(day.total_protein)}g</p>
+                      )}
+                      
+                      <div className="space-y-2">
+                        {day.meals.map((meal, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                            <div className="flex items-center gap-2">
+                              <span>{mealTypes.find(t => t.value === meal.meal_type)?.emoji || '🍽️'}</span>
+                              <span className="text-sm">{meal.food_name}</span>
+                              {meal.source === 'ai_plan' && (
+                                <Badge variant="secondary" className="text-xs">IA</Badge>
+                              )}
+                            </div>
+                            <span className="text-xs text-muted-foreground">{meal.calories} kcal</span>
+                          </div>
+                        ))}
                       </div>
-                      <div>
-                        <p className="text-muted-foreground">Glucides</p>
-                        <p className="font-medium">{Math.round(day.total_carbs)}g</p>
+                      <div className="mt-3 pt-3 border-t grid grid-cols-3 gap-2 text-center text-xs">
+                        <div>
+                          <p className="text-muted-foreground">Protéines</p>
+                          <p className="font-medium">{Math.round(day.total_protein)}g</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Glucides</p>
+                          <p className="font-medium">{Math.round(day.total_carbs)}g</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Lipides</p>
+                          <p className="font-medium">{Math.round(day.total_fat)}g</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-muted-foreground">Lipides</p>
-                        <p className="font-medium">{Math.round(day.total_fat)}g</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                );
+              })
             ) : (
               <div className="text-center py-12">
                 <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">Aucun repas ce mois-ci</p>
               </div>
+            )}
+          </TabsContent>
+
+          {/* AI Tab */}
+          <TabsContent value="ai" className="space-y-4 mt-4">
+            {/* AI Meal Plan Generation */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading text-lg flex items-center gap-2">
+                  <Utensils className="w-5 h-5 text-primary" />
+                  Générer des repas IA
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  L'IA génère des repas personnalisés selon votre profil, vos goûts et vos objectifs.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    onClick={() => generateMealPlan('daily')}
+                    className="rounded-full"
+                    variant="outline"
+                  >
+                    <CalendarPlus className="w-4 h-4 mr-2" />
+                    Plan journalier
+                  </Button>
+                  <Button 
+                    onClick={() => generateMealPlan('weekly')}
+                    className="rounded-full"
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Plan hebdomadaire
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* AI Recipes Generation */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading text-lg flex items-center gap-2">
+                  <ChefHat className="w-5 h-5 text-secondary" />
+                  Recettes IA
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Découvrez des recettes simples, économiques et adaptées à vos préférences.
+                </p>
+                <Button 
+                  onClick={generateRecipes}
+                  className="w-full rounded-full shadow-glow-purple bg-secondary hover:bg-secondary/90"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Générer 10 recettes
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Favorite Recipes */}
+            {favoriteRecipes.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-heading text-lg flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-destructive" />
+                    Mes recettes favorites ({favoriteRecipes.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-48">
+                    <div className="space-y-2">
+                      {favoriteRecipes.map((fav) => (
+                        <div 
+                          key={fav.favorite_id}
+                          className="flex items-center justify-between p-3 rounded-xl bg-muted/50"
+                        >
+                          <div>
+                            <p className="font-medium text-sm">{fav.recipe.name}</p>
+                            <div className="flex gap-2 text-xs text-muted-foreground">
+                              <span>{fav.recipe.calories} kcal</span>
+                              <span>•</span>
+                              <span>{fav.recipe.prep_time}</span>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive"
+                            onClick={() => toggleFavoriteRecipe(fav.recipe)}
+                          >
+                            <HeartOff className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
         </Tabs>
@@ -621,7 +929,7 @@ export default function NutritionPage() {
           </DialogHeader>
           {loadingRecommend ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : recommendations ? (
             <div className="space-y-4">
@@ -664,6 +972,255 @@ export default function NutritionPage() {
               )}
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Meal Plan Dialog */}
+      <Dialog open={aiMealDialogOpen} onOpenChange={setAiMealDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Utensils className="w-5 h-5 text-primary" />
+              Plan repas {mealPlanType === 'daily' ? 'du jour' : 'de la semaine'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {loadingMealPlan ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+              <p className="text-muted-foreground">Génération en cours...</p>
+              <p className="text-xs text-muted-foreground">L'IA prépare vos repas personnalisés</p>
+            </div>
+          ) : aiMealPlan?.meal_plan ? (
+            <ScrollArea className="max-h-[60vh]">
+              <div className="space-y-4 pr-4">
+                {mealPlanType === 'daily' && aiMealPlan.meal_plan.meals ? (
+                  // Daily plan
+                  <>
+                    {['breakfast', 'lunch', 'dinner'].map((mealKey) => {
+                      const meal = aiMealPlan.meal_plan.meals[mealKey];
+                      if (!meal) return null;
+                      const mealType = mealTypes.find(t => t.value === mealKey);
+                      return (
+                        <Card key={mealKey}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span>{mealType?.emoji}</span>
+                                <span className="font-medium">{mealType?.label}</span>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => addMealToDiary(meal, mealKey)}
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                Ajouter
+                              </Button>
+                            </div>
+                            <p className="font-semibold">{meal.name}</p>
+                            <div className="flex gap-2 text-xs text-muted-foreground mt-1">
+                              <span>{meal.calories} kcal</span>
+                              <span>•</span>
+                              <span>P: {meal.protein}g</span>
+                              <span>•</span>
+                              <span>G: {meal.carbs}g</span>
+                              <span>•</span>
+                              <span>L: {meal.fat}g</span>
+                            </div>
+                            {meal.recipe && (
+                              <p className="text-xs text-muted-foreground mt-2 italic">{meal.recipe}</p>
+                            )}
+                            {meal.prep_time && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                <Clock className="w-3 h-3" />
+                                {meal.prep_time}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                    {aiMealPlan.meal_plan.shopping_list && (
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">🛒 Liste de courses</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex flex-wrap gap-2">
+                            {aiMealPlan.meal_plan.shopping_list.map((item, i) => (
+                              <Badge key={i} variant="secondary">{item}</Badge>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
+                ) : aiMealPlan.meal_plan.days ? (
+                  // Weekly plan
+                  aiMealPlan.meal_plan.days.map((day, dayIndex) => (
+                    <Card key={dayIndex}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">{day.day}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {['breakfast', 'lunch', 'dinner'].map((mealKey) => {
+                          const meal = day.meals?.[mealKey];
+                          if (!meal) return null;
+                          const mealType = mealTypes.find(t => t.value === mealKey);
+                          return (
+                            <div key={mealKey} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm">{mealType?.emoji}</span>
+                                  <span className="text-sm font-medium">{meal.name}</span>
+                                </div>
+                                <span className="text-xs text-muted-foreground">{meal.calories} kcal</span>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => addMealToDiary(meal, mealKey)}
+                              >
+                                <Plus className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                        <div className="text-xs text-muted-foreground text-right">
+                          Total: {day.total_calories} kcal
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : null}
+              </div>
+            </ScrollArea>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* Recipes Dialog */}
+      <Dialog open={recipesDialogOpen} onOpenChange={setRecipesDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ChefHat className="w-5 h-5 text-secondary" />
+              Recettes personnalisées
+            </DialogTitle>
+          </DialogHeader>
+          
+          {loadingRecipes ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="w-10 h-10 animate-spin text-secondary mb-4" />
+              <p className="text-muted-foreground">Génération en cours...</p>
+              <p className="text-xs text-muted-foreground">L'IA prépare vos recettes</p>
+            </div>
+          ) : (
+            <ScrollArea className="max-h-[60vh]">
+              <div className="space-y-3 pr-4">
+                {recipes.map((recipe, i) => {
+                  const isFavorite = favoriteRecipes.some(f => f.recipe.name === recipe.name);
+                  return (
+                    <Card 
+                      key={i} 
+                      className="cursor-pointer hover:border-secondary/50 transition-colors"
+                      onClick={() => setSelectedRecipe(selectedRecipe?.id === recipe.id ? null : recipe)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold">{recipe.name}</p>
+                              {recipe.nutri_score && (
+                                <span className={`w-5 h-5 rounded text-white text-xs flex items-center justify-center font-bold ${getNutriScoreColor(recipe.nutri_score)}`}>
+                                  {recipe.nutri_score}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-2 text-xs text-muted-foreground mt-1">
+                              <span>{recipe.calories} kcal</span>
+                              <span>•</span>
+                              <span>{recipe.prep_time}</span>
+                              <span>•</span>
+                              <span>{recipe.difficulty}</span>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={isFavorite ? "text-destructive" : ""}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavoriteRecipe(recipe);
+                            }}
+                          >
+                            {isFavorite ? <Heart className="w-5 h-5 fill-current" /> : <Heart className="w-5 h-5" />}
+                          </Button>
+                        </div>
+                        
+                        {/* Expanded recipe details */}
+                        {selectedRecipe?.id === recipe.id && (
+                          <div className="mt-4 pt-4 border-t space-y-3">
+                            <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                              <div className="p-2 rounded bg-muted">
+                                <p className="font-bold">{recipe.protein}g</p>
+                                <p className="text-muted-foreground">Protéines</p>
+                              </div>
+                              <div className="p-2 rounded bg-muted">
+                                <p className="font-bold">{recipe.carbs}g</p>
+                                <p className="text-muted-foreground">Glucides</p>
+                              </div>
+                              <div className="p-2 rounded bg-muted">
+                                <p className="font-bold">{recipe.fat}g</p>
+                                <p className="text-muted-foreground">Lipides</p>
+                              </div>
+                              <div className="p-2 rounded bg-muted">
+                                <p className="font-bold">{recipe.servings}</p>
+                                <p className="text-muted-foreground">Portions</p>
+                              </div>
+                            </div>
+                            
+                            {recipe.ingredients && (
+                              <div>
+                                <p className="font-medium text-sm mb-2">📝 Ingrédients</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {recipe.ingredients.map((ing, j) => (
+                                    <Badge key={j} variant="outline" className="text-xs">
+                                      {ing.quantity} {ing.item}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {recipe.steps && (
+                              <div>
+                                <p className="font-medium text-sm mb-2">👨‍🍳 Préparation</p>
+                                <ol className="space-y-1">
+                                  {recipe.steps.map((step, j) => (
+                                    <li key={j} className="text-xs text-muted-foreground">
+                                      {step}
+                                    </li>
+                                  ))}
+                                </ol>
+                              </div>
+                            )}
+                            
+                            {recipe.tips && (
+                              <div className="p-2 rounded bg-primary/5 border border-primary/20">
+                                <p className="text-xs">💡 {recipe.tips}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          )}
         </DialogContent>
       </Dialog>
     </div>
