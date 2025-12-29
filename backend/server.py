@@ -625,7 +625,7 @@ Nutri-Score guidelines:
 
 @api_router.post("/food/recommend-alternatives")
 async def recommend_alternatives(entry: dict, user: dict = Depends(get_current_user)):
-    """Get AI recommendations for healthier alternatives"""
+    """Get AI recommendations for healthier alternatives - IN FRENCH"""
     from emergentintegrations.llm.chat import LlmChat, UserMessage
     import json
     
@@ -638,38 +638,39 @@ async def recommend_alternatives(entry: dict, user: dict = Depends(get_current_u
         likes = profile.get("food_likes", [])
         dislikes = profile.get("food_dislikes", [])
         if conditions:
-            health_context += f"Health conditions: {', '.join(conditions)}. "
+            health_context += f"Conditions de santé: {', '.join(conditions)}. "
         if preferences:
-            health_context += f"Dietary preferences: {', '.join(preferences)}. "
+            health_context += f"Préférences alimentaires: {', '.join(preferences)}. "
         if likes:
-            health_context += f"Food likes: {', '.join(likes)}. "
+            health_context += f"Aliments aimés: {', '.join(likes)}. "
         if dislikes:
-            health_context += f"Food dislikes (AVOID): {', '.join(dislikes)}. "
+            health_context += f"Aliments détestés (À ÉVITER): {', '.join(dislikes)}. "
     
     try:
         chat = LlmChat(
             api_key=EMERGENT_LLM_KEY,
             session_id=f"food_recommend_{uuid.uuid4().hex[:8]}",
-            system_message=f"""You are a nutrition expert. Suggest healthier alternatives for foods.
+            system_message=f"""Tu es un expert en nutrition français. Suggère des alternatives plus saines.
+IMPORTANT: Réponds UNIQUEMENT en français.
 {health_context}
 
-Respond in JSON:
+Réponds en JSON:
 {{
-    "analysis": "Brief analysis of why this food might not be ideal",
+    "analysis": "Analyse brève de pourquoi cet aliment n'est pas idéal",
     "alternatives": [
-        {{"name": "Alternative 1", "calories": number, "benefit": "Why it's better"}},
-        {{"name": "Alternative 2", "calories": number, "benefit": "Why it's better"}},
-        {{"name": "Alternative 3", "calories": number, "benefit": "Why it's better"}}
+        {{"name": "Alternative 1", "calories": number, "benefit": "Pourquoi c'est mieux"}},
+        {{"name": "Alternative 2", "calories": number, "benefit": "Pourquoi c'est mieux"}},
+        {{"name": "Alternative 3", "calories": number, "benefit": "Pourquoi c'est mieux"}}
     ],
-    "tips": ["Tip for healthier eating"]
+    "tips": ["Conseil pour manger plus sainement"]
 }}"""
-        ).with_model("openai", "gpt-5.2")
+        ).with_model("openai", "gpt-4o")
         
-        prompt = f"""The user ate: {entry.get('food_name')}
-Nutritional info: {entry.get('calories')} calories, {entry.get('protein')}g protein, {entry.get('carbs')}g carbs, {entry.get('fat')}g fat
-Nutri-Score: {entry.get('nutri_score', 'Unknown')}
+        prompt = f"""L'utilisateur a mangé: {entry.get('food_name')}
+Infos nutritionnelles: {entry.get('calories')} calories, {entry.get('protein')}g protéines, {entry.get('carbs')}g glucides, {entry.get('fat')}g lipides
+Nutri-Score: {entry.get('nutri_score', 'Inconnu')}
 
-Suggest 3 healthier alternatives that the user might enjoy based on their preferences."""
+Suggère 3 alternatives plus saines que l'utilisateur pourrait apprécier. RÉPONDS EN FRANÇAIS."""
         
         response = await chat.send_message(UserMessage(text=prompt))
         
