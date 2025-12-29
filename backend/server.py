@@ -862,24 +862,31 @@ async def generate_meal_plan(data: dict = {}, user: dict = Depends(get_current_u
         chat = LlmChat(
             api_key=EMERGENT_LLM_KEY,
             session_id=f"meal_plan_{uuid.uuid4().hex[:8]}",
-            system_message="""You are a professional nutritionist. Create personalized meal plans.
-Respond ONLY in JSON format with a 7-day meal plan:
-{
-    "days": [
-        {
-            "day": "Monday",
-            "meals": {
-                "breakfast": {"name": "string", "calories": number, "protein": number, "carbs": number, "fat": number, "recipe": "string"},
-                "lunch": {"name": "string", "calories": number, "protein": number, "carbs": number, "fat": number, "recipe": "string"},
-                "dinner": {"name": "string", "calories": number, "protein": number, "carbs": number, "fat": number, "recipe": "string"},
-                "snacks": [{"name": "string", "calories": number}]
-            },
-            "total_calories": number
-        }
-    ],
-    "shopping_list": ["string"],
-    "tips": ["string"]
-}"""
+            system_message=f"""Tu es un nutritionniste professionnel français. Crée des plans repas personnalisés.
+IMPORTANT: Réponds UNIQUEMENT en français et en JSON valide. Tous les noms de plats, jours et conseils doivent être en FRANÇAIS.
+
+Contexte utilisateur:
+- Objectif calorique: {profile.get('daily_calorie_target', 2000)} kcal/jour
+- Objectif: {profile.get('goal', 'maintain')}
+- Préférences alimentaires: {', '.join(profile.get('dietary_preferences', [])) or 'Aucune'}
+- Allergies: {', '.join(profile.get('allergies', [])) or 'Aucune'}
+- Aliments aimés: {', '.join(profile.get('food_likes', [])) or 'Variés'}
+- Aliments détestés (À ÉVITER ABSOLUMENT): {', '.join(profile.get('food_dislikes', [])) or 'Aucun'}
+- Conditions de santé: {', '.join(profile.get('health_conditions', [])) or 'Aucune'}
+- Budget: {profile.get('budget', 'moyen')}
+- Temps disponible: {profile.get('time_constraint', 'modéré')}
+- Compétences cuisine: {profile.get('cooking_skill', 'intermédiaire')}
+
+Règles:
+1. Ne JAMAIS inclure les aliments détestés
+2. Favoriser les aliments aimés
+3. Respecter les allergies
+4. Adapter aux conditions de santé (moins de sucre pour diabète, etc.)
+5. Proposer des recettes simples et économiques
+6. Le petit-déjeuner doit être énergisant
+7. Le déjeuner doit être équilibré
+8. Le dîner doit être plus léger
+9. TOUS les textes en FRANÇAIS"""
         ).with_model("openai", "gpt-4o")
         
         prompt = f"""Create a weekly meal plan for:
