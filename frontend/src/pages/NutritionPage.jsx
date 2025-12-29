@@ -61,6 +61,7 @@ export default function NutritionPage() {
   const [recommendDialogOpen, setRecommendDialogOpen] = useState(false);
   const [aiMealDialogOpen, setAiMealDialogOpen] = useState(false);
   const [recipesDialogOpen, setRecipesDialogOpen] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [recommendations, setRecommendations] = useState(null);
   const [loadingRecommend, setLoadingRecommend] = useState(false);
@@ -71,12 +72,16 @@ export default function NutritionPage() {
   const [aiMealPlan, setAiMealPlan] = useState(null);
   const [loadingMealPlan, setLoadingMealPlan] = useState(false);
   const [mealPlanType, setMealPlanType] = useState('daily');
+  const [mealToAdd, setMealToAdd] = useState(null);
   
   // AI Recipes state
   const [recipes, setRecipes] = useState([]);
   const [loadingRecipes, setLoadingRecipes] = useState(false);
   const [favoriteRecipes, setFavoriteRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  
+  // Shopping list state
+  const [shoppingList, setShoppingList] = useState([]);
   
   // Note state
   const [newNote, setNewNote] = useState({ date: '', content: '' });
@@ -95,6 +100,7 @@ export default function NutritionPage() {
   useEffect(() => {
     fetchData();
     fetchFavoriteRecipes();
+    fetchShoppingList();
   }, []);
 
   useEffect(() => {
