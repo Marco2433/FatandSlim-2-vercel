@@ -626,16 +626,18 @@ async def get_meal_plans(user: dict = Depends(get_current_user)):
 async def generate_workout(user: dict = Depends(get_current_user)):
     """Generate AI-powered workout plan"""
     from emergentintegrations.llm.chat import LlmChat, UserMessage
+    import json
     
     profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
     if not profile:
         raise HTTPException(status_code=400, detail="Complete onboarding first")
     
-    chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
-        session_id=f"workout_{uuid.uuid4().hex[:8]}",
-        system_message="""You are a professional fitness coach. Create personalized workout plans.
-Respond in JSON format:
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"workout_{uuid.uuid4().hex[:8]}",
+            system_message="""You are a professional fitness coach. Create personalized workout plans.
+Respond ONLY in JSON format:
 {
     "program_name": "string",
     "duration_weeks": number,
@@ -662,25 +664,46 @@ Respond in JSON format:
     "tips": ["string"],
     "equipment_needed": ["string"]
 }"""
-    ).with_model("openai", "gpt-5.2")
-    
-    prompt = f"""Create a weekly workout program for:
+        ).with_model("openai", "gpt-5.2")
+        
+        prompt = f"""Create a weekly workout program for:
 - Fitness level: {profile.get('fitness_level', 'beginner')}
 - Goal: {profile.get('goal', 'general_fitness')}
 - Activity level: {profile.get('activity_level', 'moderate')}
 - Weight: {profile.get('weight', 70)} kg
 
-Create effective, progressive workouts that can be done at home or gym."""
-    
-    response = await chat.send_message(UserMessage(text=prompt))
-    
-    import json
-    try:
+Create effective, progressive workouts that can be done at home or gym. Return JSON only."""
+        
+        response = await chat.send_message(UserMessage(text=prompt))
+        
         json_start = response.find('{')
         json_end = response.rfind('}') + 1
         workout_plan = json.loads(response[json_start:json_end])
-    except:
-        workout_plan = {"error": "Failed to generate workout", "raw": response[:500]}
+    except Exception as e:
+        logger.error(f"AI workout generation error: {e}")
+        # Return fallback workout plan
+        workout_plan = {
+            "program_name": "Programme Débutant",
+            "duration_weeks": 4,
+            "days_per_week": 3,
+            "workouts": [
+                {
+                    "day": "Jour 1",
+                    "focus": "Full Body",
+                    "duration_minutes": 30,
+                    "calories_burn_estimate": 200,
+                    "exercises": [
+                        {"name": "Squats", "sets": 3, "reps": "12", "rest_seconds": 60, "instructions": "Descendre jusqu'aux cuisses parallèles"},
+                        {"name": "Pompes", "sets": 3, "reps": "10", "rest_seconds": 60, "instructions": "Gardez le dos droit"},
+                        {"name": "Planche", "sets": 3, "reps": "30 sec", "rest_seconds": 45, "instructions": "Maintenez la position"}
+                    ],
+                    "warmup": "5 min de marche sur place",
+                    "cooldown": "5 min d'étirements"
+                }
+            ],
+            "tips": ["Échauffez-vous toujours", "Hydratez-vous bien", "Progressez à votre rythme"],
+            "equipment_needed": ["Aucun équipement requis"]
+        }
     
     plan_doc = {
         "program_id": f"workout_{uuid.uuid4().hex[:8]}",
