@@ -1339,12 +1339,22 @@ async def generate_recipes(data: dict = {}, user: dict = Depends(get_current_use
     from emergentintegrations.llm.chat import LlmChat, UserMessage
     import json
     
+    # ===== AI LIMIT CHECK =====
+    await enforce_ai_limit(user["user_id"], "/recipes/generate")
+    
     profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
     if not profile:
         raise HTTPException(status_code=400, detail="Complete onboarding first")
     
     count = data.get("count", 10)
     category = data.get("category", "all")  # all, breakfast, lunch, dinner, snack
+    user_context_hash = get_user_context_hash(profile)
+    
+    # ===== CHECK CACHE FIRST =====
+    prompt_for_cache = f"recipes {count} {category} goal:{profile.get('goal', '')}"
+    cached = await get_cached_ai_response(prompt_for_cache, "recipes-generate", user_context_hash)
+    if cached:
+        return cached
     
     try:
         chat = LlmChat(
@@ -1411,6 +1421,12 @@ Réponds UNIQUEMENT avec ce JSON:
         json_end = response.rfind('}') + 1
         result = json.loads(response[json_start:json_end])
         
+        # ===== CACHE THE RESULT & INCREMENT USAGE =====
+        await store_cached_ai_response(prompt_for_cache, result, "recipes-generate", user_context_hash)
+        await increment_ai_usage(user["user_id"], "/recipes/generate")
+        
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"AI recipes error: {e}")
         result = {
