@@ -795,13 +795,23 @@ async def get_food_logs(date: Optional[str] = None, user: dict = Depends(get_cur
 
 @api_router.get("/food/daily-summary")
 async def get_daily_summary(date: Optional[str] = None, user: dict = Depends(get_current_user)):
+    """Get daily nutrition summary - resets at midnight each day"""
     if not date:
+        # Use UTC date for consistency
         date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     
+    # Query by date field (more reliable than logged_at prefix)
     logs = await db.food_logs.find(
-        {"user_id": user["user_id"], "logged_at": {"$regex": f"^{date}"}},
+        {"user_id": user["user_id"], "date": date},
         {"_id": 0}
     ).to_list(100)
+    
+    # Fallback: also check logged_at for backward compatibility
+    if not logs:
+        logs = await db.food_logs.find(
+            {"user_id": user["user_id"], "logged_at": {"$regex": f"^{date}"}},
+            {"_id": 0}
+        ).to_list(100)
     
     profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
     
