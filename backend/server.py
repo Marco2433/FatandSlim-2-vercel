@@ -2627,6 +2627,37 @@ async def get_pwa_screenshot_narrow():
         return FileResponse(path, media_type="image/png")
     raise HTTPException(status_code=404, detail="Screenshot not found")
 
+# ==================== ASSETLINKS FOR TWA (Android App Links) ====================
+
+@app.get("/.well-known/assetlinks.json")
+async def get_assetlinks():
+    """Serve assetlinks.json for Android TWA verification"""
+    assetlinks_path = FRONTEND_PUBLIC_DIR / ".well-known" / "assetlinks.json"
+    if assetlinks_path.exists():
+        return FileResponse(
+            assetlinks_path, 
+            media_type="application/json",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
+    # Fallback if file doesn't exist
+    return JSONResponse(
+        content=[{
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": "com.fatandslim.app",
+                "sha256_cert_fingerprints": ["REMPLACER_PAR_VOTRE_SHA256_GOOGLE_PLAY"]
+            }
+        }],
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate"
+        }
+    )
+
 # ==================== USER STATS & BADGES ====================
 
 @api_router.get("/user/stats")
