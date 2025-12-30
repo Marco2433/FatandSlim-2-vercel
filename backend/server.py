@@ -699,15 +699,47 @@ Suggère 3 alternatives plus saines que l'utilisateur pourrait apprécier. RÉPO
 
 @api_router.post("/food/log")
 async def log_food(entry: FoodLogEntry, user: dict = Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
+    date_str = now.strftime("%Y-%m-%d")
+    time_str = now.strftime("%H:%M")
+    
     log_doc = {
         "entry_id": f"food_{uuid.uuid4().hex[:8]}",
         "user_id": user["user_id"],
         **entry.model_dump(),
-        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        "logged_at": datetime.now(timezone.utc).isoformat()
+        "date": date_str,
+        "time": time_str,
+        "logged_at": now.isoformat()
     }
     await db.food_logs.insert_one(log_doc)
-    return {"message": "Food logged", "entry_id": log_doc["entry_id"]}
+    
+    # Also add to agenda for tracking
+    meal_type_labels = {
+        "breakfast": "Petit-déjeuner",
+        "lunch": "Déjeuner",
+        "dinner": "Dîner",
+        "snack": "Collation"
+    }
+    meal_label = meal_type_labels.get(entry.meal_type, "Repas")
+    
+    agenda_note = {
+        "note_id": f"meal_{log_doc['entry_id']}",
+        "user_id": user["user_id"],
+        "date": date_str,
+        "content": f"🍽️ {meal_label} à {time_str}: {entry.food_name} ({entry.calories} kcal)",
+        "type": "meal_log",
+        "food_entry_id": log_doc["entry_id"],
+        "created_at": now.isoformat()
+    }
+    
+    await db.agenda_notes.insert_one(agenda_note)
+    
+    return {
+        "message": "Food logged", 
+        "entry_id": log_doc["entry_id"],
+        "date": date_str,
+        "time": time_str
+    }
 
 @api_router.put("/food/log/{entry_id}/note")
 async def update_food_note(entry_id: str, data: dict, user: dict = Depends(get_current_user)):
