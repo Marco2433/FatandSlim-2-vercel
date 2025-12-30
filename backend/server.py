@@ -2177,7 +2177,12 @@ async def award_video_badge(data: dict, user: dict = Depends(get_current_user)):
 @api_router.post("/workouts/coach/generate")
 async def generate_coach_program(config: dict, user: dict = Depends(get_current_user)):
     """Generate personalized workout program using AI"""
+    
+    # ===== AI LIMIT CHECK =====
+    await enforce_ai_limit(user["user_id"], "/workouts/coach/generate")
+    
     profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    user_context_hash = get_user_context_hash(profile)
     
     duration = config.get("duration", "month")
     time_of_day = config.get("timeOfDay", "morning")
@@ -2198,6 +2203,21 @@ async def generate_coach_program(config: dict, user: dict = Depends(get_current_
     }
     
     weeks = duration_weeks.get(duration, 4)
+    
+    # ===== CHECK CACHE FIRST =====
+    prompt_for_cache = f"coach program {duration} {' '.join(body_parts)} {equipment} {daily_duration}min"
+    cached = await get_cached_ai_response(prompt_for_cache, "coach-generate", user_context_hash)
+    if cached:
+        program_doc = {
+            "program_id": f"prog_{uuid.uuid4().hex[:8]}",
+            "user_id": user["user_id"],
+            "config": config,
+            "workout_plan": cached,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "from_cache": True
+        }
+        await db.workout_programs.insert_one(program_doc)
+        return cached
     
     # Build AI prompt
     prompt = f"""Génère un programme d'entraînement personnalisé en français.
@@ -2256,13 +2276,18 @@ Format JSON attendu:
         )
         
         # Parse JSON from response
-        import re
         json_match = re.search(r'\{[\s\S]*\}', response.message)
         if json_match:
             program = json.loads(json_match.group())
         else:
             raise ValueError("Could not parse program JSON")
+        
+        # ===== CACHE THE RESULT & INCREMENT USAGE =====
+        await store_cached_ai_response(prompt_for_cache, program, "coach-generate", user_context_hash)
+        await increment_ai_usage(user["user_id"], "/workouts/coach/generate")
             
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"AI generation error: {e}")
         # Fallback to basic program
