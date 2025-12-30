@@ -717,11 +717,17 @@ async def analyze_food(file: UploadFile = File(...), user: dict = Depends(get_cu
     from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
     import json
     
+    # ===== AI LIMIT CHECK =====
+    await enforce_ai_limit(user["user_id"], "/food/analyze")
+    
     # Get user profile for personalized analysis
     profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
     
     contents = await file.read()
     image_base64 = base64.b64encode(contents).decode()
+    
+    # For image analysis, we can't cache effectively (images are unique)
+    # So we just count the usage but don't use cache
     
     # Build context from user profile
     health_context = ""
