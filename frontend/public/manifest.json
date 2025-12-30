@@ -2,20 +2,24 @@
   "name": "Fat & Slim",
   "short_name": "Fat&Slim",
   "description": "Application de coaching sportif et nutritionnel avec IA - Perdez du poids, mangez mieux, améliorez votre forme",
-  "start_url": "/",
+  "start_url": "/?utm_source=pwa",
   "scope": "/",
   "display": "fullscreen",
-  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "display_override": ["fullscreen", "standalone"],
   "background_color": "#000000",
   "theme_color": "#F472B6",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "lang": "fr",
   "dir": "ltr",
-  "id": "com.fatandslim.app",
-  "categories": ["health", "fitness", "lifestyle"],
+  "id": "/",
+  "categories": ["health", "fitness", "lifestyle", "food"],
+  "iarc_rating_id": "",
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
   "handle_links": "preferred",
   "launch_handler": {
-    "client_mode": "navigate-existing"
+    "client_mode": ["navigate-existing", "auto"]
   },
   "icons": [
     {
@@ -37,14 +41,38 @@
       "purpose": "any"
     },
     {
+      "src": "/api/pwa/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/api/pwa/icon-144x144.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "any"
     },
     {
+      "src": "/api/pwa/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/api/pwa/icon-192x192.png",
       "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/api/pwa/icon-256x256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/api/pwa/icon-384x384.png",
+      "sizes": "384x384",
       "type": "image/png",
       "purpose": "any"
     },
@@ -67,19 +95,42 @@
       "purpose": "maskable"
     }
   ],
+  "screenshots": [
+    {
+      "src": "/api/pwa/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Dashboard Fat & Slim"
+    },
+    {
+      "src": "/api/pwa/screenshot-narrow.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Application Fat & Slim"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Scanner un aliment",
       "short_name": "Scanner",
       "description": "Analyser un aliment avec l'IA",
-      "url": "/scanner",
+      "url": "/scanner?utm_source=shortcut",
       "icons": [{ "src": "/api/pwa/icon-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "Mon suivi",
       "short_name": "Nutrition",
       "description": "Voir mon journal alimentaire",
-      "url": "/nutrition",
+      "url": "/nutrition?utm_source=shortcut",
+      "icons": [{ "src": "/api/pwa/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Recettes",
+      "short_name": "Recettes",
+      "description": "Découvrir des recettes saines",
+      "url": "/nutrition?tab=catalog&utm_source=shortcut",
       "icons": [{ "src": "/api/pwa/icon-96x96.png", "sizes": "96x96" }]
     }
   ],
