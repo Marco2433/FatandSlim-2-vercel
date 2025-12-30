@@ -320,7 +320,12 @@ export default function WorkoutsPage() {
       toast.success('Programme généré avec succès !');
     } catch (error) {
       console.error('Error generating program:', error);
-      toast.error('Erreur lors de la génération du programme');
+      if (error.response?.status === 429) {
+        const detail = error.response.data?.detail;
+        toast.error(detail?.message || 'Limite quotidienne IA atteinte. Revenez demain !');
+      } else {
+        toast.error('Erreur lors de la génération du programme');
+      }
     } finally {
       setCoachLoading(false);
     }
