@@ -3724,7 +3724,7 @@ async def send_friend_request(data: dict, user: dict = Depends(get_current_user)
     await db.friendships.insert_one(friendship)
     
     # Create notification
-    await create_notification(friend_id, "friend_request", f"{user.get('name', 'Quelqu\'un')} veut être votre ami !", user["user_id"])
+    await create_notification(friend_id, "friend_request", f"{user.get('name', 'Quelqu'un')} veut être votre ami !", user["user_id"])
     
     return {"message": "Friend request sent", "friendship_id": friendship["friendship_id"]}
 
@@ -3744,7 +3744,7 @@ async def accept_friend_request(data: dict, user: dict = Depends(get_current_use
     # Get the friendship to notify the other user
     friendship = await db.friendships.find_one({"friendship_id": friendship_id}, {"_id": 0})
     if friendship:
-        await create_notification(friendship["user_id"], "friend_accepted", f"{user.get('name', 'Quelqu\'un')} a accepté votre demande d'ami !", user["user_id"])
+        await create_notification(friendship["user_id"], "friend_accepted", f"{user.get('name', 'Quelqu'un')} a accepté votre demande d'ami !", user["user_id"])
     
     return {"message": "Friend request accepted"}
 
@@ -3935,7 +3935,7 @@ async def like_activity(activity_id: str, user: dict = Depends(get_current_user)
         # Create notification for post owner
         activity = await db.social_activities.find_one({"activity_id": activity_id}, {"_id": 0})
         if activity and activity["user_id"] != user["user_id"]:
-            await create_notification(activity["user_id"], "like", f"{user.get('name', 'Quelqu\'un')} a aimé votre publication", user["user_id"])
+            await create_notification(activity["user_id"], "like", f"{user.get('name', 'Quelqu'un')} a aimé votre publication", user["user_id"])
         
         return {"message": "Liked", "liked": True}
 
@@ -4022,7 +4022,7 @@ async def send_message(data: dict, user: dict = Depends(get_current_user)):
     await db.messages.insert_one(message)
     
     # Create notification
-    await create_notification(recipient_id, "message", f"Nouveau message de {user.get('name', 'Quelqu\'un')}", user["user_id"])
+    await create_notification(recipient_id, "message", f"Nouveau message de {user.get('name', 'Quelqu'un')}", user["user_id"])
     
     return {"message": "Message sent", "data": message}
 
@@ -4121,7 +4121,7 @@ async def create_friend_challenge(data: dict, user: dict = Depends(get_current_u
     }
     
     await db.friend_challenges.insert_one(challenge)
-    await create_notification(friend_id, "challenge", f"{user.get('name', 'Quelqu\'un')} vous lance un défi !", user["user_id"])
+    await create_notification(friend_id, "challenge", f"{user.get('name', 'Quelqu'un')} vous lance un défi !", user["user_id"])
     
     return {"message": "Challenge created", "challenge": challenge}
 
