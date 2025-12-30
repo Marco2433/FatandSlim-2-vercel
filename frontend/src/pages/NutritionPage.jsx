@@ -96,6 +96,7 @@ export default function NutritionPage() {
   // Catalog state
   const [catalogRecipes, setCatalogRecipes] = useState([]);
   const [catalogFilter, setCatalogFilter] = useState('all');
+  const [catalogDishType, setCatalogDishType] = useState('all');
   const [catalogStats, setCatalogStats] = useState(null);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   
