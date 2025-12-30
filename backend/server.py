@@ -1785,6 +1785,10 @@ async def get_bmi_history(user: dict = Depends(get_current_user)):
         {"_id": 0}
     ).sort("date", 1).to_list(365)
     
+    height = profile.get("height", 170) if profile else 170
+    weight = profile.get("weight", 70) if profile else 70
+    height_m = height / 100
+    
     # If no BMI history, create from weight history
     if not history:
         weight_history = await db.weight_history.find(
@@ -1792,7 +1796,6 @@ async def get_bmi_history(user: dict = Depends(get_current_user)):
             {"_id": 0}
         ).sort("date", 1).to_list(365)
         
-        height_m = (profile.get("height", 170) if profile else 170) / 100
         history = [
             {
                 "date": w.get("date"),
@@ -1802,9 +1805,14 @@ async def get_bmi_history(user: dict = Depends(get_current_user)):
         ]
     
     ideal_bmi = profile.get("ideal_bmi", 22.0) if profile else 22.0
-    current_bmi = profile.get("bmi", 0) if profile else 0
+    current_bmi = profile.get("bmi", round(weight / (height_m ** 2), 1)) if profile else round(weight / (height_m ** 2), 1)
     
     return {
+        # Frontend expected format
+        "bmi": current_bmi,
+        "height": height,
+        "weight": weight,
+        # Additional data
         "history": history,
         "current_bmi": current_bmi,
         "ideal_bmi": ideal_bmi,
