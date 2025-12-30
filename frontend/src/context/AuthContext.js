@@ -56,11 +56,15 @@ export const AuthProvider = ({ children }) => {
         if (error.response?.status === 401 || error.response?.status === 403) {
           console.warn('Auth error detected:', error.response.status);
           
-          // Don't logout if we're on login/register page or already logging out
+          // Don't logout if we're on public pages or already logging out
           const currentPath = window.location.pathname;
-          const isAuthPage = currentPath === '/login' || currentPath === '/register' || currentPath === '/';
+          const isPublicPage = currentPath === '/login' || 
+                               currentPath === '/register' || 
+                               currentPath === '/' ||
+                               currentPath === '/privacy' ||
+                               currentPath === '/privacy-policy';
           
-          if (!isAuthPage && !logoutInProgress.current) {
+          if (!isPublicPage && !logoutInProgress.current) {
             console.log('Session expired or invalid, forcing logout');
             forceLogout();
           }
