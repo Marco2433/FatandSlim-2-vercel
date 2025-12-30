@@ -815,9 +815,14 @@ Nutri-Score guidelines:
             result.setdefault("ingredients_detected", [])
             result.setdefault("is_healthy", True)
             result.setdefault("warnings", [])
+            
+            # ===== INCREMENT AI USAGE AFTER SUCCESSFUL CALL =====
+            await increment_ai_usage(user["user_id"], "/food/analyze")
         else:
             raise ValueError("No JSON found in response")
             
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions (like 429 limit exceeded)
     except Exception as e:
         logger.error(f"AI food analysis error: {str(e)}")
         result = {
