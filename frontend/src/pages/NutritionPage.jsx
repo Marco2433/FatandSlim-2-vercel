@@ -184,12 +184,15 @@ export default function NutritionPage() {
     }
   };
 
-  const fetchCatalogRecipes = async (filter = catalogFilter) => {
+  const fetchCatalogRecipes = async (filter = catalogFilter, dishType = catalogDishType) => {
     setLoadingCatalog(true);
     try {
       const params = new URLSearchParams({ limit: '50' });
       if (filter && filter !== 'all') {
         params.append('nutri_score', filter);
+      }
+      if (dishType && dishType !== 'all') {
+        params.append('dish_type', dishType);
       }
       // This endpoint doesn't require auth
       const response = await axios.get(`${API}/recipes/all?${params}`);
