@@ -698,38 +698,121 @@ export default function ProgressPage() {
 
           {/* Badges Tab */}
           <TabsContent value="badges" className="space-y-4">
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-3">
+              <Card className="p-4 text-center">
+                <p className="text-2xl font-bold text-primary">{badges?.total_earned || 0}</p>
+                <p className="text-xs text-muted-foreground">Obtenus</p>
+              </Card>
+              <Card className="p-4 text-center">
+                <p className="text-2xl font-bold text-muted-foreground">{(badges?.total_available || 0) - (badges?.total_earned || 0)}</p>
+                <p className="text-xs text-muted-foreground">À débloquer</p>
+              </Card>
+              <Card className="p-4 text-center">
+                <p className="text-2xl font-bold text-accent">{badges?.total_available || 0}</p>
+                <p className="text-xs text-muted-foreground">Total</p>
+              </Card>
+            </div>
+
+            {/* Next badges to earn */}
+            {badges?.next_badges?.length > 0 && (
+              <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-secondary/5">
+                <CardHeader className="pb-2">
+                  <CardTitle className="font-heading text-base flex items-center gap-2">
+                    🎯 Prochains badges à débloquer
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {badges.next_badges.map((badge) => (
+                    <div key={badge.id} className="flex items-center gap-3 p-3 rounded-lg bg-background/50">
+                      <span className="text-2xl">{badge.icon}</span>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{badge.name}</p>
+                        <p className="text-xs text-muted-foreground">{badge.description}</p>
+                        <div className="mt-1.5">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                            <span>{badge.progress}/{badge.target}</span>
+                            <span>{badge.progress_percent}%</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all"
+                              style={{ width: `${badge.progress_percent}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Earned Badges */}
             <Card>
               <CardHeader>
                 <CardTitle className="font-heading text-lg flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-accent" />
-                  Mes badges
+                  Badges obtenus ({badges?.earned?.length || 0})
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {badges?.badges ? (
+                {badges?.earned?.length > 0 ? (
                   <div className="grid grid-cols-2 gap-3">
-                    {badges.badges.map((badge) => (
+                    {badges.earned.map((badge) => (
                       <div 
                         key={badge.id}
-                        className={`p-4 rounded-xl border text-center transition-all ${
-                          badge.earned 
-                            ? 'bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/30' 
-                            : 'bg-muted/30 border-border opacity-50'
-                        }`}
+                        className="p-4 rounded-xl border text-center bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/30"
                       >
                         <span className="text-3xl">{badge.icon}</span>
                         <p className="font-medium text-sm mt-2">{badge.name}</p>
                         <p className="text-xs text-muted-foreground">{badge.description}</p>
-                        {badge.earned && (
-                          <p className="text-xs text-primary mt-1">✓ Obtenu</p>
-                        )}
+                        <p className="text-xs text-primary mt-1">✓ Obtenu</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-muted-foreground text-sm">Aucun badge obtenu encore</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* All Available Badges */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading text-lg flex items-center gap-2">
+                  🏅 Tous les badges
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {badges?.available?.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {badges.available.map((badge) => (
+                      <div 
+                        key={badge.id}
+                        className="p-4 rounded-xl border text-center bg-muted/30 border-border"
+                      >
+                        <span className="text-3xl opacity-50">{badge.icon}</span>
+                        <p className="font-medium text-sm mt-2 text-muted-foreground">{badge.name}</p>
+                        <p className="text-xs text-muted-foreground">{badge.description}</p>
+                        <div className="mt-2">
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-primary/50 rounded-full"
+                              style={{ width: `${badge.progress_percent || 0}%` }}
+                            />
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1">{badge.progress}/{badge.target}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-8">
                     <Trophy className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Continuez pour débloquer des badges !</p>
+                    <p className="text-muted-foreground">Vous avez débloqué tous les badges ! 🎉</p>
                   </div>
                 )}
               </CardContent>
