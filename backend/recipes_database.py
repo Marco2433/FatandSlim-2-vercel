@@ -11,8 +11,11 @@ import random
 from typing import List, Dict, Optional
 import hashlib
 
-# Catégories de repas
+# Catégories de repas (moment)
 CATEGORIES = ["breakfast", "lunch", "dinner", "snack"]
+
+# Types de plats pour le filtre
+DISH_TYPES = ["entree", "plat", "dessert", "accompagnement", "viande", "gouter"]
 
 # Ingrédients sains (Score A-B)
 INGREDIENTS_SCORE_A = [
