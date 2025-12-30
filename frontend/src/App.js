@@ -15,6 +15,7 @@ import WorkoutsPage from "@/pages/WorkoutsPage";
 import ProgressPage from "@/pages/ProgressPage";
 import ProfilePage from "@/pages/ProfilePage";
 import AuthCallback from "@/pages/AuthCallback";
+import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 
 // Context
 import { AuthProvider, useAuth } from "@/context/AuthContext";
