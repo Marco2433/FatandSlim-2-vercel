@@ -919,6 +919,85 @@ export default function WorkoutsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Program Details Dialog */}
+      <Dialog open={!!selectedProgram} onOpenChange={() => setSelectedProgram(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-primary" />
+              {selectedProgram?.workout_plan?.name || 'Programme personnalisé'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedProgram?.workout_plan?.description || 'Votre programme d\'entraînement personnalisé'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedProgram && (
+            <div className="space-y-4 py-4">
+              {/* Program Info */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-primary/10 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-primary">
+                    {selectedProgram.workout_plan?.weeks?.length || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Semaines</p>
+                </div>
+                <div className="p-3 bg-secondary/10 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-secondary">
+                    {selectedProgram.workout_plan?.weeks?.reduce((acc, w) => acc + (w.days?.length || 0), 0) || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Séances</p>
+                </div>
+              </div>
+
+              {/* Program Details */}
+              <ScrollArea className="h-64">
+                {selectedProgram.workout_plan?.weeks?.map((week, weekIndex) => (
+                  <div key={weekIndex} className="mb-4">
+                    <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      Semaine {week.week_number || weekIndex + 1}
+                    </h4>
+                    {week.days?.map((day, dayIndex) => (
+                      <div key={dayIndex} className="ml-4 mb-3 p-3 bg-muted/30 rounded-lg">
+                        <p className="font-medium text-sm mb-2">{day.name || `Jour ${dayIndex + 1}`}</p>
+                        <div className="space-y-1">
+                          {day.exercises?.map((exercise, exIndex) => (
+                            <div key={exIndex} className="flex items-center justify-between text-xs">
+                              <span>{exercise.name}</span>
+                              <span className="text-muted-foreground">
+                                {exercise.sets}x{exercise.reps} {exercise.rest && `• ${exercise.rest}`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </ScrollArea>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => setSelectedProgram(null)}>
+                  Fermer
+                </Button>
+                <Button 
+                  className="flex-1" 
+                  onClick={() => {
+                    addProgramToAgenda();
+                    setSelectedProgram(null);
+                  }}
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Ajouter à l'agenda
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
