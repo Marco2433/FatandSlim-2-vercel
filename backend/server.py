@@ -2491,6 +2491,13 @@ async def get_pwa_icon_96():
         return FileResponse(icon_path, media_type="image/png")
     raise HTTPException(status_code=404, detail="Icon not found")
 
+@app.get("/api/pwa/icon-128x128.png")
+async def get_pwa_icon_128():
+    icon_path = FRONTEND_PUBLIC_DIR / "icon-128x128.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
 @app.get("/api/pwa/icon-144x144.png")
 async def get_pwa_icon_144():
     icon_path = FRONTEND_PUBLIC_DIR / "icon-144x144.png"
