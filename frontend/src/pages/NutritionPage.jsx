@@ -386,7 +386,13 @@ export default function NutritionPage() {
       setRecommendations(response.data);
     } catch (error) {
       console.error('Error getting recommendations:', error);
-      setRecommendations({ analysis: 'Erreur', alternatives: [], tips: [] });
+      if (error.response?.status === 429) {
+        const detail = error.response.data?.detail;
+        setRecommendations({ analysis: detail?.message || 'Limite quotidienne IA atteinte', alternatives: [], tips: ['Revenez demain pour plus de recommandations IA !'] });
+        toast.error(detail?.message || 'Limite quotidienne IA atteinte.');
+      } else {
+        setRecommendations({ analysis: 'Erreur', alternatives: [], tips: [] });
+      }
     } finally {
       setLoadingRecommend(false);
     }
@@ -403,9 +409,17 @@ export default function NutritionPage() {
     try {
       const response = await axios.post(`${API}/meals/generate`, { type }, { withCredentials: true });
       setAiMealPlan(response.data);
+      if (response.data.from_cache) {
+        toast.success('Plan récupéré depuis le cache !');
+      }
     } catch (error) {
       console.error('Error generating meal plan:', error);
-      toast.error('Erreur lors de la génération. Veuillez réessayer.');
+      if (error.response?.status === 429) {
+        const detail = error.response.data?.detail;
+        toast.error(detail?.message || 'Limite quotidienne IA atteinte. Revenez demain !');
+      } else {
+        toast.error('Erreur lors de la génération. Veuillez réessayer.');
+      }
       setAiMealPlan(null);
     } finally {
       setLoadingMealPlan(false);
