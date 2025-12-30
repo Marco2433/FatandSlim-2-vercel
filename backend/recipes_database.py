@@ -488,9 +488,12 @@ def generate_recipe(recipe_id: int, nutri_score: str = None) -> Dict:
     difficulties = ["facile", "moyen"] if nutri_score in ["A", "B"] else ["facile", "moyen", "difficile"]
     costs = ["économique", "moyen"] if nutri_score in ["A", "B"] else ["économique", "moyen", "élevé"]
     
+    # Générer le nom d'abord pour trouver l'image appropriée
+    name = generate_recipe_name(category, seed)
+    
     return {
         "id": f"r{recipe_id:06d}",
-        "name": generate_recipe_name(category, seed),
+        "name": name,
         "category": category,
         "calories": nutrition["calories"],
         "protein": nutrition["protein"],
@@ -502,7 +505,7 @@ def generate_recipe(recipe_id: int, nutri_score: str = None) -> Dict:
         "servings": random.choice([1, 2, 3, 4]),
         "difficulty": random.choice(difficulties),
         "cost": random.choice(costs),
-        "image": random.choice(CATEGORY_IMAGES[category]),
+        "image": get_image_for_recipe(name, category, seed),
         "ingredients": get_ingredients_for_score(nutri_score, seed + 1),
         "steps": random.choice(STEPS_BY_CATEGORY[category]),
         "dish_type": get_dish_type(category, seed),
