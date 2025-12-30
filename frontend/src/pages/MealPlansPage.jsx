@@ -49,10 +49,19 @@ export default function MealPlansPage() {
     try {
       const response = await axios.post(`${API}/meals/generate`, {}, { withCredentials: true });
       setCurrentPlan(response.data.meal_plan);
-      toast.success('Nouveau plan de repas généré !');
+      if (response.data.from_cache) {
+        toast.success('Plan récupéré depuis le cache !');
+      } else {
+        toast.success('Nouveau plan de repas généré !');
+      }
       fetchPlans();
     } catch (error) {
-      toast.error('Erreur lors de la génération');
+      if (error.response?.status === 429) {
+        const detail = error.response.data?.detail;
+        toast.error(detail?.message || 'Limite quotidienne IA atteinte. Revenez demain !');
+      } else {
+        toast.error('Erreur lors de la génération');
+      }
     } finally {
       setGenerating(false);
     }
