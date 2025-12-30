@@ -2554,6 +2554,20 @@ async def get_pwa_maskable_512():
         return FileResponse(icon_path, media_type="image/png")
     raise HTTPException(status_code=404, detail="Icon not found")
 
+@app.get("/api/pwa/screenshot-wide.png")
+async def get_pwa_screenshot_wide():
+    path = FRONTEND_PUBLIC_DIR / "screenshot-wide.png"
+    if path.exists():
+        return FileResponse(path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Screenshot not found")
+
+@app.get("/api/pwa/screenshot-narrow.png")
+async def get_pwa_screenshot_narrow():
+    path = FRONTEND_PUBLIC_DIR / "screenshot-narrow.png"
+    if path.exists():
+        return FileResponse(path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Screenshot not found")
+
 # ==================== USER STATS & BADGES ====================
 
 @api_router.get("/user/stats")
