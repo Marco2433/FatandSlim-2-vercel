@@ -2346,33 +2346,92 @@ async def award_badge(user_id: str, badge_id: str, badge_name: str):
 @api_router.get("/challenges")
 async def get_challenges(user: dict = Depends(get_current_user)):
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
     
-    daily_challenges = [
-        {"id": "log_3_meals", "name": "3 repas logués", "description": "Enregistrez 3 repas aujourd'hui", "xp": 50, "type": "daily"},
-        {"id": "drink_water", "name": "Hydratation", "description": "Buvez 8 verres d'eau", "xp": 30, "type": "daily"},
-        {"id": "workout_30", "name": "30 min d'exercice", "description": "Faites 30 minutes d'exercice", "xp": 100, "type": "daily"},
-        {"id": "under_calories", "name": "Objectif calories", "description": "Restez sous votre objectif calorique", "xp": 75, "type": "daily"},
-    ]
-    
-    # Check completion status
+    # Get current data
     food_count = await db.food_logs.count_documents({"user_id": user["user_id"], "logged_at": {"$regex": f"^{today}"}})
     workout_today = await db.workout_logs.find_one({"user_id": user["user_id"], "logged_at": {"$regex": f"^{today}"}})
+    steps_today = await db.step_logs.find_one({"user_id": user["user_id"], "date": today})
     
-    for challenge in daily_challenges:
-        if challenge["id"] == "log_3_meals":
-            challenge["progress"] = min(food_count, 3)
-            challenge["target"] = 3
-            challenge["completed"] = food_count >= 3
-        elif challenge["id"] == "workout_30":
-            challenge["progress"] = workout_today.get("duration_minutes", 0) if workout_today else 0
-            challenge["target"] = 30
-            challenge["completed"] = (workout_today.get("duration_minutes", 0) if workout_today else 0) >= 30
-        else:
-            challenge["progress"] = 0
-            challenge["target"] = 1
-            challenge["completed"] = False
+    # Daily summary for calories
+    daily_summary_docs = await db.food_logs.find(
+        {"user_id": user["user_id"], "logged_at": {"$regex": f"^{today}"}}
+    ).to_list(100)
+    total_calories_today = sum([d.get("calories", 0) for d in daily_summary_docs])
+    target_calories = profile.get("daily_calorie_target", 2000) if profile else 2000
     
-    return {"daily": daily_challenges, "weekly": []}
+    # Dynamic daily challenges
+    daily_challenges = [
+        {
+            "id": "log_breakfast",
+            "title": "Petit-déjeuner enregistré",
+            "description": "Commencez bien la journée",
+            "icon": "🍳",
+            "reward": 25,
+            "progress": min(food_count, 1),
+            "target": 1,
+            "completed": food_count >= 1
+        },
+        {
+            "id": "log_3_meals",
+            "title": "3 repas équilibrés",
+            "description": "Enregistrez 3 repas aujourd'hui",
+            "icon": "🥗",
+            "reward": 50,
+            "progress": min(food_count, 3),
+            "target": 3,
+            "completed": food_count >= 3
+        },
+        {
+            "id": "walk_5000_steps",
+            "title": "5 000 pas",
+            "description": "Objectif mi-journée",
+            "icon": "👟",
+            "reward": 40,
+            "progress": steps_today.get("steps", 0) if steps_today else 0,
+            "target": 5000,
+            "completed": (steps_today.get("steps", 0) if steps_today else 0) >= 5000
+        },
+        {
+            "id": "walk_10000_steps",
+            "title": "10 000 pas",
+            "description": "Objectif quotidien",
+            "icon": "🏃",
+            "reward": 100,
+            "progress": steps_today.get("steps", 0) if steps_today else 0,
+            "target": 10000,
+            "completed": (steps_today.get("steps", 0) if steps_today else 0) >= 10000
+        },
+        {
+            "id": "workout_20",
+            "title": "20 min d'exercice",
+            "description": "Bougez votre corps",
+            "icon": "💪",
+            "reward": 60,
+            "progress": workout_today.get("duration_minutes", 0) if workout_today else 0,
+            "target": 20,
+            "completed": (workout_today.get("duration_minutes", 0) if workout_today else 0) >= 20
+        },
+        {
+            "id": "under_calories",
+            "title": "Objectif calories",
+            "description": f"Restez sous {target_calories} kcal",
+            "icon": "🎯",
+            "reward": 75,
+            "progress": total_calories_today,
+            "target": target_calories,
+            "completed": total_calories_today <= target_calories and total_calories_today > 0
+        },
+    ]
+    
+    # Use day of year as seed for consistent selection
+    day_of_year = datetime.now(timezone.utc).timetuple().tm_yday
+    random.seed(day_of_year + hash(user["user_id"]))
+    
+    # Select 4 challenges for today (random but consistent for the day)
+    selected_challenges = random.sample(daily_challenges, min(4, len(daily_challenges)))
+    
+    return {"daily": selected_challenges, "weekly": []}
 
 # ==================== MOTIVATION MESSAGES ====================
 
