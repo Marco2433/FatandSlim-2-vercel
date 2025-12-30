@@ -3605,6 +3605,283 @@ async def generate_progress_pdf(user: dict = Depends(get_current_user)):
     
     return report_data
 
+# ==================== GOOGLE CALENDAR INTEGRATION ====================
+
+# Google Calendar OAuth Configuration
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', '')
+GOOGLE_CALENDAR_SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+
+@api_router.get("/calendar/auth-url")
+async def get_calendar_auth_url(user: dict = Depends(get_current_user)):
+    """Get Google Calendar OAuth URL"""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        raise HTTPException(status_code=503, detail="Google Calendar not configured")
+    
+    from google_auth_oauthlib.flow import Flow
+    
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token"
+            }
+        },
+        scopes=GOOGLE_CALENDAR_SCOPES,
+        redirect_uri=GOOGLE_REDIRECT_URI
+    )
+    
+    auth_url, state = flow.authorization_url(
+        access_type='offline',
+        prompt='consent',
+        include_granted_scopes='true',
+        state=user["user_id"]  # Pass user_id in state
+    )
+    
+    # Store state for verification
+    await db.oauth_states.insert_one({
+        "state": state,
+        "user_id": user["user_id"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"auth_url": auth_url}
+
+@api_router.get("/calendar/callback")
+async def calendar_oauth_callback(code: str, state: str):
+    """Handle Google Calendar OAuth callback"""
+    from google.oauth2.credentials import Credentials
+    
+    # Verify state
+    state_doc = await db.oauth_states.find_one({"state": state})
+    if not state_doc:
+        raise HTTPException(status_code=400, detail="Invalid state")
+    
+    user_id = state_doc["user_id"]
+    
+    # Exchange code for tokens
+    async with httpx.AsyncClient() as client_http:
+        token_resp = await client_http.post(
+            'https://oauth2.googleapis.com/token',
+            data={
+                'code': code,
+                'client_id': GOOGLE_CLIENT_ID,
+                'client_secret': GOOGLE_CLIENT_SECRET,
+                'redirect_uri': GOOGLE_REDIRECT_URI,
+                'grant_type': 'authorization_code'
+            }
+        )
+        
+        if token_resp.status_code != 200:
+            logger.error(f"Token exchange failed: {token_resp.text}")
+            raise HTTPException(status_code=400, detail="Token exchange failed")
+        
+        tokens = token_resp.json()
+    
+    # Store tokens
+    await db.google_calendar_tokens.update_one(
+        {"user_id": user_id},
+        {
+            "$set": {
+                "access_token": tokens.get("access_token"),
+                "refresh_token": tokens.get("refresh_token"),
+                "expires_at": (datetime.now(timezone.utc) + timedelta(seconds=tokens.get("expires_in", 3600))).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        },
+        upsert=True
+    )
+    
+    # Clean up state
+    await db.oauth_states.delete_one({"state": state})
+    
+    # Redirect to app
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://workout-buddy-803.preview.emergentagent.com')
+    return RedirectResponse(f"{frontend_url}/dashboard?calendar_connected=true")
+
+@api_router.get("/calendar/status")
+async def get_calendar_status(user: dict = Depends(get_current_user)):
+    """Check if Google Calendar is connected"""
+    tokens = await db.google_calendar_tokens.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    return {
+        "connected": bool(tokens and tokens.get("access_token")),
+        "configured": bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+    }
+
+@api_router.delete("/calendar/disconnect")
+async def disconnect_calendar(user: dict = Depends(get_current_user)):
+    """Disconnect Google Calendar"""
+    await db.google_calendar_tokens.delete_one({"user_id": user["user_id"]})
+    return {"message": "Calendar disconnected"}
+
+async def get_valid_calendar_credentials(user_id: str):
+    """Get valid Google Calendar credentials, refreshing if needed"""
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request as GoogleRequest
+    
+    tokens = await db.google_calendar_tokens.find_one({"user_id": user_id}, {"_id": 0})
+    
+    if not tokens or not tokens.get("access_token"):
+        return None
+    
+    creds = Credentials(
+        token=tokens.get("access_token"),
+        refresh_token=tokens.get("refresh_token"),
+        token_uri='https://oauth2.googleapis.com/token',
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET
+    )
+    
+    # Check if expired and refresh
+    if creds.expired and creds.refresh_token:
+        try:
+            creds.refresh(GoogleRequest())
+            # Update stored tokens
+            await db.google_calendar_tokens.update_one(
+                {"user_id": user_id},
+                {
+                    "$set": {
+                        "access_token": creds.token,
+                        "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }
+                }
+            )
+        except Exception as e:
+            logger.error(f"Token refresh failed: {e}")
+            return None
+    
+    return creds
+
+@api_router.get("/calendar/events")
+async def get_calendar_events(
+    user: dict = Depends(get_current_user),
+    time_min: str = None,
+    time_max: str = None,
+    max_results: int = 50
+):
+    """Get Google Calendar events"""
+    from googleapiclient.discovery import build
+    
+    creds = await get_valid_calendar_credentials(user["user_id"])
+    
+    if not creds:
+        raise HTTPException(status_code=401, detail="Google Calendar not connected")
+    
+    try:
+        service = build('calendar', 'v3', credentials=creds)
+        
+        # Default to next 30 days
+        if not time_min:
+            time_min = datetime.now(timezone.utc).isoformat()
+        if not time_max:
+            time_max = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+        
+        events_result = service.events().list(
+            calendarId='primary',
+            timeMin=time_min,
+            timeMax=time_max,
+            maxResults=max_results,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+        
+        events = events_result.get('items', [])
+        
+        # Format events for the app
+        formatted_events = []
+        for event in events:
+            start = event.get('start', {})
+            end = event.get('end', {})
+            
+            formatted_events.append({
+                "id": event.get('id'),
+                "title": event.get('summary', 'Sans titre'),
+                "description": event.get('description', ''),
+                "start": start.get('dateTime') or start.get('date'),
+                "end": end.get('dateTime') or end.get('date'),
+                "all_day": 'date' in start,
+                "location": event.get('location', ''),
+                "source": "google_calendar",
+                "color": "#4285F4"  # Google blue
+            })
+        
+        return {"events": formatted_events, "count": len(formatted_events)}
+        
+    except Exception as e:
+        logger.error(f"Calendar fetch error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch calendar: {str(e)}")
+
+@api_router.get("/calendar/sync")
+async def sync_calendar_to_agenda(user: dict = Depends(get_current_user)):
+    """Sync Google Calendar events to app agenda"""
+    from googleapiclient.discovery import build
+    
+    creds = await get_valid_calendar_credentials(user["user_id"])
+    
+    if not creds:
+        raise HTTPException(status_code=401, detail="Google Calendar not connected")
+    
+    try:
+        service = build('calendar', 'v3', credentials=creds)
+        
+        # Get events for next 30 days
+        time_min = datetime.now(timezone.utc).isoformat()
+        time_max = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+        
+        events_result = service.events().list(
+            calendarId='primary',
+            timeMin=time_min,
+            timeMax=time_max,
+            maxResults=100,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+        
+        events = events_result.get('items', [])
+        synced_count = 0
+        
+        for event in events:
+            start = event.get('start', {})
+            start_time = start.get('dateTime') or start.get('date')
+            
+            # Check if already synced
+            existing = await db.appointments.find_one({
+                "user_id": user["user_id"],
+                "google_event_id": event.get('id')
+            })
+            
+            if not existing:
+                # Create appointment from Google event
+                appointment = {
+                    "appointment_id": f"gcal_{event.get('id')}",
+                    "user_id": user["user_id"],
+                    "google_event_id": event.get('id'),
+                    "title": event.get('summary', 'Sans titre'),
+                    "description": event.get('description', ''),
+                    "datetime": start_time,
+                    "type": "event",
+                    "source": "google_calendar",
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+                
+                await db.appointments.insert_one(appointment)
+                synced_count += 1
+        
+        return {
+            "message": f"Synchronisation terminée",
+            "synced": synced_count,
+            "total_events": len(events)
+        }
+        
+    except Exception as e:
+        logger.error(f"Calendar sync error: {e}")
+        raise HTTPException(status_code=500, detail=f"Sync failed: {str(e)}")
+
 # ==================== SOCIAL NETWORK ENDPOINTS ====================
 
 # --- Public Profiles ---
