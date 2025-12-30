@@ -147,6 +147,7 @@ export default function WorkoutsPage() {
   const [programs, setPrograms] = useState([]);
   const [workoutLogs, setWorkoutLogs] = useState([]);
   const [logDialogOpen, setLogDialogOpen] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState(null);
   const [newLog, setNewLog] = useState({
     workout_name: '',
     duration_minutes: '',
