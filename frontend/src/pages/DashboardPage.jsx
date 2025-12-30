@@ -844,40 +844,64 @@ export default function DashboardPage() {
         </Card>
 
         {/* Daily Challenges */}
-        {challenges?.daily && (
+        {challenges?.daily && challenges.daily.length > 0 && (
           <Card data-testid="challenges-card">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <CardTitle className="font-heading text-lg flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-accent" />
                 Défis du jour
               </CardTitle>
-              <Button variant="ghost" size="sm" className="text-primary">
-                Voir tout
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
+              <span className="text-xs text-muted-foreground">
+                {challenges.daily.filter(c => c.completed).length}/{challenges.daily.length} complétés
+              </span>
             </CardHeader>
             <CardContent className="space-y-3">
-              {challenges.daily.slice(0, 3).map((challenge) => (
+              {challenges.daily.map((challenge) => (
                 <div 
                   key={challenge.id}
-                  className={`flex items-center justify-between p-3 rounded-xl border ${
-                    challenge.completed ? 'bg-primary/5 border-primary/20' : 'border-border'
+                  className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                    challenge.completed 
+                      ? 'bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/30' 
+                      : 'border-border hover:border-primary/30'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      challenge.completed ? 'bg-primary text-white' : 'bg-muted'
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
+                      challenge.completed 
+                        ? 'bg-gradient-to-r from-primary to-secondary text-white' 
+                        : 'bg-muted'
                     }`}>
                       {challenge.completed ? '✓' : challenge.icon}
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">{challenge.title}</p>
-                      <p className="text-xs text-muted-foreground">{challenge.reward} pts</p>
+                    <div className="flex-1">
+                      <p className={`font-medium text-sm ${challenge.completed ? 'line-through opacity-70' : ''}`}>
+                        {challenge.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{challenge.description}</p>
+                      {/* Progress bar */}
+                      {!challenge.completed && challenge.target > 1 && (
+                        <div className="mt-1">
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-primary rounded-full transition-all"
+                              style={{ width: `${Math.min((challenge.progress / challenge.target) * 100, 100)}%` }}
+                            />
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {challenge.progress.toLocaleString()}/{challenge.target.toLocaleString()}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <Badge variant={challenge.completed ? 'default' : 'outline'}>
-                    {challenge.completed ? 'Fait' : 'À faire'}
-                  </Badge>
+                  <div className="text-right">
+                    <Badge 
+                      variant={challenge.completed ? 'default' : 'outline'}
+                      className={challenge.completed ? 'bg-gradient-to-r from-primary to-secondary' : ''}
+                    >
+                      {challenge.completed ? '✓ Fait' : `+${challenge.reward} pts`}
+                    </Badge>
+                  </div>
                 </div>
               ))}
             </CardContent>
