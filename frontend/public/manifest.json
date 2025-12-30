@@ -2,7 +2,7 @@
   "name": "Fat & Slim",
   "short_name": "Fat&Slim",
   "description": "Application de coaching sportif et nutritionnel avec IA - Perdez du poids, mangez mieux, améliorez votre forme",
-  "start_url": "/?utm_source=pwa",
+  "start_url": "/dashboard?utm_source=pwa&v=2.0",
   "scope": "/",
   "display": "fullscreen",
   "display_override": ["fullscreen", "standalone"],
