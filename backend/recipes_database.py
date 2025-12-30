@@ -378,6 +378,7 @@ def generate_recipe(recipe_id: int, nutri_score: str = None) -> Dict:
         "image": random.choice(CATEGORY_IMAGES[category]),
         "ingredients": get_ingredients_for_score(nutri_score, seed + 1),
         "steps": random.choice(STEPS_BY_CATEGORY[category]),
+        "dish_type": get_dish_type(category, seed),
         "tips": random.choice([
             "Ajoutez des herbes fraîches pour plus de saveur",
             "Se conserve 2-3 jours au réfrigérateur",
@@ -391,6 +392,18 @@ def generate_recipe(recipe_id: int, nutri_score: str = None) -> Dict:
             "Ajustez les épices selon vos goûts",
         ]),
     }
+
+def get_dish_type(category: str, seed: int) -> str:
+    """Détermine le type de plat selon la catégorie"""
+    random.seed(seed + 999)
+    if category == "breakfast":
+        return random.choice(["gouter", "entree"])
+    elif category == "lunch":
+        return random.choice(["entree", "plat", "viande", "accompagnement"])
+    elif category == "dinner":
+        return random.choice(["plat", "viande", "accompagnement", "entree"])
+    else:  # snack
+        return random.choice(["gouter", "dessert"])
 
 # Générer un échantillon de 2000 recettes en mémoire pour performance
 # Les autres sont générées à la demande
