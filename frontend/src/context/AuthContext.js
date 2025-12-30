@@ -86,6 +86,15 @@ export const AuthProvider = ({ children }) => {
       setIsProcessingAuth(true);
       return;
     }
+    
+    // Skip auth check for public pages
+    const currentPath = window.location.pathname;
+    const isPublicPage = currentPath === '/privacy' || currentPath === '/privacy-policy';
+    if (isPublicPage) {
+      setLoading(false);
+      return;
+    }
+    
     checkAuth();
   }, []);
 
