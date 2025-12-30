@@ -1355,7 +1355,7 @@ export default function NutritionPage() {
               </CardHeader>
               <CardContent>
                 {/* Nutri-Score Filter */}
-                <div className="flex gap-2 mb-4 flex-wrap">
+                <div className="flex gap-2 mb-3 flex-wrap">
                   {['all', 'A', 'B', 'C', 'D'].map((score) => (
                     <Button
                       key={score}
@@ -1364,13 +1364,45 @@ export default function NutritionPage() {
                       className={`h-8 ${score !== 'all' ? getNutriScoreColor(score) + (catalogFilter === score ? '' : ' bg-opacity-20') : ''}`}
                       onClick={() => {
                         setCatalogFilter(score);
-                        fetchCatalogRecipes(score);
+                        fetchCatalogRecipes(score, catalogDishType);
                       }}
                     >
                       {score === 'all' ? 'Toutes' : `Nutri-Score ${score}`}
                       {catalogStats && score !== 'all' && (
                         <span className="ml-1 text-xs opacity-80">
                           ({catalogStats.by_nutri_score?.[score] || 0})
+                        </span>
+                      )}
+                    </Button>
+                  ))}
+                </div>
+
+                {/* Dish Type Filter */}
+                <div className="flex gap-2 mb-4 flex-wrap">
+                  {[
+                    { value: 'all', label: 'Tous', emoji: '🍽️' },
+                    { value: 'entree', label: 'Entrée', emoji: '🥗' },
+                    { value: 'plat', label: 'Plat', emoji: '🍝' },
+                    { value: 'dessert', label: 'Dessert', emoji: '🍰' },
+                    { value: 'accompagnement', label: 'Accompagnement', emoji: '🥔' },
+                    { value: 'viande', label: 'Viande', emoji: '🥩' },
+                    { value: 'gouter', label: 'Goûter', emoji: '🧁' },
+                  ].map((type) => (
+                    <Button
+                      key={type.value}
+                      variant={catalogDishType === type.value ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-8"
+                      onClick={() => {
+                        setCatalogDishType(type.value);
+                        fetchCatalogRecipes(catalogFilter, type.value);
+                      }}
+                    >
+                      <span className="mr-1">{type.emoji}</span>
+                      {type.label}
+                      {catalogStats?.by_dish_type && type.value !== 'all' && (
+                        <span className="ml-1 text-xs opacity-80">
+                          ({catalogStats.by_dish_type?.[type.value] || 0})
                         </span>
                       )}
                     </Button>
