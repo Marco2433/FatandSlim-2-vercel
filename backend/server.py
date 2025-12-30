@@ -851,7 +851,19 @@ async def recommend_alternatives(entry: dict, user: dict = Depends(get_current_u
     from emergentintegrations.llm.chat import LlmChat, UserMessage
     import json
     
+    # ===== AI LIMIT CHECK =====
+    await enforce_ai_limit(user["user_id"], "/food/recommend-alternatives")
+    
     profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    user_context_hash = get_user_context_hash(profile)
+    
+    # Build the prompt for cache lookup
+    prompt_for_cache = f"alternatives for {entry.get('food_name')} {entry.get('nutri_score', '')}"
+    
+    # ===== CHECK CACHE FIRST =====
+    cached = await get_cached_ai_response(prompt_for_cache, "recommend-alternatives", user_context_hash)
+    if cached:
+        return cached
     
     health_context = ""
     if profile:
@@ -899,6 +911,13 @@ Suggère 3 alternatives plus saines que l'utilisateur pourrait apprécier. RÉPO
         json_start = response.find('{')
         json_end = response.rfind('}') + 1
         result = json.loads(response[json_start:json_end])
+        
+        # ===== CACHE THE RESULT & INCREMENT USAGE =====
+        await store_cached_ai_response(prompt_for_cache, result, "recommend-alternatives", user_context_hash)
+        await increment_ai_usage(user["user_id"], "/food/recommend-alternatives")
+        
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Recommendation error: {e}")
         result = {
