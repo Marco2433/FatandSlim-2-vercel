@@ -75,7 +75,12 @@ export default function FoodScannerPage() {
       setMode('result');
     } catch (error) {
       console.error('Analysis error:', error);
-      toast.error('Erreur lors de l\'analyse');
+      if (error.response?.status === 429) {
+        const detail = error.response.data?.detail;
+        toast.error(detail?.message || 'Limite quotidienne IA atteinte. Revenez demain !');
+      } else {
+        toast.error('Erreur lors de l\'analyse');
+      }
       setMode('preview');
     } finally {
       setLoading(false);
