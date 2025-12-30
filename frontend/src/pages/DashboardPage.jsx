@@ -41,29 +41,77 @@ export default function DashboardPage() {
   const [motivation, setMotivation] = useState(null);
   const [dailyRecipes, setDailyRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
   
   // AI Recipe Search state
   const [recipeSearchQuery, setRecipeSearchQuery] = useState('');
   const [searchedRecipe, setSearchedRecipe] = useState(null);
   const [loadingSearch, setLoadingSearch] = useState(false);
 
+  // Check for midnight reset
+  useEffect(() => {
+    const checkDateChange = () => {
+      const today = new Date().toISOString().split('T')[0];
+      if (today !== currentDate) {
+        console.log('New day detected, refreshing data...');
+        setCurrentDate(today);
+        // Reset daily summary to force refresh
+        setDailySummary(null);
+        fetchDashboardData();
+      }
+    };
+
+    // Check every minute for date change
+    const interval = setInterval(checkDateChange, 60000);
+    
+    // Also check on visibility change (when user returns to app)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkDateChange();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [currentDate]);
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
   const fetchDashboardData = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    
     try {
       // Fetch data in parallel but handle failures independently
       const [statsRes, summaryRes, challengesRes, motivationRes, recipesRes] = await Promise.allSettled([
         axios.get(`${API}/progress/stats`, { withCredentials: true }),
-        axios.get(`${API}/food/daily-summary`, { withCredentials: true }),
+        axios.get(`${API}/food/daily-summary?date=${today}`, { withCredentials: true }),
         axios.get(`${API}/challenges`, { withCredentials: true }),
         axios.get(`${API}/motivation`, { withCredentials: true }),
         axios.get(`${API}/recipes/daily`, { withCredentials: true }),
       ]);
       
       if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
-      if (summaryRes.status === 'fulfilled') setDailySummary(summaryRes.value.data);
+      if (summaryRes.status === 'fulfilled') {
+        // Verify the date matches today
+        const summaryData = summaryRes.value.data;
+        if (summaryData.date === today) {
+          setDailySummary(summaryData);
+        } else {
+          // Data is stale, set to zero
+          setDailySummary({
+            date: today,
+            consumed: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+            targets: summaryData.targets || { calories: 2000, protein: 100, carbs: 250, fat: 65 },
+            remaining: summaryData.targets || { calories: 2000, protein: 100, carbs: 250, fat: 65 },
+            meals_logged: 0
+          });
+        }
+      }
       if (challengesRes.status === 'fulfilled') setChallenges(challengesRes.value.data);
       if (motivationRes.status === 'fulfilled') setMotivation(motivationRes.value.data);
       if (recipesRes.status === 'fulfilled') setDailyRecipes(recipesRes.value.data?.recipes || []);
