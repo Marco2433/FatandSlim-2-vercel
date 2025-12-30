@@ -851,9 +851,14 @@ export default function DashboardPage() {
                 <Trophy className="w-5 h-5 text-accent" />
                 Défis du jour
               </CardTitle>
-              <span className="text-xs text-muted-foreground">
-                {challenges.daily.filter(c => c.completed).length}/{challenges.daily.length} complétés
-              </span>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold px-3">
+                  🏆 {challenges.total_points || 0} pts
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {challenges.daily.filter(c => c.completed).length}/{challenges.daily.length}
+                </span>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {challenges.daily.map((challenge) => (
@@ -907,6 +912,24 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Social Card */}
+        <Card className="shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/social')}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 flex items-center justify-center text-white text-xl">
+                  👥
+                </div>
+                <div>
+                  <p className="font-semibold">Communauté</p>
+                  <p className="text-sm text-muted-foreground">Amis, messagerie, défis</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
       </main>
 
       {/* Appointment Dialog */}
