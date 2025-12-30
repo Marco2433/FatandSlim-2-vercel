@@ -42,12 +42,183 @@ db = client[os.environ['DB_NAME']]
 JWT_SECRET = os.environ.get('JWT_SECRET', 'fatandslim_secret')
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
 
+# AI Usage limits configuration
+AI_DAILY_LIMIT = 2  # Maximum AI calls per user per day
+AI_CACHE_SIMILARITY_THRESHOLD = 0.90  # 90% similarity for cache hits
+AI_CACHE_EXPIRY_DAYS = 30  # Cache entries expire after 30 days
+
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# ==================== AI USAGE LIMITING & CACHING SYSTEM ====================
+
+def normalize_prompt(prompt: str) -> str:
+    """Normalize prompt for better similarity matching"""
+    # Remove extra whitespace
+    normalized = ' '.join(prompt.lower().split())
+    # Remove punctuation that doesn't affect meaning
+    normalized = re.sub(r'[^\w\s]', '', normalized)
+    return normalized
+
+def calculate_prompt_hash(prompt: str) -> str:
+    """Generate a hash for the normalized prompt"""
+    normalized = normalize_prompt(prompt)
+    return hashlib.sha256(normalized.encode()).hexdigest()
+
+def calculate_similarity(prompt1: str, prompt2: str) -> float:
+    """Calculate similarity between two prompts (0.0 to 1.0)"""
+    norm1 = normalize_prompt(prompt1)
+    norm2 = normalize_prompt(prompt2)
+    return SequenceMatcher(None, norm1, norm2).ratio()
+
+async def check_ai_usage_limit(user_id: str) -> dict:
+    """
+    Check if user has exceeded daily AI usage limit.
+    Returns: {"allowed": bool, "remaining": int, "used": int}
+    """
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    usage = await db.ai_usage_logs.find_one({
+        "user_id": user_id,
+        "date": today
+    })
+    
+    used = usage.get("count", 0) if usage else 0
+    remaining = max(0, AI_DAILY_LIMIT - used)
+    
+    return {
+        "allowed": used < AI_DAILY_LIMIT,
+        "remaining": remaining,
+        "used": used,
+        "limit": AI_DAILY_LIMIT
+    }
+
+async def increment_ai_usage(user_id: str, endpoint: str) -> None:
+    """Increment user's daily AI usage counter"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    await db.ai_usage_logs.update_one(
+        {"user_id": user_id, "date": today},
+        {
+            "$inc": {"count": 1},
+            "$push": {
+                "calls": {
+                    "endpoint": endpoint,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            },
+            "$setOnInsert": {"created_at": datetime.now(timezone.utc).isoformat()}
+        },
+        upsert=True
+    )
+    
+    logger.info(f"AI usage incremented for user {user_id}: endpoint={endpoint}")
+
+async def get_cached_ai_response(prompt: str, endpoint: str, user_context_hash: str = "") -> Optional[dict]:
+    """
+    Search for a cached AI response with similarity matching.
+    Returns cached response if found with >= 90% similarity, else None.
+    """
+    prompt_hash = calculate_prompt_hash(prompt)
+    cache_key = f"{endpoint}:{user_context_hash}"
+    
+    # First, try exact hash match
+    exact_match = await db.ai_cache.find_one({
+        "prompt_hash": prompt_hash,
+        "cache_key": cache_key
+    }, {"_id": 0})
+    
+    if exact_match:
+        logger.info(f"AI Cache HIT (exact): endpoint={endpoint}")
+        await db.ai_cache.update_one(
+            {"prompt_hash": prompt_hash, "cache_key": cache_key},
+            {"$inc": {"hit_count": 1}, "$set": {"last_hit": datetime.now(timezone.utc).isoformat()}}
+        )
+        return exact_match.get("response")
+    
+    # Try similarity matching - get recent cache entries for this endpoint
+    cutoff_date = (datetime.now(timezone.utc) - timedelta(days=AI_CACHE_EXPIRY_DAYS)).isoformat()
+    recent_entries = await db.ai_cache.find({
+        "cache_key": cache_key,
+        "created_at": {"$gte": cutoff_date}
+    }, {"_id": 0}).sort("hit_count", -1).limit(50).to_list(50)
+    
+    for entry in recent_entries:
+        stored_prompt = entry.get("original_prompt", "")
+        similarity = calculate_similarity(prompt, stored_prompt)
+        
+        if similarity >= AI_CACHE_SIMILARITY_THRESHOLD:
+            logger.info(f"AI Cache HIT (similarity={similarity:.2%}): endpoint={endpoint}")
+            await db.ai_cache.update_one(
+                {"prompt_hash": entry["prompt_hash"], "cache_key": cache_key},
+                {"$inc": {"hit_count": 1}, "$set": {"last_hit": datetime.now(timezone.utc).isoformat()}}
+            )
+            return entry.get("response")
+    
+    logger.info(f"AI Cache MISS: endpoint={endpoint}")
+    return None
+
+async def store_cached_ai_response(prompt: str, response: dict, endpoint: str, user_context_hash: str = "") -> None:
+    """Store AI response in cache"""
+    prompt_hash = calculate_prompt_hash(prompt)
+    cache_key = f"{endpoint}:{user_context_hash}"
+    
+    await db.ai_cache.update_one(
+        {"prompt_hash": prompt_hash, "cache_key": cache_key},
+        {
+            "$set": {
+                "response": response,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            },
+            "$setOnInsert": {
+                "original_prompt": prompt[:500],  # Store first 500 chars for similarity matching
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "hit_count": 0
+            }
+        },
+        upsert=True
+    )
+    
+    logger.info(f"AI response cached: endpoint={endpoint}")
+
+async def enforce_ai_limit(user_id: str, endpoint: str) -> None:
+    """
+    Enforce AI usage limit. Raises HTTPException if limit exceeded.
+    Call this BEFORE making any AI request.
+    """
+    usage = await check_ai_usage_limit(user_id)
+    
+    if not usage["allowed"]:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error": "Limite quotidienne IA atteinte",
+                "message": f"Vous avez atteint votre limite de {AI_DAILY_LIMIT} appels IA par jour. Revenez demain !",
+                "used": usage["used"],
+                "limit": usage["limit"],
+                "reset_at": "minuit UTC"
+            }
+        )
+
+def get_user_context_hash(profile: dict) -> str:
+    """Generate a hash for user's dietary context to scope cache"""
+    if not profile:
+        return "default"
+    
+    # Include relevant dietary context that affects AI responses
+    context = {
+        "goal": profile.get("goal", ""),
+        "allergies": sorted(profile.get("allergies", [])),
+        "dietary_preferences": sorted(profile.get("dietary_preferences", [])),
+        "health_conditions": sorted(profile.get("health_conditions", [])),
+        "fitness_level": profile.get("fitness_level", "")
+    }
+    
+    return hashlib.md5(json.dumps(context, sort_keys=True).encode()).hexdigest()[:12]
 
 # ==================== MODELS ====================
 
