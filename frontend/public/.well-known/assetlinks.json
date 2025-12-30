@@ -3,6 +3,6 @@
   "target": {
     "namespace": "android_app",
     "package_name": "com.fatandslim.app",
-    "sha256_cert_fingerprints": ["REMPLACER_PAR_VOTRE_SHA256_GOOGLE_PLAY"]
+    "sha256_cert_fingerprints": ["FC:60:08:CA:12:D9:BC:DA:C1:A2:64:A1:7A:95:24:98:A5:E3:35:14:A4:89:D9:71:AD:F0:4C:9B:B8:11:A3:8A"]
   }
 }]
