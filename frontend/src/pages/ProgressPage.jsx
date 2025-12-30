@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, ComposedChart } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, ComposedChart, BarChart, Bar } from 'recharts';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 import { 
   TrendingUp, 
   ArrowLeft,
@@ -17,7 +20,13 @@ import {
   Plus,
   Flame,
   Award,
-  Activity
+  Activity,
+  Footprints,
+  Download,
+  FileText,
+  Loader2,
+  RefreshCw,
+  Zap
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -32,23 +41,47 @@ export default function ProgressPage() {
   const [loading, setLoading] = useState(true);
   const [weightDialogOpen, setWeightDialogOpen] = useState(false);
   const [newWeight, setNewWeight] = useState('');
+  
+  // Steps & calories burned
+  const [stepsData, setStepsData] = useState(null);
+  const [stepsHistory, setStepsHistory] = useState([]);
+  const [newSteps, setNewSteps] = useState('');
+  const [stepsDialogOpen, setStepsDialogOpen] = useState(false);
+  const [loadingSteps, setLoadingSteps] = useState(false);
+  
+  // PDF generation
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [reportData, setReportData] = useState(null);
 
   useEffect(() => {
     fetchData();
+    fetchStepsData();
   }, []);
+
+  // Auto-refresh steps every 60 seconds when page is visible
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible' && activeTab === 'steps') {
+        fetchStepsData();
+      }
+    }, 60000);
+    
+    return () => clearInterval(interval);
+  }, [activeTab]);
 
   const fetchData = async () => {
     try {
-      const [statsRes, weightRes, bmiRes, badgesRes] = await Promise.all([
+      const [statsRes, weightRes, bmiRes, badgesRes] = await Promise.allSettled([
         axios.get(`${API}/progress/stats`, { withCredentials: true }),
         axios.get(`${API}/progress/weight`, { withCredentials: true }),
         axios.get(`${API}/progress/bmi`, { withCredentials: true }),
         axios.get(`${API}/badges`, { withCredentials: true })
       ]);
-      setStats(statsRes.data);
-      setWeightHistory(weightRes.data);
-      setBmiData(bmiRes.data);
-      setBadges(badgesRes.data);
+      
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
+      if (weightRes.status === 'fulfilled') setWeightHistory(weightRes.value.data);
+      if (bmiRes.status === 'fulfilled') setBmiData(bmiRes.value.data);
+      if (badgesRes.status === 'fulfilled') setBadges(badgesRes.value.data);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -56,64 +89,214 @@ export default function ProgressPage() {
     }
   };
 
+  const fetchStepsData = async () => {
+    try {
+      const [todayRes, historyRes] = await Promise.allSettled([
+        axios.get(`${API}/steps/today`, { withCredentials: true }),
+        axios.get(`${API}/steps/history?days=7`, { withCredentials: true })
+      ]);
+      
+      if (todayRes.status === 'fulfilled') setStepsData(todayRes.value.data);
+      if (historyRes.status === 'fulfilled') setStepsHistory(historyRes.value.data || []);
+    } catch (error) {
+      console.error('Error fetching steps:', error);
+    }
+  };
+
   const logWeight = async () => {
     if (!newWeight) {
-      toast.error('Entrez votre poids');
+      toast.error('Veuillez entrer votre poids');
       return;
     }
-
+    
     try {
-      const response = await axios.post(`${API}/progress/weight`, {
-        weight: parseFloat(newWeight)
-      }, { withCredentials: true });
+      await axios.post(`${API}/progress/weight`, { weight: parseFloat(newWeight) }, { withCredentials: true });
+      toast.success('Poids enregistré !');
       
-      toast.success(`Poids enregistré ! IMC: ${response.data.bmi}`);
-      setWeightDialogOpen(false);
+      // Refresh data immediately
+      const [weightRes, bmiRes] = await Promise.all([
+        axios.get(`${API}/progress/weight`, { withCredentials: true }),
+        axios.get(`${API}/progress/bmi`, { withCredentials: true })
+      ]);
+      setWeightHistory(weightRes.data);
+      setBmiData(bmiRes.data);
+      
       setNewWeight('');
-      
-      // Immediately update local state for real-time feedback
-      const newEntry = {
-        date: new Date().toISOString().split('T')[0],
-        weight: parseFloat(newWeight),
-        bmi: response.data.bmi
-      };
-      
-      // Add to weight history
-      setWeightHistory(prev => [...prev, newEntry]);
-      
-      // Update stats immediately
-      if (stats) {
-        const newStats = {
-          ...stats,
-          current_weight: parseFloat(newWeight),
-          bmi: response.data.bmi,
-          weight_change: stats.weight_change + (parseFloat(newWeight) - stats.current_weight)
-        };
-        setStats(newStats);
-      }
-      
-      // Update BMI data
-      if (bmiData) {
-        const newBmiData = {
-          ...bmiData,
-          current_bmi: response.data.bmi,
-          history: [...(bmiData.history || []), { date: newEntry.date, bmi: response.data.bmi }]
-        };
-        setBmiData(newBmiData);
-      }
-      
-      // Also fetch fresh data from server
-      fetchData();
+      setWeightDialogOpen(false);
     } catch (error) {
       toast.error('Erreur lors de l\'enregistrement');
+    }
+  };
+
+  const logSteps = async () => {
+    if (!newSteps || parseInt(newSteps) < 0) {
+      toast.error('Veuillez entrer un nombre de pas valide');
+      return;
+    }
+    
+    setLoadingSteps(true);
+    try {
+      const response = await axios.post(`${API}/steps/log`, { 
+        steps: parseInt(newSteps),
+        source: 'manual'
+      }, { withCredentials: true });
+      
+      toast.success(`${newSteps} pas enregistrés ! (${response.data.calories_burned} kcal brûlées)`);
+      setNewSteps('');
+      setStepsDialogOpen(false);
+      fetchStepsData();
+    } catch (error) {
+      toast.error('Erreur lors de l\'enregistrement');
+    } finally {
+      setLoadingSteps(false);
+    }
+  };
+
+  const generatePdfReport = async () => {
+    setGeneratingPdf(true);
+    
+    try {
+      // Fetch report data
+      const response = await axios.get(`${API}/reports/progress-pdf`, { withCredentials: true });
+      const data = response.data;
+      setReportData(data);
+      
+      // Generate PDF
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Header
+      doc.setFontSize(24);
+      doc.setTextColor(244, 114, 182); // Primary color
+      doc.text('Fat & Slim', pageWidth / 2, 20, { align: 'center' });
+      
+      doc.setFontSize(14);
+      doc.setTextColor(100);
+      doc.text('Rapport de Progression', pageWidth / 2, 30, { align: 'center' });
+      
+      // User info
+      doc.setFontSize(10);
+      doc.setTextColor(60);
+      doc.text(`Généré le: ${new Date().toLocaleDateString('fr-FR')}`, 20, 45);
+      doc.text(`Utilisateur: ${data.user.name}`, 20, 52);
+      doc.text(`Membre depuis: ${new Date(data.user.created_at).toLocaleDateString('fr-FR')}`, 20, 59);
+      doc.text(`Jours actifs: ${data.user.days_active}`, 20, 66);
+      
+      // Profile section
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text('Profil', 20, 82);
+      
+      doc.autoTable({
+        startY: 87,
+        head: [['Paramètre', 'Valeur']],
+        body: [
+          ['Âge', `${data.profile.age} ans`],
+          ['Taille', `${data.profile.height} cm`],
+          ['Objectif calories', `${data.profile.daily_calorie_target} kcal/jour`],
+          ['Poids objectif', `${data.profile.target_weight} kg`],
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [244, 114, 182] },
+        styles: { fontSize: 9 }
+      });
+      
+      // Weight progress section
+      doc.setFontSize(14);
+      doc.text('Progression du poids', 20, doc.lastAutoTable.finalY + 15);
+      
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [['Métrique', 'Valeur']],
+        body: [
+          ['Poids initial', `${data.weight_progress.start_weight} kg`],
+          ['Poids actuel', `${data.weight_progress.current_weight} kg`],
+          ['Variation', `${data.weight_progress.weight_change > 0 ? '+' : ''}${data.weight_progress.weight_change} kg`],
+          ['IMC initial', `${data.weight_progress.bmi_start}`],
+          ['IMC actuel', `${data.weight_progress.bmi_current}`],
+          ['Pesées enregistrées', `${data.weight_progress.entries_count}`],
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [163, 230, 53] }, // Secondary color
+        styles: { fontSize: 9 }
+      });
+      
+      // Nutrition stats
+      doc.setFontSize(14);
+      doc.text('Statistiques nutritionnelles', 20, doc.lastAutoTable.finalY + 15);
+      
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [['Métrique', 'Valeur']],
+        body: [
+          ['Repas enregistrés', `${data.nutrition_stats.total_meals_logged}`],
+          ['Calories totales', `${data.nutrition_stats.total_calories_logged.toLocaleString()} kcal`],
+          ['Moyenne journalière', `${data.nutrition_stats.avg_daily_calories} kcal`],
+          ['Objectif journalier', `${data.nutrition_stats.target_calories} kcal`],
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [251, 191, 36] }, // Accent color
+        styles: { fontSize: 9 }
+      });
+      
+      // Activity stats
+      doc.setFontSize(14);
+      doc.text('Activité physique', 20, doc.lastAutoTable.finalY + 15);
+      
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [['Métrique', 'Valeur']],
+        body: [
+          ['Pas totaux', `${data.activity_stats.total_steps.toLocaleString()}`],
+          ['Calories brûlées', `${data.activity_stats.total_calories_burned.toLocaleString()} kcal`],
+          ['Moyenne journalière', `${data.activity_stats.avg_daily_steps.toLocaleString()} pas`],
+          ['Jours suivis', `${data.activity_stats.days_tracked}`],
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [147, 51, 234] },
+        styles: { fontSize: 9 }
+      });
+      
+      // Footer
+      const pageCount = doc.internal.getNumberOfPages();
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.text(
+          `Fat & Slim - Rapport généré le ${new Date().toLocaleDateString('fr-FR')} - Page ${i}/${pageCount}`,
+          pageWidth / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: 'center' }
+        );
+      }
+      
+      // Save PDF
+      doc.save(`fat-slim-rapport-${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success('Rapport PDF téléchargé !');
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Erreur lors de la génération du rapport');
+    } finally {
+      setGeneratingPdf(false);
     }
   };
 
   const getBmiCategory = (bmi) => {
     if (bmi < 18.5) return { label: 'Insuffisance pondérale', color: 'text-blue-500' };
     if (bmi < 25) return { label: 'Poids normal', color: 'text-green-500' };
-    if (bmi < 30) return { label: 'Surpoids', color: 'text-orange-500' };
+    if (bmi < 30) return { label: 'Surpoids', color: 'text-yellow-500' };
     return { label: 'Obésité', color: 'text-red-500' };
+  };
+
+  const getStepsRecommendation = () => {
+    if (!stepsData) return '';
+    const remaining = stepsData.goal - stepsData.steps;
+    if (remaining <= 0) return '🎉 Objectif atteint ! Bravo !';
+    if (remaining < 2000) return `💪 Plus que ${remaining.toLocaleString()} pas, vous y êtes presque !`;
+    if (remaining < 5000) return `🚶 Encore ${remaining.toLocaleString()} pas, une petite marche ?`;
+    return `🎯 ${remaining.toLocaleString()} pas restants pour aujourd'hui`;
   };
 
   if (loading) {
@@ -126,20 +309,16 @@ export default function ProgressPage() {
     );
   }
 
-  // Format weight data for chart
-  const weightChartData = weightHistory.map(entry => ({
-    date: new Date(entry.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
-    weight: entry.weight,
-    bmi: entry.bmi
+  const chartData = weightHistory.map(entry => ({
+    date: new Date(entry.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+    weight: entry.weight
   }));
 
-  // Format BMI data for chart
-  const bmiChartData = bmiData?.history?.map(entry => ({
-    date: new Date(entry.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
-    bmi: entry.bmi
-  })) || [];
-
-  const bmiCategory = stats?.bmi ? getBmiCategory(stats.bmi) : null;
+  const stepsChartData = stepsHistory.map(entry => ({
+    date: new Date(entry.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+    steps: entry.steps,
+    calories: entry.calories_burned
+  }));
 
   return (
     <div className="min-h-screen bg-background pb-safe" data-testid="progress-page">
@@ -154,415 +333,399 @@ export default function ProgressPage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <div>
-              <h1 className="font-heading text-xl font-bold">Progrès</h1>
-              <p className="text-sm text-muted-foreground">Suivez votre évolution</p>
-            </div>
+            <h1 className="font-heading text-xl font-bold">Mes Progrès</h1>
           </div>
-          <Dialog open={weightDialogOpen} onOpenChange={setWeightDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="rounded-full" data-testid="add-weight-btn">
-                <Plus className="w-4 h-4 mr-1" />
-                Poids
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Enregistrer votre poids</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Input
-                  type="number"
-                  step="0.1"
-                  placeholder="70.5"
-                  value={newWeight}
-                  onChange={(e) => setNewWeight(e.target.value)}
-                  data-testid="weight-input"
-                />
-                <Button onClick={logWeight} className="w-full">
-                  Enregistrer
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={generatePdfReport}
+            disabled={generatingPdf}
+          >
+            {generatingPdf ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            Rapport PDF
+          </Button>
         </div>
       </header>
 
-      <main className="p-4 space-y-6 pb-24">
+      <main className="p-4 space-y-4 max-w-lg mx-auto">
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="weight">Poids</TabsTrigger>
-            <TabsTrigger value="bmi">IMC</TabsTrigger>
-            <TabsTrigger value="badges">Badges</TabsTrigger>
+            <TabsTrigger value="weight" className="flex items-center gap-1">
+              <Scale className="w-4 h-4" />
+              Poids
+            </TabsTrigger>
+            <TabsTrigger value="steps" className="flex items-center gap-1">
+              <Footprints className="w-4 h-4" />
+              Pas
+            </TabsTrigger>
+            <TabsTrigger value="badges" className="flex items-center gap-1">
+              <Trophy className="w-4 h-4" />
+              Badges
+            </TabsTrigger>
           </TabsList>
 
           {/* Weight Tab */}
-          <TabsContent value="weight" className="space-y-4 mt-4">
-            {/* Weight Stats */}
-            {stats && (
-              <Card data-testid="weight-stats-card">
-                <CardContent className="p-6">
+          <TabsContent value="weight" className="space-y-4">
+            {/* BMI Card */}
+            {bmiData && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="font-heading text-lg flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-primary" />
+                    Indice de Masse Corporelle
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-                        <Scale className="w-6 h-6 text-primary-foreground" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Poids actuel</p>
-                        <p className="font-heading text-3xl font-bold">{stats.current_weight} kg</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-3 rounded-xl bg-muted/50">
-                      <p className="text-sm text-muted-foreground">Objectif</p>
-                      <p className="font-heading font-bold text-lg">{stats.target_weight} kg</p>
-                    </div>
-                    <div className="text-center p-3 rounded-xl bg-muted/50">
-                      <p className="text-sm text-muted-foreground">Évolution</p>
-                      <p className={`font-heading font-bold text-lg ${stats.weight_change < 0 ? 'text-primary' : stats.weight_change > 0 ? 'text-destructive' : ''}`}>
-                        {stats.weight_change > 0 ? '+' : ''}{stats.weight_change} kg
+                    <div>
+                      <p className="text-4xl font-bold">{bmiData.bmi}</p>
+                      <p className={`text-sm font-medium ${getBmiCategory(bmiData.bmi).color}`}>
+                        {getBmiCategory(bmiData.bmi).label}
                       </p>
                     </div>
-                    <div className="text-center p-3 rounded-xl bg-muted/50">
-                      <p className="text-sm text-muted-foreground">Poids idéal</p>
-                      <p className="font-heading font-bold text-lg">{stats.ideal_weight || '--'} kg</p>
+                    <div className="text-right text-sm text-muted-foreground">
+                      <p>Taille: {bmiData.height} cm</p>
+                      <p>Poids: {bmiData.weight} kg</p>
                     </div>
+                  </div>
+                  
+                  {/* BMI Scale */}
+                  <div className="relative h-3 rounded-full bg-gradient-to-r from-blue-500 via-green-500 via-yellow-500 to-red-500">
+                    <div 
+                      className="absolute w-3 h-5 bg-white border-2 border-black rounded-sm -top-1"
+                      style={{ 
+                        left: `${Math.min(Math.max((bmiData.bmi - 15) / 25 * 100, 0), 100)}%`,
+                        transform: 'translateX(-50%)'
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>15</span>
+                    <span>18.5</span>
+                    <span>25</span>
+                    <span>30</span>
+                    <span>40</span>
                   </div>
                 </CardContent>
               </Card>
             )}
 
             {/* Weight Chart */}
-            {weightChartData.length > 1 && (
-              <Card data-testid="weight-chart-card">
-                <CardHeader className="pb-2">
-                  <CardTitle className="font-heading text-lg flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-chart-4" />
-                    Évolution du poids
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+            <Card>
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="font-heading text-lg flex items-center gap-2">
+                  <Scale className="w-5 h-5 text-secondary" />
+                  Évolution du poids
+                </CardTitle>
+                <Dialog open={weightDialogOpen} onOpenChange={setWeightDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="rounded-full">
+                      <Plus className="w-4 h-4 mr-1" />
+                      Ajouter
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Enregistrer mon poids</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div>
+                        <label className="text-sm text-muted-foreground">Poids (kg)</label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="Ex: 72.5"
+                          value={newWeight}
+                          onChange={(e) => setNewWeight(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={logWeight}>Enregistrer</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent>
+                {chartData.length > 0 ? (
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={weightChartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis 
-                          dataKey="date" 
-                          stroke="hsl(var(--muted-foreground))"
-                          fontSize={12}
-                        />
+                      <ComposedChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                        <XAxis dataKey="date" stroke="#666" fontSize={10} />
                         <YAxis 
-                          stroke="hsl(var(--muted-foreground))"
-                          fontSize={12}
-                          domain={['dataMin - 2', 'dataMax + 2']}
+                          stroke="#666" 
+                          fontSize={10}
+                          domain={['auto', 'auto']}
                         />
                         <Tooltip 
-                          contentStyle={{
-                            backgroundColor: 'hsl(var(--card))',
-                            border: '1px solid hsl(var(--border))',
+                          contentStyle={{ 
+                            backgroundColor: '#1a1a1a', 
+                            border: '1px solid #333',
                             borderRadius: '8px'
                           }}
-                          formatter={(value, name) => [
-                            name === 'weight' ? `${value} kg` : value,
-                            name === 'weight' ? 'Poids' : 'IMC'
-                          ]}
                         />
                         {stats?.target_weight && (
                           <ReferenceLine 
                             y={stats.target_weight} 
-                            stroke="hsl(var(--primary))"
+                            stroke="#a3e635" 
                             strokeDasharray="5 5"
-                            label={{ value: 'Objectif', position: 'right', fontSize: 10 }}
+                            label={{ value: 'Objectif', fill: '#a3e635', fontSize: 10 }}
                           />
                         )}
+                        <Area 
+                          type="monotone" 
+                          dataKey="weight" 
+                          fill="rgba(244, 114, 182, 0.2)" 
+                          stroke="none"
+                        />
                         <Line 
                           type="monotone" 
                           dataKey="weight" 
-                          stroke="hsl(var(--primary))"
-                          strokeWidth={3}
-                          dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
-                          activeDot={{ r: 6, fill: 'hsl(var(--primary))' }}
+                          stroke="#F472B6" 
+                          strokeWidth={2}
+                          dot={{ fill: '#F472B6', r: 4 }}
+                          activeDot={{ r: 6, fill: '#F472B6' }}
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Streak */}
-            {stats?.streak && (
-              <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-accent/10">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center">
-                    <Flame className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Série actuelle</p>
-                    <p className="font-heading text-3xl font-bold">{stats.streak.current} jours</p>
-                    <p className="text-sm text-muted-foreground">
-                      Record: {stats.streak.longest} jours
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          {/* BMI Tab */}
-          <TabsContent value="bmi" className="space-y-4 mt-4">
-            {/* Current BMI */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 rounded-2xl bg-secondary/10 flex items-center justify-center">
-                    <Activity className="w-8 h-8 text-secondary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Votre IMC</p>
-                    <p className="font-heading text-4xl font-bold">{stats?.bmi || '--'}</p>
-                    {bmiCategory && (
-                      <p className={`text-sm font-medium ${bmiCategory.color}`}>
-                        {bmiCategory.label}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* BMI Scale */}
-                <div className="relative mt-6">
-                  <div className="flex h-4 rounded-full overflow-hidden">
-                    <div className="flex-1 bg-blue-400" title="< 18.5" />
-                    <div className="flex-1 bg-green-400" title="18.5 - 24.9" />
-                    <div className="flex-1 bg-orange-400" title="25 - 29.9" />
-                    <div className="flex-1 bg-red-400" title="> 30" />
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>16</span>
-                    <span>18.5</span>
-                    <span>25</span>
-                    <span>30</span>
-                    <span>40</span>
-                  </div>
-                  {stats?.bmi && (
-                    <div 
-                      className="absolute -top-1 w-0.5 h-6 bg-foreground"
-                      style={{ 
-                        left: `${Math.min(100, Math.max(0, ((stats.bmi - 16) / 24) * 100))}%`,
-                        transform: 'translateX(-50%)'
-                      }}
-                    >
-                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-xs font-bold whitespace-nowrap">
-                        {stats.bmi}
-                      </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-center">
+                    <div>
+                      <Scale className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">Aucune donnée</p>
+                      <p className="text-sm text-muted-foreground">Commencez à enregistrer votre poids</p>
                     </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div className="p-3 rounded-xl bg-primary/5 border border-primary/20">
-                    <p className="text-xs text-muted-foreground">IMC idéal</p>
-                    <p className="font-heading font-bold text-xl text-primary">
-                      {bmiData?.ideal_bmi || 22.0}
-                    </p>
                   </div>
-                  <div className="p-3 rounded-xl bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Poids idéal</p>
-                    <p className="font-heading font-bold text-xl">
-                      {bmiData?.ideal_weight || '--'} kg
-                    </p>
-                  </div>
-                </div>
-
-                {bmiData?.ideal_weight_range && (
-                  <p className="text-sm text-muted-foreground mt-3 text-center">
-                    Plage de poids sain: {bmiData.ideal_weight_range.min} - {bmiData.ideal_weight_range.max} kg
-                  </p>
                 )}
               </CardContent>
             </Card>
 
-            {/* BMI Chart */}
-            {bmiChartData.length > 1 && (
+            {/* Stats Summary */}
+            {stats && (
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-primary">
+                      {stats.current_weight || '—'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Poids actuel (kg)</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-secondary">
+                      {stats.target_weight || '—'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Objectif (kg)</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Steps Tab */}
+          <TabsContent value="steps" className="space-y-4">
+            {/* Today's Steps Card */}
+            <Card className="bg-gradient-to-br from-primary/10 to-secondary/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="font-heading text-lg flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Footprints className="w-5 h-5 text-primary" />
+                    Pas aujourd'hui
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={fetchStepsData}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center mb-4">
+                  <p className="text-5xl font-bold text-primary">
+                    {(stepsData?.steps || 0).toLocaleString()}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    sur {(stepsData?.goal || 10000).toLocaleString()} pas
+                  </p>
+                </div>
+                
+                <Progress 
+                  value={stepsData?.progress || 0} 
+                  className="h-4 mb-4"
+                />
+                
+                <p className="text-center text-sm text-muted-foreground mb-4">
+                  {getStepsRecommendation()}
+                </p>
+                
+                {/* Calories Burned */}
+                <div className="flex items-center justify-center gap-6 p-4 rounded-xl bg-background/50">
+                  <div className="text-center">
+                    <div className="flex items-center gap-1 justify-center">
+                      <Flame className="w-5 h-5 text-orange-500" />
+                      <p className="text-2xl font-bold">{stepsData?.calories_burned || 0}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">kcal brûlées</p>
+                  </div>
+                  <div className="h-10 w-px bg-border" />
+                  <div className="text-center">
+                    <div className="flex items-center gap-1 justify-center">
+                      <Zap className="w-5 h-5 text-yellow-500" />
+                      <p className="text-2xl font-bold">{stepsData?.progress || 0}%</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">objectif</p>
+                  </div>
+                </div>
+                
+                <Dialog open={stepsDialogOpen} onOpenChange={setStepsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="w-full mt-4">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Enregistrer mes pas
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Enregistrer mes pas</DialogTitle>
+                      <DialogDescription>
+                        Entrez le nombre de pas de votre podomètre ou montre connectée
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <Input
+                        type="number"
+                        placeholder="Ex: 8500"
+                        value={newSteps}
+                        onChange={(e) => setNewSteps(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        💡 Les calories seront calculées automatiquement selon votre profil
+                      </p>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={logSteps} disabled={loadingSteps}>
+                        {loadingSteps ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : null}
+                        Enregistrer
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
+
+            {/* Steps History Chart */}
+            {stepsChartData.length > 0 && (
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="font-heading text-lg flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-secondary" />
-                    Évolution de l'IMC
-                  </CardTitle>
+                  <CardTitle className="font-heading text-lg">Historique (7 jours)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64">
+                  <div className="h-48">
                     <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={bmiChartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis 
-                          dataKey="date" 
-                          stroke="hsl(var(--muted-foreground))"
-                          fontSize={12}
-                        />
-                        <YAxis 
-                          stroke="hsl(var(--muted-foreground))"
-                          fontSize={12}
-                          domain={[15, 35]}
-                        />
+                      <BarChart data={stepsChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                        <XAxis dataKey="date" stroke="#666" fontSize={10} />
+                        <YAxis stroke="#666" fontSize={10} />
                         <Tooltip 
-                          contentStyle={{
-                            backgroundColor: 'hsl(var(--card))',
-                            border: '1px solid hsl(var(--border))',
+                          contentStyle={{ 
+                            backgroundColor: '#1a1a1a', 
+                            border: '1px solid #333',
                             borderRadius: '8px'
                           }}
+                          formatter={(value, name) => [
+                            value.toLocaleString(), 
+                            name === 'steps' ? 'Pas' : 'Calories'
+                          ]}
                         />
-                        {/* Healthy BMI zone */}
-                        <ReferenceLine y={18.5} stroke="hsl(var(--chart-4))" strokeDasharray="3 3" />
-                        <ReferenceLine y={24.9} stroke="hsl(var(--chart-4))" strokeDasharray="3 3" />
-                        {/* Ideal BMI line */}
-                        <ReferenceLine 
-                          y={bmiData?.ideal_bmi || 22} 
-                          stroke="hsl(var(--primary))"
-                          strokeDasharray="5 5"
-                          label={{ value: 'Idéal', position: 'right', fontSize: 10 }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="bmi" 
-                          stroke="hsl(var(--secondary))"
-                          strokeWidth={3}
-                          dot={{ fill: 'hsl(var(--secondary))', strokeWidth: 2 }}
-                        />
-                      </ComposedChart>
+                        <Bar dataKey="steps" fill="#F472B6" radius={[4, 4, 0, 0]} />
+                      </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <p className="text-xs text-muted-foreground text-center mt-2">
-                    Zone verte = IMC sain (18.5 - 24.9)
-                  </p>
                 </CardContent>
               </Card>
             )}
 
-            {/* BMI Info */}
-            <Card className="bg-muted/30">
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-3">📊 Comprendre l'IMC</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-blue-400" />
-                    <span>{"< 18.5 : Insuffisance pondérale"}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-green-400" />
-                    <span>18.5 - 24.9 : Poids normal ✓</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-orange-400" />
-                    <span>25 - 29.9 : Surpoids</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-red-400" />
-                    <span>≥ 30 : Obésité</span>
-                  </div>
+            {/* Recommendations */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="font-heading text-lg flex items-center gap-2">
+                  <Target className="w-5 h-5 text-accent" />
+                  Objectifs recommandés
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="p-3 rounded-xl bg-muted/50">
+                  <p className="font-medium text-sm">🎯 Objectif quotidien</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {(stepsData?.goal || 10000).toLocaleString()} pas/jour basé sur votre niveau d'activité
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-3">
-                  IMC = Poids (kg) ÷ Taille (m)²
-                </p>
+                <div className="p-3 rounded-xl bg-muted/50">
+                  <p className="font-medium text-sm">🔥 Calories à brûler</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Environ {Math.round((stepsData?.goal || 10000) * 0.04)} kcal avec l'objectif de pas
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-muted/50">
+                  <p className="font-medium text-sm">🚶 Distance estimée</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ~{(((stepsData?.goal || 10000) * 0.75) / 1000).toFixed(1)} km pour atteindre l'objectif
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* Badges Tab */}
-          <TabsContent value="badges" className="space-y-4 mt-4">
-            {badges && (
-              <>
-                {/* Earned Badges */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="font-heading text-lg flex items-center gap-2">
-                      <Trophy className="w-5 h-5 text-accent" />
-                      Badges gagnés ({badges.total_earned})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {badges.earned.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-4">
-                        {badges.earned.map((badge) => (
-                          <div 
-                            key={badge.badge_id}
-                            className="flex flex-col items-center text-center p-3"
-                          >
-                            <div className="w-14 h-14 rounded-2xl badge-3d flex items-center justify-center mb-2">
-                              <Award className="w-7 h-7 text-primary-foreground" />
-                            </div>
-                            <p className="text-xs font-medium">{badge.badge_name}</p>
-                          </div>
-                        ))}
+          <TabsContent value="badges" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading text-lg flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-accent" />
+                  Mes badges
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {badges?.badges ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {badges.badges.map((badge) => (
+                      <div 
+                        key={badge.id}
+                        className={`p-4 rounded-xl border text-center transition-all ${
+                          badge.earned 
+                            ? 'bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/30' 
+                            : 'bg-muted/30 border-border opacity-50'
+                        }`}
+                      >
+                        <span className="text-3xl">{badge.icon}</span>
+                        <p className="font-medium text-sm mt-2">{badge.name}</p>
+                        <p className="text-xs text-muted-foreground">{badge.description}</p>
+                        {badge.earned && (
+                          <p className="text-xs text-primary mt-1">✓ Obtenu</p>
+                        )}
                       </div>
-                    ) : (
-                      <p className="text-center text-muted-foreground py-4">
-                        Aucun badge gagné pour l'instant
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Available Badges */}
-                {badges.available.length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="font-heading text-lg">
-                        Badges à débloquer
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-3 gap-4">
-                        {badges.available.map((badge) => (
-                          <div 
-                            key={badge.id}
-                            className="flex flex-col items-center text-center p-3 opacity-50"
-                          >
-                            <div className="w-14 h-14 rounded-2xl badge-3d-locked flex items-center justify-center mb-2">
-                              <Award className="w-7 h-7 text-muted-foreground" />
-                            </div>
-                            <p className="text-xs font-medium text-muted-foreground">{badge.name}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{badge.description}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </>
-            )}
-
-            {/* Weekly Summary */}
-            {stats?.weekly_stats && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="font-heading text-lg flex items-center gap-2">
-                    <Target className="w-5 h-5 text-secondary" />
-                    Cette semaine
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl bg-muted/50 text-center">
-                      <p className="text-3xl font-bold font-heading">{stats.weekly_stats.workouts_completed}</p>
-                      <p className="text-sm text-muted-foreground">Entraînements</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-muted/50 text-center">
-                      <p className="text-3xl font-bold font-heading">{stats.weekly_stats.workout_minutes}</p>
-                      <p className="text-sm text-muted-foreground">Minutes</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-muted/50 text-center col-span-2">
-                      <p className="text-3xl font-bold font-heading">{stats.weekly_stats.calories_consumed.toLocaleString()}</p>
-                      <p className="text-sm text-muted-foreground">Calories totales</p>
-                    </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <div className="text-center py-8">
+                    <Trophy className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Continuez pour débloquer des badges !</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </main>
