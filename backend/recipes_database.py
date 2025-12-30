@@ -214,7 +214,7 @@ MODIFIERS = {
     "saveur": ["chocolat", "vanille", "citron", "coco", "amande", "noisette", "cannelle", "matcha", "café", "caramel"],
 }
 
-# Images par catégorie (URLs Unsplash)
+# Images par catégorie (URLs Unsplash) - MAPPING PRÉCIS PAR TYPE DE PLAT ET MOT-CLÉ
 CATEGORY_IMAGES = {
     "breakfast": [
         "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400",
@@ -252,6 +252,133 @@ CATEGORY_IMAGES = {
         "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=400",
     ],
 }
+
+# Images spécifiques par mots-clés pour plus de cohérence
+KEYWORD_IMAGES = {
+    # Petit-déjeuner spécifiques
+    "porridge": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400",
+    "smoothie": "https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=400",
+    "smoothie bowl": "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400",
+    "œufs brouillés": "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400",
+    "omelette": "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400",
+    "pancakes": "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400",
+    "crêpes": "https://images.unsplash.com/photo-1519676867240-f03562e64548?w=400",
+    "gaufres": "https://images.unsplash.com/photo-1562376552-0d160a2f238d?w=400",
+    "granola": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400",
+    "muesli": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400",
+    "açaï": "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400",
+    "toast": "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400",
+    "tartine": "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400",
+    "avocado toast": "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400",
+    "yaourt": "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400",
+    "chia pudding": "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400",
+    "pain perdu": "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400",
+    "œufs pochés": "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400",
+    "breakfast bowl": "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400",
+    
+    # Salades
+    "salade": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400",
+    "salade composée": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400",
+    "salade méditerranéen": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400",
+    "taboulé": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400",
+    
+    # Bowls
+    "buddha bowl": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
+    "poke bowl": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
+    "burrito bowl": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
+    "bowl méditerranéen": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
+    
+    # Wraps et sandwichs
+    "wrap": "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400",
+    "sandwich": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
+    "tacos": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400",
+    "fajitas": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400",
+    
+    # Soupes et plats mijotés
+    "soupe": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400",
+    "ragoût": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400",
+    "blanquette": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400",
+    "tajine": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400",
+    "cocotte": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400",
+    "mijoté": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400",
+    "fricassée": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400",
+    "colombo": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400",
+    
+    # Riz et pâtes
+    "risotto": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400",
+    "riz sauté": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400",
+    "nouilles": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400",
+    "couscous": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400",
+    
+    # Poisson
+    "saumon": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",
+    "pavé": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",
+    "filet": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",
+    "cabillaud": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",
+    "thon": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",
+    "poisson": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",
+    "papillote": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",
+    
+    # Viande
+    "poulet": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400",
+    "dinde": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400",
+    "escalope": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400",
+    "brochettes": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400",
+    "grillades": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400",
+    "bœuf": "https://images.unsplash.com/photo-1558030006-450675393462?w=400",
+    "rôti": "https://images.unsplash.com/photo-1558030006-450675393462?w=400",
+    "émincé": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400",
+    "sauté": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400",
+    "boulettes": "https://images.unsplash.com/photo-1529042410759-befb1204b468?w=400",
+    
+    # Légumes et gratins
+    "gratin": "https://images.unsplash.com/photo-1574484284002-952d92456975?w=400",
+    "poêlée": "https://images.unsplash.com/photo-1547592180-85f173990554?w=400",
+    "wok": "https://images.unsplash.com/photo-1547592180-85f173990554?w=400",
+    "légumes": "https://images.unsplash.com/photo-1547592180-85f173990554?w=400",
+    
+    # Pizza et quiche
+    "quiche": "https://images.unsplash.com/photo-1574484284002-952d92456975?w=400",
+    "pizza": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400",
+    
+    # Curry et plats asiatiques
+    "curry": "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400",
+    "thaï": "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400",
+    "asiatique": "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400",
+    "indien": "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400",
+    
+    # Snacks et desserts
+    "energy balls": "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400",
+    "barre": "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400",
+    "muffin": "https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=400",
+    "biscuits": "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400",
+    "crackers": "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400",
+    "houmous": "https://images.unsplash.com/photo-1577805947697-89e18249d767?w=400",
+    "compote": "https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=400",
+    "fromage blanc": "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400",
+    "pudding": "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400",
+    "mousse": "https://images.unsplash.com/photo-1541599188778-cdc73298e8fd?w=400",
+    "galette": "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400",
+    
+    # Fruits
+    "fruits rouges": "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=400",
+    "banane": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400",
+    "mangue": "https://images.unsplash.com/photo-1553279768-865429fa0078?w=400",
+    "fraises": "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400",
+}
+
+def get_image_for_recipe(name: str, category: str, seed: int) -> str:
+    """Retourne une image cohérente basée sur le nom de la recette"""
+    name_lower = name.lower()
+    
+    # Chercher les mots-clés dans le nom de la recette
+    for keyword, image_url in KEYWORD_IMAGES.items():
+        if keyword in name_lower:
+            return image_url
+    
+    # Fallback sur les images de catégorie
+    random.seed(seed)
+    return random.choice(CATEGORY_IMAGES[category])
 
 # Étapes de préparation génériques
 STEPS_BY_CATEGORY = {
