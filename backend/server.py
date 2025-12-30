@@ -2642,8 +2642,8 @@ async def generate_progress_pdf(user: dict = Depends(get_current_user)):
     
     return report_data
 
-# Add dateutil to requirements
-# pip install python-dateutil
+# Include router - MUST be after all endpoint definitions
+app.include_router(api_router)
 
 app.add_middleware(
     CORSMiddleware,
