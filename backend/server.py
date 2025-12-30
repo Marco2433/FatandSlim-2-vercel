@@ -2721,11 +2721,57 @@ async def check_and_award_badges(user_id: str):
         if count > 0:
             await award_badge(user_id, "first_workout", "Premier entraînement")
     
-    # Check streak
-    if "week_streak" not in existing:
-        streak = await get_streak(user_id)
-        if streak["current"] >= 7:
-            await award_badge(user_id, "week_streak", "Semaine parfaite")
+    # Check streak badges
+    streak = await get_streak(user_id)
+    if "week_streak" not in existing and streak["current"] >= 7:
+        await award_badge(user_id, "week_streak", "Semaine parfaite")
+    if "month_streak" not in existing and streak["current"] >= 30:
+        await award_badge(user_id, "month_streak", "Mois incroyable")
+    
+    # Check nutrition master
+    if "nutrition_master" not in existing:
+        food_count = await db.food_logs.count_documents({"user_id": user_id})
+        if food_count >= 100:
+            await award_badge(user_id, "nutrition_master", "Maître nutrition")
+    
+    # Check food scanner
+    if "food_scanner" not in existing:
+        scan_count = await db.food_logs.count_documents({"user_id": user_id, "image_url": {"$exists": True}})
+        if scan_count >= 10:
+            await award_badge(user_id, "food_scanner", "Détective nutrition")
+    
+    # Check meal planner
+    if "meal_planner" not in existing:
+        meal_plan_count = await db.meal_plans.count_documents({"user_id": user_id})
+        if meal_plan_count >= 1:
+            await award_badge(user_id, "meal_planner", "Chef organisé")
+    
+    # Check workout warrior
+    if "workout_warrior" not in existing:
+        workout_count = await db.workout_logs.count_documents({"user_id": user_id})
+        if workout_count >= 50:
+            await award_badge(user_id, "workout_warrior", "Guerrier fitness")
+    
+    # Check points badges
+    user_points = await db.user_points.find_one({"user_id": user_id}, {"_id": 0})
+    total_points = user_points.get("total_points", 0) if user_points else 0
+    
+    if "points_100" not in existing and total_points >= 100:
+        await award_badge(user_id, "points_100", "Challenger")
+    if "points_500" not in existing and total_points >= 500:
+        await award_badge(user_id, "points_500", "Champion")
+    if "points_1000" not in existing and total_points >= 1000:
+        await award_badge(user_id, "points_1000", "Légende")
+    
+    # Check social badges
+    friend_count = await db.friendships.count_documents({
+        "$or": [{"user_id": user_id}, {"friend_id": user_id}],
+        "status": "accepted"
+    })
+    if "first_friend" not in existing and friend_count >= 1:
+        await award_badge(user_id, "first_friend", "Social")
+    if "social_butterfly" not in existing and friend_count >= 10:
+        await award_badge(user_id, "social_butterfly", "Papillon social")
 
 async def award_badge(user_id: str, badge_id: str, badge_name: str):
     await db.user_badges.insert_one({
