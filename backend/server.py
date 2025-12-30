@@ -2634,21 +2634,76 @@ async def get_badges(user: dict = Depends(get_current_user)):
     # Check for new badges
     await check_and_award_badges(user["user_id"])
     
+    # Get user stats for progress calculation
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    food_count = await db.food_logs.count_documents({"user_id": user["user_id"]})
+    workout_count = await db.workout_logs.count_documents({"user_id": user["user_id"]})
+    streak_data = await get_streak(user["user_id"])
+    scan_count = await db.food_logs.count_documents({"user_id": user["user_id"], "image_url": {"$exists": True}})
+    meal_plan_count = await db.meal_plans.count_documents({"user_id": user["user_id"]})
+    user_points = await db.user_points.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    total_points = user_points.get("total_points", 0) if user_points else 0
+    friend_count = await db.friendships.count_documents({
+        "$or": [{"user_id": user["user_id"]}, {"friend_id": user["user_id"]}],
+        "status": "accepted"
+    })
+    
     all_badges = [
-        {"id": "first_meal", "name": "Premier repas", "description": "Enregistrez votre premier repas", "icon": "utensils"},
-        {"id": "first_workout", "name": "Premier entraînement", "description": "Complétez votre premier workout", "icon": "dumbbell"},
-        {"id": "week_streak", "name": "Semaine parfaite", "description": "7 jours consécutifs d'activité", "icon": "fire"},
-        {"id": "weight_goal_10", "name": "10% accompli", "description": "10% de votre objectif poids atteint", "icon": "target"},
-        {"id": "food_scanner", "name": "Détective nutrition", "description": "Scannez 10 aliments", "icon": "camera"},
-        {"id": "meal_planner", "name": "Chef organisé", "description": "Générez votre premier plan repas", "icon": "calendar"},
+        # Beginner badges
+        {"id": "first_meal", "name": "Premier repas", "description": "Enregistrez votre premier repas", "icon": "🍽️", "category": "nutrition", "progress": min(food_count, 1), "target": 1},
+        {"id": "first_workout", "name": "Premier entraînement", "description": "Complétez votre premier workout", "icon": "💪", "category": "fitness", "progress": min(workout_count, 1), "target": 1},
+        {"id": "week_streak", "name": "Semaine parfaite", "description": "7 jours consécutifs d'activité", "icon": "🔥", "category": "streak", "progress": streak_data.get("current", 0), "target": 7},
+        
+        # Progress badges
+        {"id": "food_scanner", "name": "Détective nutrition", "description": "Scannez 10 aliments", "icon": "📸", "category": "nutrition", "progress": min(scan_count, 10), "target": 10},
+        {"id": "meal_planner", "name": "Chef organisé", "description": "Générez votre premier plan repas", "icon": "📅", "category": "nutrition", "progress": min(meal_plan_count, 1), "target": 1},
+        {"id": "nutrition_master", "name": "Maître nutrition", "description": "100 repas enregistrés", "icon": "🥗", "category": "nutrition", "progress": min(food_count, 100), "target": 100},
+        
+        # Fitness badges
+        {"id": "workout_warrior", "name": "Guerrier fitness", "description": "50 entraînements complétés", "icon": "🏋️", "category": "fitness", "progress": min(workout_count, 50), "target": 50},
+        {"id": "month_streak", "name": "Mois incroyable", "description": "30 jours consécutifs", "icon": "⭐", "category": "streak", "progress": streak_data.get("current", 0), "target": 30},
+        
+        # Points badges
+        {"id": "points_100", "name": "Challenger", "description": "Gagnez 100 points de défis", "icon": "🎯", "category": "challenges", "progress": min(total_points, 100), "target": 100},
+        {"id": "points_500", "name": "Champion", "description": "Gagnez 500 points de défis", "icon": "🏆", "category": "challenges", "progress": min(total_points, 500), "target": 500},
+        {"id": "points_1000", "name": "Légende", "description": "Gagnez 1000 points de défis", "icon": "👑", "category": "challenges", "progress": min(total_points, 1000), "target": 1000},
+        
+        # Social badges
+        {"id": "first_friend", "name": "Social", "description": "Ajoutez votre premier ami", "icon": "👋", "category": "social", "progress": min(friend_count, 1), "target": 1},
+        {"id": "social_butterfly", "name": "Papillon social", "description": "10 amis dans votre réseau", "icon": "🦋", "category": "social", "progress": min(friend_count, 10), "target": 10},
     ]
     
     earned_ids = {b["badge_id"] for b in user_badges}
     
+    # Calculate next badges to earn (closest to completion)
+    available_badges = []
+    for badge in all_badges:
+        if badge["id"] not in earned_ids:
+            progress_percent = (badge["progress"] / badge["target"]) * 100 if badge["target"] > 0 else 0
+            badge["progress_percent"] = round(progress_percent, 1)
+            badge["earned"] = False
+            available_badges.append(badge)
+    
+    # Sort by progress percentage (closest to completion first)
+    available_badges.sort(key=lambda x: x["progress_percent"], reverse=True)
+    next_badges = available_badges[:4]  # Show top 4 closest badges
+    
+    # Add earned status to all badges
+    earned_badges = []
+    for badge in all_badges:
+        if badge["id"] in earned_ids:
+            earned_badge = next((b for b in user_badges if b["badge_id"] == badge["id"]), None)
+            badge["earned"] = True
+            badge["progress_percent"] = 100
+            badge["earned_at"] = earned_badge.get("earned_at") if earned_badge else None
+            earned_badges.append(badge)
+    
     return {
-        "earned": user_badges,
-        "available": [b for b in all_badges if b["id"] not in earned_ids],
-        "total_earned": len(user_badges)
+        "earned": earned_badges,
+        "available": available_badges,
+        "next_badges": next_badges,
+        "total_earned": len(earned_badges),
+        "total_available": len(all_badges)
     }
 
 async def check_and_award_badges(user_id: str):
