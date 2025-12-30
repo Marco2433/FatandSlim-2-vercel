@@ -484,7 +484,12 @@ export default function NutritionPage() {
       setRecipes(response.data.recipes || []);
     } catch (error) {
       console.error('Error generating recipes:', error);
-      toast.error('Erreur lors de la génération. Veuillez réessayer.');
+      if (error.response?.status === 429) {
+        const detail = error.response.data?.detail;
+        toast.error(detail?.message || 'Limite quotidienne IA atteinte. Revenez demain !');
+      } else {
+        toast.error('Erreur lors de la génération. Veuillez réessayer.');
+      }
     } finally {
       setLoadingRecipes(false);
     }
@@ -512,14 +517,23 @@ export default function NutritionPage() {
       
       if (response.data.recipe) {
         setSearchedRecipe(response.data.recipe);
-        toast.success('Recette trouvée !');
+        if (response.data.from_cache) {
+          toast.success('Recette trouvée depuis le cache !');
+        } else {
+          toast.success('Recette trouvée !');
+        }
       } else {
         toast.error('Aucune recette générée. Réessayez avec une autre description.');
       }
     } catch (error) {
       console.error('Error searching recipe:', error);
-      const errorMsg = error.response?.data?.detail || 'Erreur lors de la recherche';
-      toast.error(errorMsg + '. Veuillez réessayer.');
+      if (error.response?.status === 429) {
+        const detail = error.response.data?.detail;
+        toast.error(detail?.message || 'Limite quotidienne IA atteinte. Revenez demain !');
+      } else {
+        const errorMsg = error.response?.data?.detail || 'Erreur lors de la recherche';
+        toast.error(errorMsg + '. Veuillez réessayer.');
+      }
     } finally {
       setLoadingSearch(false);
     }
