@@ -505,6 +505,31 @@ async def logout(request: Request, response: Response):
     response.delete_cookie("session_token", path="/")
     return {"message": "Logged out"}
 
+# ==================== AI USAGE STATUS ENDPOINT ====================
+
+@api_router.get("/ai/usage")
+async def get_ai_usage_status(user: dict = Depends(get_current_user)):
+    """Get user's AI usage status for today"""
+    usage = await check_ai_usage_limit(user["user_id"])
+    
+    # Get today's call history
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    usage_doc = await db.ai_usage_logs.find_one({
+        "user_id": user["user_id"],
+        "date": today
+    }, {"_id": 0})
+    
+    calls = usage_doc.get("calls", []) if usage_doc else []
+    
+    return {
+        "used": usage["used"],
+        "remaining": usage["remaining"],
+        "limit": usage["limit"],
+        "date": today,
+        "calls": calls,
+        "message": f"Vous avez utilisé {usage['used']}/{usage['limit']} appels IA aujourd'hui" if usage['used'] > 0 else "Vous n'avez pas encore utilisé l'IA aujourd'hui"
+    }
+
 # ==================== PROFILE ENDPOINTS ====================
 
 @api_router.get("/profile")
