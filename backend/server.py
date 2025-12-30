@@ -1466,7 +1466,16 @@ async def search_recipe_by_ai(data: dict, user: dict = Depends(get_current_user)
     if not query:
         raise HTTPException(status_code=400, detail="Query is required")
     
+    # ===== AI LIMIT CHECK =====
+    await enforce_ai_limit(user["user_id"], "/recipes/search")
+    
     profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    user_context_hash = get_user_context_hash(profile)
+    
+    # ===== CHECK CACHE FIRST (using the query as prompt) =====
+    cached = await get_cached_ai_response(query, "recipes-search", user_context_hash)
+    if cached:
+        return {"recipe": cached, "query": query, "from_cache": True}
     
     try:
         chat = LlmChat(
@@ -1525,8 +1534,14 @@ Réponds UNIQUEMENT avec ce JSON (pas de texte avant ou après):
         json_end = response.rfind('}') + 1
         recipe = json.loads(response[json_start:json_end])
         
+        # ===== CACHE THE RESULT & INCREMENT USAGE =====
+        await store_cached_ai_response(query, recipe, "recipes-search", user_context_hash)
+        await increment_ai_usage(user["user_id"], "/recipes/search")
+        
         return {"recipe": recipe, "query": query}
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"AI recipe search error: {e}")
         # Return a fallback recipe
