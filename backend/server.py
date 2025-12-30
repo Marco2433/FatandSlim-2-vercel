@@ -1239,6 +1239,7 @@ Réponds UNIQUEMENT avec ce JSON (tous les textes en français):
         
     except HTTPException:
         raise
+    except Exception as e:
         logger.error(f"AI meal plan error: {e}")
         # Return a fallback meal plan in French
         if plan_type == "daily":
