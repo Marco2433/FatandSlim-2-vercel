@@ -3605,6 +3605,675 @@ async def generate_progress_pdf(user: dict = Depends(get_current_user)):
     
     return report_data
 
+# ==================== SOCIAL NETWORK ENDPOINTS ====================
+
+# --- Public Profiles ---
+@api_router.get("/social/profile/{user_id}")
+async def get_public_profile(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a user's public profile"""
+    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    profile = await db.user_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    
+    # Get badges
+    user_badges = await db.user_badges.find({"user_id": user_id}, {"_id": 0}).to_list(100)
+    
+    # Get challenge points
+    user_points = await db.user_points.find_one({"user_id": user_id}, {"_id": 0})
+    total_points = user_points.get("total_points", 0) if user_points else 0
+    
+    # Get favorite recipes count
+    favorite_count = await db.favorite_recipes.count_documents({"user_id": user_id})
+    
+    # Check friendship status
+    friendship = await db.friendships.find_one({
+        "$or": [
+            {"user_id": current_user["user_id"], "friend_id": user_id},
+            {"user_id": user_id, "friend_id": current_user["user_id"]}
+        ]
+    }, {"_id": 0})
+    
+    is_friend = friendship and friendship.get("status") == "accepted"
+    is_pending = friendship and friendship.get("status") == "pending"
+    is_self = current_user["user_id"] == user_id
+    
+    return {
+        "user_id": user_id,
+        "name": user_doc.get("name", "Utilisateur"),
+        "picture": user_doc.get("picture") or profile.get("picture") if profile else None,
+        "goal": profile.get("goal") if profile else None,
+        "fitness_level": profile.get("fitness_level") if profile else None,
+        "badges": user_badges,
+        "badges_count": len(user_badges),
+        "total_points": total_points,
+        "favorite_recipes_count": favorite_count,
+        "is_friend": is_friend,
+        "is_pending": is_pending,
+        "is_self": is_self,
+        "created_at": user_doc.get("created_at")
+    }
+
+@api_router.get("/social/search")
+async def search_users(q: str, user: dict = Depends(get_current_user)):
+    """Search for users by name or email"""
+    if len(q) < 2:
+        return {"users": []}
+    
+    users = await db.users.find({
+        "$and": [
+            {"user_id": {"$ne": user["user_id"]}},
+            {"$or": [
+                {"name": {"$regex": q, "$options": "i"}},
+                {"email": {"$regex": q, "$options": "i"}}
+            ]}
+        ]
+    }, {"_id": 0, "password_hash": 0}).limit(20).to_list(20)
+    
+    # Add friendship status
+    result = []
+    for u in users:
+        friendship = await db.friendships.find_one({
+            "$or": [
+                {"user_id": user["user_id"], "friend_id": u["user_id"]},
+                {"user_id": u["user_id"], "friend_id": user["user_id"]}
+            ]
+        }, {"_id": 0})
+        
+        result.append({
+            "user_id": u["user_id"],
+            "name": u.get("name", "Utilisateur"),
+            "email": u.get("email", ""),
+            "picture": u.get("picture"),
+            "friendship_status": friendship.get("status") if friendship else None
+        })
+    
+    return {"users": result}
+
+# --- Friendships ---
+@api_router.post("/social/friends/request")
+async def send_friend_request(data: dict, user: dict = Depends(get_current_user)):
+    """Send a friend request"""
+    friend_id = data.get("friend_id")
+    if not friend_id:
+        raise HTTPException(status_code=400, detail="friend_id required")
+    
+    if friend_id == user["user_id"]:
+        raise HTTPException(status_code=400, detail="Cannot add yourself")
+    
+    # Check if friendship already exists
+    existing = await db.friendships.find_one({
+        "$or": [
+            {"user_id": user["user_id"], "friend_id": friend_id},
+            {"user_id": friend_id, "friend_id": user["user_id"]}
+        ]
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Friendship already exists or pending")
+    
+    friendship = {
+        "friendship_id": f"friend_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "friend_id": friend_id,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.friendships.insert_one(friendship)
+    
+    # Create notification
+    await create_notification(friend_id, "friend_request", f"{user.get('name', 'Quelqu\'un')} veut être votre ami !", user["user_id"])
+    
+    return {"message": "Friend request sent", "friendship_id": friendship["friendship_id"]}
+
+@api_router.post("/social/friends/accept")
+async def accept_friend_request(data: dict, user: dict = Depends(get_current_user)):
+    """Accept a friend request"""
+    friendship_id = data.get("friendship_id")
+    
+    result = await db.friendships.update_one(
+        {"friendship_id": friendship_id, "friend_id": user["user_id"], "status": "pending"},
+        {"$set": {"status": "accepted", "accepted_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Friend request not found")
+    
+    # Get the friendship to notify the other user
+    friendship = await db.friendships.find_one({"friendship_id": friendship_id}, {"_id": 0})
+    if friendship:
+        await create_notification(friendship["user_id"], "friend_accepted", f"{user.get('name', 'Quelqu\'un')} a accepté votre demande d'ami !", user["user_id"])
+    
+    return {"message": "Friend request accepted"}
+
+@api_router.post("/social/friends/reject")
+async def reject_friend_request(data: dict, user: dict = Depends(get_current_user)):
+    """Reject or cancel a friend request"""
+    friendship_id = data.get("friendship_id")
+    
+    result = await db.friendships.delete_one({
+        "friendship_id": friendship_id,
+        "$or": [
+            {"friend_id": user["user_id"]},
+            {"user_id": user["user_id"]}
+        ]
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Friend request not found")
+    
+    return {"message": "Friend request rejected/cancelled"}
+
+@api_router.delete("/social/friends/{friend_id}")
+async def remove_friend(friend_id: str, user: dict = Depends(get_current_user)):
+    """Remove a friend"""
+    result = await db.friendships.delete_one({
+        "status": "accepted",
+        "$or": [
+            {"user_id": user["user_id"], "friend_id": friend_id},
+            {"user_id": friend_id, "friend_id": user["user_id"]}
+        ]
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Friendship not found")
+    
+    return {"message": "Friend removed"}
+
+@api_router.get("/social/friends")
+async def get_friends(user: dict = Depends(get_current_user)):
+    """Get user's friends list"""
+    friendships = await db.friendships.find({
+        "$or": [{"user_id": user["user_id"]}, {"friend_id": user["user_id"]}],
+        "status": "accepted"
+    }, {"_id": 0}).to_list(100)
+    
+    friends = []
+    for f in friendships:
+        friend_user_id = f["friend_id"] if f["user_id"] == user["user_id"] else f["user_id"]
+        friend_user = await db.users.find_one({"user_id": friend_user_id}, {"_id": 0, "password_hash": 0})
+        
+        if friend_user:
+            user_points = await db.user_points.find_one({"user_id": friend_user_id}, {"_id": 0})
+            friends.append({
+                "user_id": friend_user_id,
+                "name": friend_user.get("name", "Utilisateur"),
+                "picture": friend_user.get("picture"),
+                "total_points": user_points.get("total_points", 0) if user_points else 0,
+                "friendship_id": f["friendship_id"],
+                "since": f.get("accepted_at", f.get("created_at"))
+            })
+    
+    return {"friends": friends, "count": len(friends)}
+
+@api_router.get("/social/friends/requests")
+async def get_friend_requests(user: dict = Depends(get_current_user)):
+    """Get pending friend requests"""
+    # Requests received
+    received = await db.friendships.find({
+        "friend_id": user["user_id"],
+        "status": "pending"
+    }, {"_id": 0}).to_list(50)
+    
+    received_list = []
+    for r in received:
+        sender = await db.users.find_one({"user_id": r["user_id"]}, {"_id": 0, "password_hash": 0})
+        if sender:
+            received_list.append({
+                "friendship_id": r["friendship_id"],
+                "user_id": r["user_id"],
+                "name": sender.get("name", "Utilisateur"),
+                "picture": sender.get("picture"),
+                "sent_at": r["created_at"]
+            })
+    
+    # Requests sent
+    sent = await db.friendships.find({
+        "user_id": user["user_id"],
+        "status": "pending"
+    }, {"_id": 0}).to_list(50)
+    
+    sent_list = []
+    for s in sent:
+        recipient = await db.users.find_one({"user_id": s["friend_id"]}, {"_id": 0, "password_hash": 0})
+        if recipient:
+            sent_list.append({
+                "friendship_id": s["friendship_id"],
+                "user_id": s["friend_id"],
+                "name": recipient.get("name", "Utilisateur"),
+                "picture": recipient.get("picture"),
+                "sent_at": s["created_at"]
+            })
+    
+    return {"received": received_list, "sent": sent_list}
+
+# --- Activity Feed ---
+@api_router.get("/social/feed")
+async def get_activity_feed(user: dict = Depends(get_current_user), limit: int = 30):
+    """Get activity feed from friends"""
+    # Get friend ids
+    friendships = await db.friendships.find({
+        "$or": [{"user_id": user["user_id"]}, {"friend_id": user["user_id"]}],
+        "status": "accepted"
+    }, {"_id": 0}).to_list(100)
+    
+    friend_ids = [user["user_id"]]  # Include own activities
+    for f in friendships:
+        friend_ids.append(f["friend_id"] if f["user_id"] == user["user_id"] else f["user_id"])
+    
+    # Get activities
+    activities = await db.social_activities.find(
+        {"user_id": {"$in": friend_ids}},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    # Enrich with user info
+    result = []
+    for activity in activities:
+        activity_user = await db.users.find_one({"user_id": activity["user_id"]}, {"_id": 0, "password_hash": 0})
+        likes_count = await db.activity_likes.count_documents({"activity_id": activity["activity_id"]})
+        user_liked = await db.activity_likes.find_one({
+            "activity_id": activity["activity_id"],
+            "user_id": user["user_id"]
+        })
+        
+        result.append({
+            **activity,
+            "user_name": activity_user.get("name", "Utilisateur") if activity_user else "Utilisateur",
+            "user_picture": activity_user.get("picture") if activity_user else None,
+            "likes_count": likes_count,
+            "user_liked": bool(user_liked)
+        })
+    
+    return {"activities": result}
+
+@api_router.post("/social/post")
+async def create_post(data: dict, user: dict = Depends(get_current_user)):
+    """Create a new post"""
+    content = data.get("content", "").strip()
+    post_type = data.get("type", "text")  # text, achievement, recipe
+    image = data.get("image")
+    recipe_id = data.get("recipe_id")
+    
+    if not content and not image and not recipe_id:
+        raise HTTPException(status_code=400, detail="Content, image or recipe required")
+    
+    activity = {
+        "activity_id": f"post_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "type": post_type,
+        "content": content,
+        "image": image,
+        "recipe_id": recipe_id,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.social_activities.insert_one(activity)
+    
+    return {"message": "Post created", "activity": activity}
+
+@api_router.post("/social/like/{activity_id}")
+async def like_activity(activity_id: str, user: dict = Depends(get_current_user)):
+    """Like or unlike an activity"""
+    existing = await db.activity_likes.find_one({
+        "activity_id": activity_id,
+        "user_id": user["user_id"]
+    })
+    
+    if existing:
+        await db.activity_likes.delete_one({"activity_id": activity_id, "user_id": user["user_id"]})
+        return {"message": "Unliked", "liked": False}
+    else:
+        await db.activity_likes.insert_one({
+            "activity_id": activity_id,
+            "user_id": user["user_id"],
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        # Create notification for post owner
+        activity = await db.social_activities.find_one({"activity_id": activity_id}, {"_id": 0})
+        if activity and activity["user_id"] != user["user_id"]:
+            await create_notification(activity["user_id"], "like", f"{user.get('name', 'Quelqu\'un')} a aimé votre publication", user["user_id"])
+        
+        return {"message": "Liked", "liked": True}
+
+# --- Messaging ---
+@api_router.get("/social/messages")
+async def get_conversations(user: dict = Depends(get_current_user)):
+    """Get list of conversations"""
+    # Get all messages where user is sender or recipient
+    messages = await db.messages.find({
+        "$or": [{"sender_id": user["user_id"]}, {"recipient_id": user["user_id"]}]
+    }, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Group by conversation partner
+    conversations = {}
+    for msg in messages:
+        partner_id = msg["recipient_id"] if msg["sender_id"] == user["user_id"] else msg["sender_id"]
+        
+        if partner_id not in conversations:
+            partner = await db.users.find_one({"user_id": partner_id}, {"_id": 0, "password_hash": 0})
+            unread_count = await db.messages.count_documents({
+                "sender_id": partner_id,
+                "recipient_id": user["user_id"],
+                "read": False
+            })
+            
+            conversations[partner_id] = {
+                "partner_id": partner_id,
+                "partner_name": partner.get("name", "Utilisateur") if partner else "Utilisateur",
+                "partner_picture": partner.get("picture") if partner else None,
+                "last_message": msg,
+                "unread_count": unread_count
+            }
+    
+    return {"conversations": list(conversations.values())}
+
+@api_router.get("/social/messages/{partner_id}")
+async def get_messages(partner_id: str, user: dict = Depends(get_current_user)):
+    """Get messages with a specific user"""
+    messages = await db.messages.find({
+        "$or": [
+            {"sender_id": user["user_id"], "recipient_id": partner_id},
+            {"sender_id": partner_id, "recipient_id": user["user_id"]}
+        ]
+    }, {"_id": 0}).sort("created_at", 1).to_list(100)
+    
+    # Mark as read
+    await db.messages.update_many(
+        {"sender_id": partner_id, "recipient_id": user["user_id"], "read": False},
+        {"$set": {"read": True, "read_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"messages": messages}
+
+@api_router.post("/social/messages")
+async def send_message(data: dict, user: dict = Depends(get_current_user)):
+    """Send a message"""
+    recipient_id = data.get("recipient_id")
+    content = data.get("content", "").strip()
+    
+    if not recipient_id or not content:
+        raise HTTPException(status_code=400, detail="recipient_id and content required")
+    
+    # Check if they are friends
+    friendship = await db.friendships.find_one({
+        "status": "accepted",
+        "$or": [
+            {"user_id": user["user_id"], "friend_id": recipient_id},
+            {"user_id": recipient_id, "friend_id": user["user_id"]}
+        ]
+    })
+    
+    if not friendship:
+        raise HTTPException(status_code=403, detail="You can only message friends")
+    
+    message = {
+        "message_id": f"msg_{uuid.uuid4().hex[:8]}",
+        "sender_id": user["user_id"],
+        "recipient_id": recipient_id,
+        "content": content,
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.messages.insert_one(message)
+    
+    # Create notification
+    await create_notification(recipient_id, "message", f"Nouveau message de {user.get('name', 'Quelqu\'un')}", user["user_id"])
+    
+    return {"message": "Message sent", "data": message}
+
+# --- Notifications ---
+async def create_notification(user_id: str, notif_type: str, content: str, from_user_id: str = None):
+    """Helper to create notifications"""
+    notification = {
+        "notification_id": f"notif_{uuid.uuid4().hex[:8]}",
+        "user_id": user_id,
+        "type": notif_type,
+        "content": content,
+        "from_user_id": from_user_id,
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.notifications.insert_one(notification)
+
+@api_router.get("/social/notifications")
+async def get_notifications(user: dict = Depends(get_current_user)):
+    """Get user notifications"""
+    notifications = await db.notifications.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(50).to_list(50)
+    
+    # Enrich with from_user info
+    result = []
+    for n in notifications:
+        if n.get("from_user_id"):
+            from_user = await db.users.find_one({"user_id": n["from_user_id"]}, {"_id": 0, "password_hash": 0})
+            n["from_user_name"] = from_user.get("name") if from_user else None
+            n["from_user_picture"] = from_user.get("picture") if from_user else None
+        result.append(n)
+    
+    unread_count = sum(1 for n in notifications if not n.get("read"))
+    
+    return {"notifications": result, "unread_count": unread_count}
+
+@api_router.post("/social/notifications/read")
+async def mark_notifications_read(data: dict, user: dict = Depends(get_current_user)):
+    """Mark notifications as read"""
+    notification_ids = data.get("notification_ids", [])
+    
+    if notification_ids:
+        await db.notifications.update_many(
+            {"notification_id": {"$in": notification_ids}, "user_id": user["user_id"]},
+            {"$set": {"read": True}}
+        )
+    else:
+        # Mark all as read
+        await db.notifications.update_many(
+            {"user_id": user["user_id"], "read": False},
+            {"$set": {"read": True}}
+        )
+    
+    return {"message": "Notifications marked as read"}
+
+# --- Friend Challenges ---
+@api_router.post("/social/challenges/create")
+async def create_friend_challenge(data: dict, user: dict = Depends(get_current_user)):
+    """Create a challenge between friends"""
+    friend_id = data.get("friend_id")
+    challenge_type = data.get("type", "steps")  # steps, meals, workouts
+    target = data.get("target", 10000)
+    duration_days = data.get("duration_days", 7)
+    
+    if not friend_id:
+        raise HTTPException(status_code=400, detail="friend_id required")
+    
+    # Verify friendship
+    friendship = await db.friendships.find_one({
+        "status": "accepted",
+        "$or": [
+            {"user_id": user["user_id"], "friend_id": friend_id},
+            {"user_id": friend_id, "friend_id": user["user_id"]}
+        ]
+    })
+    
+    if not friendship:
+        raise HTTPException(status_code=403, detail="Not friends")
+    
+    end_date = (datetime.now(timezone.utc) + timedelta(days=duration_days)).isoformat()
+    
+    challenge = {
+        "challenge_id": f"fc_{uuid.uuid4().hex[:8]}",
+        "creator_id": user["user_id"],
+        "opponent_id": friend_id,
+        "type": challenge_type,
+        "target": target,
+        "duration_days": duration_days,
+        "status": "pending",
+        "creator_progress": 0,
+        "opponent_progress": 0,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "end_date": end_date
+    }
+    
+    await db.friend_challenges.insert_one(challenge)
+    await create_notification(friend_id, "challenge", f"{user.get('name', 'Quelqu\'un')} vous lance un défi !", user["user_id"])
+    
+    return {"message": "Challenge created", "challenge": challenge}
+
+@api_router.get("/social/challenges")
+async def get_friend_challenges(user: dict = Depends(get_current_user)):
+    """Get friend challenges"""
+    challenges = await db.friend_challenges.find({
+        "$or": [{"creator_id": user["user_id"]}, {"opponent_id": user["user_id"]}]
+    }, {"_id": 0}).sort("created_at", -1).to_list(50)
+    
+    result = []
+    for c in challenges:
+        opponent_id = c["opponent_id"] if c["creator_id"] == user["user_id"] else c["creator_id"]
+        opponent = await db.users.find_one({"user_id": opponent_id}, {"_id": 0, "password_hash": 0})
+        
+        result.append({
+            **c,
+            "opponent_name": opponent.get("name") if opponent else "Utilisateur",
+            "opponent_picture": opponent.get("picture") if opponent else None,
+            "is_creator": c["creator_id"] == user["user_id"]
+        })
+    
+    return {"challenges": result}
+
+@api_router.post("/social/challenges/{challenge_id}/accept")
+async def accept_friend_challenge(challenge_id: str, user: dict = Depends(get_current_user)):
+    """Accept a friend challenge"""
+    result = await db.friend_challenges.update_one(
+        {"challenge_id": challenge_id, "opponent_id": user["user_id"], "status": "pending"},
+        {"$set": {"status": "active", "started_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Challenge not found")
+    
+    challenge = await db.friend_challenges.find_one({"challenge_id": challenge_id}, {"_id": 0})
+    if challenge:
+        await create_notification(challenge["creator_id"], "challenge_accepted", f"{user.get('name')} a accepté votre défi !", user["user_id"])
+    
+    return {"message": "Challenge accepted"}
+
+# --- Leaderboard ---
+@api_router.get("/social/leaderboard")
+async def get_leaderboard(user: dict = Depends(get_current_user)):
+    """Get friends leaderboard"""
+    # Get friend ids
+    friendships = await db.friendships.find({
+        "$or": [{"user_id": user["user_id"]}, {"friend_id": user["user_id"]}],
+        "status": "accepted"
+    }, {"_id": 0}).to_list(100)
+    
+    user_ids = [user["user_id"]]
+    for f in friendships:
+        user_ids.append(f["friend_id"] if f["user_id"] == user["user_id"] else f["user_id"])
+    
+    # Get points for all
+    leaderboard = []
+    for uid in user_ids:
+        u = await db.users.find_one({"user_id": uid}, {"_id": 0, "password_hash": 0})
+        points_doc = await db.user_points.find_one({"user_id": uid}, {"_id": 0})
+        badges_count = await db.user_badges.count_documents({"user_id": uid})
+        
+        if u:
+            leaderboard.append({
+                "user_id": uid,
+                "name": u.get("name", "Utilisateur"),
+                "picture": u.get("picture"),
+                "total_points": points_doc.get("total_points", 0) if points_doc else 0,
+                "badges_count": badges_count,
+                "is_self": uid == user["user_id"]
+            })
+    
+    # Sort by points
+    leaderboard.sort(key=lambda x: x["total_points"], reverse=True)
+    
+    # Add rank
+    for i, entry in enumerate(leaderboard):
+        entry["rank"] = i + 1
+    
+    return {"leaderboard": leaderboard}
+
+# --- Groups (Communities) ---
+@api_router.get("/social/groups")
+async def get_groups(user: dict = Depends(get_current_user)):
+    """Get available groups/communities"""
+    # Get user's groups
+    user_groups = await db.group_members.find({"user_id": user["user_id"]}, {"_id": 0}).to_list(50)
+    user_group_ids = [g["group_id"] for g in user_groups]
+    
+    # Get all groups
+    all_groups = await db.groups.find({}, {"_id": 0}).to_list(100)
+    
+    result = []
+    for group in all_groups:
+        member_count = await db.group_members.count_documents({"group_id": group["group_id"]})
+        result.append({
+            **group,
+            "member_count": member_count,
+            "is_member": group["group_id"] in user_group_ids
+        })
+    
+    return {"groups": result}
+
+@api_router.post("/social/groups/join")
+async def join_group(data: dict, user: dict = Depends(get_current_user)):
+    """Join a group"""
+    group_id = data.get("group_id")
+    
+    existing = await db.group_members.find_one({"group_id": group_id, "user_id": user["user_id"]})
+    if existing:
+        raise HTTPException(status_code=400, detail="Already a member")
+    
+    await db.group_members.insert_one({
+        "group_id": group_id,
+        "user_id": user["user_id"],
+        "joined_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"message": "Joined group"}
+
+@api_router.post("/social/groups/leave")
+async def leave_group(data: dict, user: dict = Depends(get_current_user)):
+    """Leave a group"""
+    group_id = data.get("group_id")
+    
+    await db.group_members.delete_one({"group_id": group_id, "user_id": user["user_id"]})
+    
+    return {"message": "Left group"}
+
+# Initialize default groups on startup
+async def init_default_groups():
+    """Create default community groups if they don't exist"""
+    default_groups = [
+        {"group_id": "fitness", "name": "🏋️ Fitness", "description": "Passionnés de fitness et musculation", "category": "fitness"},
+        {"group_id": "cardio", "name": "🏃 Cardio", "description": "Coureurs, cyclistes et amateurs de cardio", "category": "cardio"},
+        {"group_id": "nutrition", "name": "🥗 Nutrition", "description": "Conseils et astuces nutrition", "category": "nutrition"},
+        {"group_id": "weight_loss", "name": "⚖️ Perte de poids", "description": "Soutien pour la perte de poids", "category": "weight"},
+        {"group_id": "muscle_gain", "name": "💪 Prise de muscle", "description": "Objectif prise de masse", "category": "muscle"},
+        {"group_id": "yoga", "name": "🧘 Yoga & Bien-être", "description": "Yoga, méditation et bien-être", "category": "wellness"},
+    ]
+    
+    for group in default_groups:
+        existing = await db.groups.find_one({"group_id": group["group_id"]})
+        if not existing:
+            group["created_at"] = datetime.now(timezone.utc).isoformat()
+            await db.groups.insert_one(group)
+
+# Call init on startup
+@app.on_event("startup")
+async def startup_event():
+    await init_default_groups()
+
 # Include router - MUST be after all endpoint definitions
 app.include_router(api_router)
 
