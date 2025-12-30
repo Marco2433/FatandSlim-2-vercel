@@ -21,7 +21,8 @@ from recipes_database import (
     get_daily_recipes, 
     get_recipes_by_nutri_score,
     get_recipes_stats,
-    generate_single_recipe
+    generate_recipe,
+    search_recipes
 )
 
 ROOT_DIR = Path(__file__).parent
