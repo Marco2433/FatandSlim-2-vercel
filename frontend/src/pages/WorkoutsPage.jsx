@@ -1,11 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { 
   Dumbbell, 
@@ -16,18 +23,129 @@ import {
   Flame,
   Play,
   Check,
-  Plus
+  Plus,
+  Video,
+  Trophy,
+  Target,
+  Calendar,
+  Award,
+  ChevronRight,
+  Bot,
+  Zap,
+  Home,
+  Building2,
+  Heart,
+  Timer,
+  Pause,
+  X
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+// Video categories
+const VIDEO_CATEGORIES = [
+  { id: 'all', label: 'Toutes', icon: Video },
+  { id: 'home', label: 'Maison', icon: Home },
+  { id: 'gym', label: 'Salle', icon: Building2 },
+  { id: 'gainage', label: 'Gainage', icon: Dumbbell },
+  { id: 'cardio', label: 'Cardio', icon: Heart },
+  { id: 'musculation', label: 'Musculation', icon: Dumbbell },
+  { id: 'fitness', label: 'Fitness', icon: Zap },
+];
+
+// Difficulty levels
+const DIFFICULTY_LABELS = {
+  beginner: { label: 'Débutant', color: 'bg-green-500' },
+  intermediate: { label: 'Intermédiaire', color: 'bg-yellow-500' },
+  expert: { label: 'Expert', color: 'bg-red-500' },
+};
+
+// Coach IA program durations
+const PROGRAM_DURATIONS = [
+  { value: 'week', label: '1 semaine' },
+  { value: '15days', label: '15 jours' },
+  { value: 'month', label: '1 mois' },
+  { value: '3months', label: '3 mois' },
+  { value: '6months', label: '6 mois' },
+  { value: 'year', label: '1 an' },
+];
+
+const TIME_OF_DAY = [
+  { value: 'morning', label: 'Matin' },
+  { value: 'noon', label: 'Midi' },
+  { value: 'afternoon', label: 'Après-midi' },
+  { value: 'evening', label: 'Soirée' },
+];
+
+const DAILY_DURATION = [
+  { value: '15', label: '15 minutes' },
+  { value: '30', label: '30 minutes' },
+  { value: '45', label: '45 minutes' },
+  { value: '60', label: '1 heure' },
+  { value: '90', label: '1h30' },
+];
+
+const BODY_PARTS = [
+  { id: 'full_body', label: 'Corps entier', emoji: '💪' },
+  { id: 'upper_body', label: 'Haut du corps', emoji: '🏋️' },
+  { id: 'lower_body', label: 'Bas du corps', emoji: '🦵' },
+  { id: 'abs', label: 'Abdominaux', emoji: '🧘' },
+  { id: 'arms', label: 'Bras', emoji: '💪' },
+  { id: 'back', label: 'Dos', emoji: '🔙' },
+  { id: 'chest', label: 'Pectoraux', emoji: '🫁' },
+  { id: 'legs', label: 'Jambes', emoji: '🦿' },
+  { id: 'glutes', label: 'Fessiers', emoji: '🍑' },
+  { id: 'cardio', label: 'Cardio', emoji: '❤️' },
+];
+
+// Congratulation messages for video completion
+const CONGRATULATION_MESSAGES = [
+  "🎉 Bravo champion ! Tu viens de terminer cette séance avec brio !",
+  "💪 Incroyable ! Chaque entraînement te rapproche de ton objectif !",
+  "🔥 Tu es en feu ! Continue comme ça, les résultats arrivent !",
+  "⭐ Excellent travail ! Tu mérites amplement ce badge !",
+  "🚀 Tu as tout donné ! La persévérance est la clé du succès !",
+  "🏆 Victoire ! Un entraînement de plus vers la meilleure version de toi !",
+  "💯 Parfait ! Ton corps te remercie pour cet effort !",
+  "🌟 Superbe performance ! Tu deviens plus fort chaque jour !",
+  "🎯 Objectif atteint ! Rien ne peut t'arrêter maintenant !",
+  "✨ Magnifique ! Tu inspires ceux qui t'entourent !",
+];
+
 export default function WorkoutsPage() {
   const navigate = useNavigate();
-  const [programs, setPrograms] = useState([]);
-  const [currentProgram, setCurrentProgram] = useState(null);
-  const [workoutLogs, setWorkoutLogs] = useState([]);
+  const [activeTab, setActiveTab] = useState('videos');
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
+  
+  // Videos state
+  const [videos, setVideos] = useState([]);
+  const [videoCategory, setVideoCategory] = useState('all');
+  const [loadingVideos, setLoadingVideos] = useState(false);
+  const [watchedVideos, setWatchedVideos] = useState([]);
+  const [playingVideo, setPlayingVideo] = useState(null);
+  const [showCongratsDialog, setShowCongratsDialog] = useState(false);
+  const [congratsMessage, setCongratsMessage] = useState('');
+  const [earnedBadge, setEarnedBadge] = useState(null);
+  const videoRef = useRef(null);
+  
+  // Coach IA state
+  const [showCoachDialog, setShowCoachDialog] = useState(false);
+  const [coachStep, setCoachStep] = useState(1);
+  const [coachLoading, setCoachLoading] = useState(false);
+  const [generatedProgram, setGeneratedProgram] = useState(null);
+  const [coachConfig, setCoachConfig] = useState({
+    duration: 'month',
+    timeOfDay: 'morning',
+    dailyDuration: '30',
+    bodyParts: [],
+    equipment: 'none',
+    goals: '',
+    injuries: '',
+  });
+  
+  // Programs & Logs state
+  const [programs, setPrograms] = useState([]);
+  const [workoutLogs, setWorkoutLogs] = useState([]);
   const [logDialogOpen, setLogDialogOpen] = useState(false);
   const [newLog, setNewLog] = useState({
     workout_name: '',
@@ -37,19 +155,22 @@ export default function WorkoutsPage() {
 
   useEffect(() => {
     fetchData();
+    fetchVideos();
+    loadWatchedVideos();
   }, []);
+
+  useEffect(() => {
+    fetchVideos();
+  }, [videoCategory]);
 
   const fetchData = async () => {
     try {
-      const [programsRes, logsRes] = await Promise.all([
+      const [programsRes, logsRes] = await Promise.allSettled([
         axios.get(`${API}/workouts/programs`, { withCredentials: true }),
         axios.get(`${API}/workouts/logs`, { withCredentials: true })
       ]);
-      setPrograms(programsRes.data);
-      if (programsRes.data.length > 0) {
-        setCurrentProgram(programsRes.data[0].workout_plan);
-      }
-      setWorkoutLogs(logsRes.data);
+      if (programsRes.status === 'fulfilled') setPrograms(programsRes.value.data || []);
+      if (logsRes.status === 'fulfilled') setWorkoutLogs(logsRes.value.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -57,17 +178,168 @@ export default function WorkoutsPage() {
     }
   };
 
-  const generateProgram = async () => {
-    setGenerating(true);
+  const fetchVideos = async () => {
+    setLoadingVideos(true);
     try {
-      const response = await axios.post(`${API}/workouts/generate`, {}, { withCredentials: true });
-      setCurrentProgram(response.data.workout_plan);
-      toast.success('Programme d\'entraînement généré !');
-      fetchData();
+      const response = await axios.get(`${API}/workouts/videos`, {
+        params: { category: videoCategory !== 'all' ? videoCategory : undefined },
+        withCredentials: true
+      });
+      setVideos(response.data || []);
     } catch (error) {
-      toast.error('Erreur lors de la génération');
+      console.error('Error fetching videos:', error);
+      // Use mock data if API fails
+      setVideos(getMockVideos());
     } finally {
-      setGenerating(false);
+      setLoadingVideos(false);
+    }
+  };
+
+  const loadWatchedVideos = () => {
+    const saved = localStorage.getItem('watchedWorkoutVideos');
+    if (saved) {
+      setWatchedVideos(JSON.parse(saved));
+    }
+  };
+
+  const getMockVideos = () => {
+    return [
+      {
+        id: 'v1',
+        title: 'HIIT Brûle-Graisse 20 min - Sans équipement',
+        thumbnail: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400',
+        duration: '20:00',
+        category: 'cardio',
+        level: 'intermediate',
+        views: 125000,
+        publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'v2',
+        title: 'Gainage Complet - 15 min pour des abdos en béton',
+        thumbnail: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400',
+        duration: '15:00',
+        category: 'gainage',
+        level: 'beginner',
+        views: 89000,
+        publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'v3',
+        title: 'Musculation à la maison - Full Body',
+        thumbnail: 'https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=400',
+        duration: '35:00',
+        category: 'home',
+        level: 'intermediate',
+        views: 156000,
+        publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'v4',
+        title: 'Entraînement Jambes & Fessiers - Salle',
+        thumbnail: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400',
+        duration: '45:00',
+        category: 'gym',
+        level: 'expert',
+        views: 78000,
+        publishedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'v5',
+        title: 'Fitness Dance - Cardio Fun 30 min',
+        thumbnail: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400',
+        duration: '30:00',
+        category: 'fitness',
+        level: 'beginner',
+        views: 234000,
+        publishedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'v6',
+        title: 'Musculation Haut du Corps - Prise de masse',
+        thumbnail: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400',
+        duration: '40:00',
+        category: 'musculation',
+        level: 'expert',
+        views: 145000,
+        publishedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    ];
+  };
+
+  const handleVideoComplete = async (video) => {
+    // Add to watched list
+    const newWatched = [...watchedVideos, video.id];
+    setWatchedVideos(newWatched);
+    localStorage.setItem('watchedWorkoutVideos', JSON.stringify(newWatched));
+    
+    // Generate random congratulation message
+    const message = CONGRATULATION_MESSAGES[Math.floor(Math.random() * CONGRATULATION_MESSAGES.length)];
+    setCongratsMessage(message);
+    
+    // Award badge
+    try {
+      const response = await axios.post(`${API}/badges/award`, {
+        type: 'video_complete',
+        video_id: video.id,
+        video_title: video.title
+      }, { withCredentials: true });
+      
+      if (response.data.badge) {
+        setEarnedBadge(response.data.badge);
+      }
+    } catch (error) {
+      console.error('Error awarding badge:', error);
+    }
+    
+    // Log workout
+    try {
+      const durationMinutes = parseInt(video.duration.split(':')[0]);
+      await axios.post(`${API}/workouts/log`, {
+        workout_name: video.title,
+        duration_minutes: durationMinutes,
+        calories_burned: Math.round(durationMinutes * 8),
+        exercises: [],
+        source: 'video'
+      }, { withCredentials: true });
+    } catch (error) {
+      console.error('Error logging workout:', error);
+    }
+    
+    setPlayingVideo(null);
+    setShowCongratsDialog(true);
+  };
+
+  const generateCoachProgram = async () => {
+    setCoachLoading(true);
+    try {
+      const response = await axios.post(`${API}/workouts/coach/generate`, coachConfig, { withCredentials: true });
+      setGeneratedProgram(response.data);
+      setCoachStep(5);
+      toast.success('Programme généré avec succès !');
+    } catch (error) {
+      console.error('Error generating program:', error);
+      toast.error('Erreur lors de la génération du programme');
+    } finally {
+      setCoachLoading(false);
+    }
+  };
+
+  const addProgramToAgenda = async () => {
+    if (!generatedProgram) return;
+    
+    try {
+      await axios.post(`${API}/workouts/coach/add-to-agenda`, {
+        program: generatedProgram,
+        config: coachConfig
+      }, { withCredentials: true });
+      toast.success('Programme ajouté à votre agenda avec rappels !');
+      setShowCoachDialog(false);
+      setCoachStep(1);
+      setGeneratedProgram(null);
+    } catch (error) {
+      console.error('Error adding to agenda:', error);
+      toast.error('Erreur lors de l\'ajout à l\'agenda');
     }
   };
 
@@ -94,17 +366,17 @@ export default function WorkoutsPage() {
     }
   };
 
+  const filteredVideos = videos.filter(v => 
+    videoCategory === 'all' || v.category === videoCategory
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-full gradient-primary" />
-        </div>
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
-
-  const workouts = currentProgram?.workouts || [];
 
   return (
     <div className="min-h-screen bg-background pb-safe" data-testid="workouts-page">
@@ -112,217 +384,533 @@ export default function WorkoutsPage() {
       <header className="sticky top-0 z-10 px-4 py-4 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => navigate('/dashboard')}
-            >
+            <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <div>
-              <h1 className="font-heading text-xl font-bold">Entraînements</h1>
-              <p className="text-sm text-muted-foreground">
-                {currentProgram?.program_name || 'Programmes personnalisés'}
-              </p>
-            </div>
+            <h1 className="font-heading text-xl font-bold">Entraînements</h1>
           </div>
+          <Button variant="outline" size="sm" onClick={() => setShowCoachDialog(true)}>
+            <Bot className="w-4 h-4 mr-2" />
+            Coach IA
+          </Button>
         </div>
       </header>
 
-      <main className="p-4 space-y-6 pb-24">
-        {/* Action Buttons */}
-        <div className="flex gap-3">
-          <Button
-            className="flex-1 rounded-full shadow-glow bg-primary"
-            onClick={generateProgram}
-            disabled={generating}
-            data-testid="generate-workout-btn"
-          >
-            {generating ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Génération...
-              </>
+      <main className="p-4 space-y-4 max-w-lg mx-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="videos" className="flex items-center gap-1">
+              <Video className="w-4 h-4" />
+              Vidéos
+            </TabsTrigger>
+            <TabsTrigger value="programs" className="flex items-center gap-1">
+              <Target className="w-4 h-4" />
+              Programmes
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              Historique
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Videos Tab */}
+          <TabsContent value="videos" className="space-y-4 mt-4">
+            {/* Category Filter */}
+            <ScrollArea className="w-full whitespace-nowrap">
+              <div className="flex gap-2 pb-2">
+                {VIDEO_CATEGORIES.map((cat) => (
+                  <Button
+                    key={cat.id}
+                    variant={videoCategory === cat.id ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex-shrink-0"
+                    onClick={() => setVideoCategory(cat.id)}
+                  >
+                    <cat.icon className="w-4 h-4 mr-1" />
+                    {cat.label}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+
+            {/* Videos Grid */}
+            {loadingVideos ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
             ) : (
-              <>
-                <Sparkles className="w-4 h-4 mr-2" />
-                Nouveau programme
-              </>
-            )}
-          </Button>
-          
-          <Dialog open={logDialogOpen} onOpenChange={setLogDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="rounded-full" data-testid="log-workout-btn">
-                <Plus className="w-4 h-4 mr-2" />
-                Logger
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Enregistrer un entraînement</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Nom de l'entraînement</Label>
-                  <Input
-                    placeholder="Ex: Cardio HIIT"
-                    value={newLog.workout_name}
-                    onChange={(e) => setNewLog({ ...newLog, workout_name: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Durée (minutes)</Label>
-                    <Input
-                      type="number"
-                      placeholder="30"
-                      value={newLog.duration_minutes}
-                      onChange={(e) => setNewLog({ ...newLog, duration_minutes: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Calories brûlées</Label>
-                    <Input
-                      type="number"
-                      placeholder="250"
-                      value={newLog.calories_burned}
-                      onChange={(e) => setNewLog({ ...newLog, calories_burned: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <Button onClick={logWorkout} className="w-full">
-                  Enregistrer
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {/* Program Info */}
-        {currentProgram && (
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5">
-            <CardContent className="p-4">
-              <h2 className="font-heading font-bold text-lg">{currentProgram.program_name}</h2>
-              <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                <span>{currentProgram.duration_weeks} semaines</span>
-                <span>{currentProgram.days_per_week} jours/semaine</span>
-              </div>
-              {currentProgram.equipment_needed?.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {currentProgram.equipment_needed.map((equip, i) => (
-                    <span key={i} className="px-2 py-1 rounded-full bg-muted text-xs">
-                      {equip}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Workouts List */}
-        {workouts.length > 0 ? (
-          <div className="space-y-4">
-            <h3 className="font-heading font-semibold">Programme de la semaine</h3>
-            {workouts.map((workout, index) => (
-              <Card key={index} className="workout-card overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground">{workout.day}</p>
-                      <h4 className="font-heading font-semibold text-lg">{workout.focus}</h4>
-                    </div>
-                    <Button size="sm" className="rounded-full">
-                      <Play className="w-4 h-4 mr-1" />
-                      Commencer
-                    </Button>
-                  </div>
-                  
-                  <div className="flex gap-4 text-sm text-muted-foreground mb-4">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      {workout.duration_minutes} min
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Flame className="w-4 h-4 text-accent" />
-                      ~{workout.calories_burn_estimate} kcal
-                    </span>
-                  </div>
-
-                  {workout.exercises?.length > 0 && (
-                    <div className="space-y-2">
-                      {workout.exercises.slice(0, 4).map((exercise, i) => (
-                        <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                          <span className="text-sm font-medium">{exercise.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {exercise.sets}x{exercise.reps}
-                          </span>
+              <div className="space-y-3">
+                {filteredVideos.map((video) => (
+                  <Card 
+                    key={video.id}
+                    className={`cursor-pointer transition-all hover:border-primary/50 ${
+                      watchedVideos.includes(video.id) ? 'border-green-500/50 bg-green-500/5' : ''
+                    }`}
+                    onClick={() => setPlayingVideo(video)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex gap-3">
+                        <div className="relative flex-shrink-0">
+                          <img 
+                            src={video.thumbnail} 
+                            alt={video.title}
+                            className="w-32 h-20 object-cover rounded-lg"
+                          />
+                          <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/80 rounded text-xs text-white">
+                            {video.duration}
+                          </div>
+                          {watchedVideos.includes(video.id) && (
+                            <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
                         </div>
-                      ))}
-                      {workout.exercises.length > 4 && (
-                        <p className="text-xs text-muted-foreground text-center">
-                          +{workout.exercises.length - 4} exercices de plus
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <Dumbbell className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Aucun programme</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Générez votre premier programme personnalisé
-            </p>
-          </div>
-        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm line-clamp-2">{video.title}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className={`text-xs ${DIFFICULTY_LABELS[video.level]?.color}`}>
+                              {DIFFICULTY_LABELS[video.level]?.label}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {(video.views / 1000).toFixed(0)}k vues
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Publié il y a {Math.floor((Date.now() - new Date(video.publishedAt).getTime()) / (24 * 60 * 60 * 1000))} jours
+                          </p>
+                        </div>
+                        <Button variant="ghost" size="icon" className="self-center">
+                          <Play className="w-5 h-5" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
 
-        {/* Recent Workouts */}
-        {workoutLogs.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="font-heading text-lg flex items-center gap-2">
-                <Check className="w-5 h-5 text-primary" />
-                Entraînements récents
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {workoutLogs.slice(0, 5).map((log) => (
-                <div key={log.log_id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-                  <div>
-                    <p className="font-medium">{log.workout_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(log.logged_at).toLocaleDateString('fr-FR')}
+                {filteredVideos.length === 0 && (
+                  <div className="text-center py-12">
+                    <Video className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Aucune vidéo dans cette catégorie</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Programs Tab */}
+          <TabsContent value="programs" className="space-y-4 mt-4">
+            <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/30">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Bot className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold">Coach IA Personnel</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Créez un programme sur mesure adapté à vos objectifs
                     </p>
                   </div>
-                  <div className="text-right text-sm">
-                    <p>{log.duration_minutes} min</p>
-                    <p className="text-muted-foreground">{log.calories_burned} kcal</p>
+                  <Button onClick={() => setShowCoachDialog(true)}>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Créer
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {programs.length > 0 ? (
+              <div className="space-y-3">
+                {programs.map((program, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">{program.workout_plan?.program_name || 'Programme personnalisé'}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {program.workout_plan?.duration || '4 semaines'} • {program.workout_plan?.workouts?.length || 0} séances
+                          </p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Dumbbell className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Aucun programme créé</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Utilisez le Coach IA pour créer votre premier programme
+                </p>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* History Tab */}
+          <TabsContent value="history" className="space-y-4 mt-4">
+            <Dialog open={logDialogOpen} onOpenChange={setLogDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Enregistrer un entraînement
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Enregistrer un entraînement</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Nom de l'entraînement</Label>
+                    <Input
+                      placeholder="Ex: Cardio HIIT"
+                      value={newLog.workout_name}
+                      onChange={(e) => setNewLog({ ...newLog, workout_name: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Durée (minutes)</Label>
+                      <Input
+                        type="number"
+                        placeholder="30"
+                        value={newLog.duration_minutes}
+                        onChange={(e) => setNewLog({ ...newLog, duration_minutes: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Calories brûlées</Label>
+                      <Input
+                        type="number"
+                        placeholder="250"
+                        value={newLog.calories_burned}
+                        onChange={(e) => setNewLog({ ...newLog, calories_burned: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <Button onClick={logWorkout} className="w-full">
+                    Enregistrer
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {workoutLogs.length > 0 ? (
+              <div className="space-y-2">
+                {workoutLogs.map((log, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{log.workout_name}</p>
+                          <div className="flex gap-3 text-xs text-muted-foreground mt-1">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {log.duration_minutes} min
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Flame className="w-3 h-3" />
+                              {log.calories_burned} kcal
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(log.logged_at).toLocaleDateString('fr-FR')}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Clock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Aucun entraînement enregistré</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      {/* Video Player Dialog */}
+      <Dialog open={!!playingVideo} onOpenChange={() => setPlayingVideo(null)}>
+        <DialogContent className="max-w-2xl p-0">
+          {playingVideo && (
+            <>
+              <div className="relative aspect-video bg-black">
+                <img 
+                  src={playingVideo.thumbnail} 
+                  alt={playingVideo.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <div className="text-center text-white">
+                    <Play className="w-16 h-16 mx-auto mb-4" />
+                    <p className="text-sm">Lecture intégrée disponible prochainement</p>
+                    <p className="text-xs mt-2 opacity-70">Cliquez sur "J'ai terminé" une fois la vidéo regardée</p>
                   </div>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+              </div>
+              <div className="p-4">
+                <h3 className="font-semibold">{playingVideo.title}</h3>
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge className={DIFFICULTY_LABELS[playingVideo.level]?.color}>
+                    {DIFFICULTY_LABELS[playingVideo.level]?.label}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">{playingVideo.duration}</span>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button 
+                    className="flex-1" 
+                    onClick={() => handleVideoComplete(playingVideo)}
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    J'ai terminé !
+                  </Button>
+                  <Button variant="outline" onClick={() => setPlayingVideo(null)}>
+                    Fermer
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
-        {/* Tips */}
-        {currentProgram?.tips?.length > 0 && (
-          <Card className="border-accent/20 bg-accent/5">
-            <CardContent className="p-4">
-              <h3 className="font-semibold mb-2">💪 Conseils</h3>
-              <ul className="space-y-1">
-                {currentProgram.tips.map((tip, i) => (
-                  <li key={i} className="text-sm text-muted-foreground">• {tip}</li>
+      {/* Congratulations Dialog */}
+      <Dialog open={showCongratsDialog} onOpenChange={setShowCongratsDialog}>
+        <DialogContent className="text-center">
+          <div className="py-6">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-r from-primary to-secondary mx-auto flex items-center justify-center mb-4">
+              <Trophy className="w-10 h-10 text-white" />
+            </div>
+            <DialogTitle className="text-2xl mb-4">Félicitations !</DialogTitle>
+            <p className="text-muted-foreground mb-4">{congratsMessage}</p>
+            {earnedBadge && (
+              <div className="p-4 bg-primary/10 rounded-lg mb-4">
+                <p className="text-sm text-muted-foreground mb-2">Badge gagné :</p>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-3xl">{earnedBadge.icon}</span>
+                  <span className="font-semibold">{earnedBadge.name}</span>
+                </div>
+              </div>
+            )}
+            <Button onClick={() => setShowCongratsDialog(false)} className="w-full">
+              Continuer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Coach IA Dialog */}
+      <Dialog open={showCoachDialog} onOpenChange={(open) => {
+        setShowCoachDialog(open);
+        if (!open) {
+          setCoachStep(1);
+          setGeneratedProgram(null);
+        }
+      }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="w-5 h-5 text-primary" />
+              Coach IA - Programme personnalisé
+            </DialogTitle>
+            <DialogDescription>
+              {coachStep < 5 ? `Étape ${coachStep}/4 - Personnalisation` : 'Votre programme est prêt !'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Step 1: Duration */}
+          {coachStep === 1 && (
+            <div className="space-y-4 py-4">
+              <h3 className="font-semibold">Quelle durée pour votre programme ?</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {PROGRAM_DURATIONS.map((d) => (
+                  <Button
+                    key={d.value}
+                    variant={coachConfig.duration === d.value ? 'default' : 'outline'}
+                    className="h-auto py-3"
+                    onClick={() => setCoachConfig({ ...coachConfig, duration: d.value })}
+                  >
+                    {d.label}
+                  </Button>
                 ))}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
-      </main>
+              </div>
+              <Button className="w-full mt-4" onClick={() => setCoachStep(2)}>
+                Suivant
+              </Button>
+            </div>
+          )}
+
+          {/* Step 2: Time of day & Daily duration */}
+          {coachStep === 2 && (
+            <div className="space-y-4 py-4">
+              <div>
+                <h3 className="font-semibold mb-2">Moment de la journée préféré ?</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {TIME_OF_DAY.map((t) => (
+                    <Button
+                      key={t.value}
+                      variant={coachConfig.timeOfDay === t.value ? 'default' : 'outline'}
+                      onClick={() => setCoachConfig({ ...coachConfig, timeOfDay: t.value })}
+                    >
+                      {t.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Temps disponible par séance ?</h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {DAILY_DURATION.map((d) => (
+                    <Button
+                      key={d.value}
+                      variant={coachConfig.dailyDuration === d.value ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setCoachConfig({ ...coachConfig, dailyDuration: d.value })}
+                    >
+                      {d.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button variant="outline" onClick={() => setCoachStep(1)}>Retour</Button>
+                <Button className="flex-1" onClick={() => setCoachStep(3)}>Suivant</Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Body parts */}
+          {coachStep === 3 && (
+            <div className="space-y-4 py-4">
+              <h3 className="font-semibold">Quelles parties du corps souhaitez-vous travailler ?</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {BODY_PARTS.map((part) => (
+                  <Button
+                    key={part.id}
+                    variant={coachConfig.bodyParts.includes(part.id) ? 'default' : 'outline'}
+                    className="h-auto py-2 justify-start"
+                    onClick={() => {
+                      const newParts = coachConfig.bodyParts.includes(part.id)
+                        ? coachConfig.bodyParts.filter(p => p !== part.id)
+                        : [...coachConfig.bodyParts, part.id];
+                      setCoachConfig({ ...coachConfig, bodyParts: newParts });
+                    }}
+                  >
+                    <span className="mr-2">{part.emoji}</span>
+                    {part.label}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button variant="outline" onClick={() => setCoachStep(2)}>Retour</Button>
+                <Button className="flex-1" onClick={() => setCoachStep(4)} disabled={coachConfig.bodyParts.length === 0}>
+                  Suivant
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Additional info */}
+          {coachStep === 4 && (
+            <div className="space-y-4 py-4">
+              <div>
+                <h3 className="font-semibold mb-2">Équipement disponible ?</h3>
+                <Select 
+                  value={coachConfig.equipment} 
+                  onValueChange={(v) => setCoachConfig({ ...coachConfig, equipment: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Aucun (poids du corps)</SelectItem>
+                    <SelectItem value="basic">Basique (haltères, tapis)</SelectItem>
+                    <SelectItem value="home">À la maison (élastiques, kettlebell)</SelectItem>
+                    <SelectItem value="full">Salle de sport complète</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Objectifs spécifiques (optionnel)</Label>
+                <Textarea
+                  placeholder="Ex: Perdre du ventre, préparer un marathon..."
+                  value={coachConfig.goals}
+                  onChange={(e) => setCoachConfig({ ...coachConfig, goals: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Blessures ou limitations (optionnel)</Label>
+                <Textarea
+                  placeholder="Ex: Problème de genou, douleur au dos..."
+                  value={coachConfig.injuries}
+                  onChange={(e) => setCoachConfig({ ...coachConfig, injuries: e.target.value })}
+                />
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button variant="outline" onClick={() => setCoachStep(3)}>Retour</Button>
+                <Button 
+                  className="flex-1" 
+                  onClick={generateCoachProgram}
+                  disabled={coachLoading}
+                >
+                  {coachLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Génération...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Générer mon programme
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Generated Program */}
+          {coachStep === 5 && generatedProgram && (
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-primary/10 rounded-lg">
+                <h3 className="font-semibold text-lg">{generatedProgram.name}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{generatedProgram.description}</p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-medium">Aperçu du programme :</h4>
+                <ScrollArea className="h-48">
+                  {generatedProgram.weeks?.slice(0, 2).map((week, weekIndex) => (
+                    <div key={weekIndex} className="mb-4">
+                      <p className="font-medium text-sm text-primary">Semaine {weekIndex + 1}</p>
+                      {week.days?.slice(0, 3).map((day, dayIndex) => (
+                        <div key={dayIndex} className="ml-4 text-sm py-1 border-l-2 border-primary/30 pl-3">
+                          <span className="font-medium">{day.name}:</span> {day.exercises?.length || 0} exercices
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </ScrollArea>
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setCoachStep(4)}>
+                  Modifier
+                </Button>
+                <Button className="flex-1" onClick={addProgramToAgenda}>
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Ajouter à l'agenda
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
