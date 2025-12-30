@@ -8,6 +8,7 @@ import logging
 import random
 import hashlib
 import json
+import re
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional
@@ -17,6 +18,7 @@ import base64
 import jwt
 import bcrypt
 import httpx
+from difflib import SequenceMatcher
 
 # Import recipes database
 from recipes_database import (
