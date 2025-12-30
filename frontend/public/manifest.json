@@ -127,6 +127,13 @@
       "icons": [{ "src": "/api/pwa/icon-96x96.png", "sizes": "96x96" }]
     },
     {
+      "name": "Communauté",
+      "short_name": "Social",
+      "description": "Amis, messagerie et défis",
+      "url": "/social?utm_source=shortcut",
+      "icons": [{ "src": "/api/pwa/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
       "name": "Recettes",
       "short_name": "Recettes",
       "description": "Découvrir des recettes saines",
