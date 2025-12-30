@@ -1460,6 +1460,7 @@ async def get_daily_recipes_endpoint(user: dict = Depends(get_current_user)):
 async def get_all_recipes_endpoint(
     nutri_score: Optional[str] = None,
     category: Optional[str] = None,
+    dish_type: Optional[str] = None,
     limit: int = 100,
     offset: int = 0
 ):
@@ -1474,15 +1475,29 @@ async def get_all_recipes_endpoint(
     if category:
         recipes = [r for r in recipes if r["category"] == category.lower()]
     
+    # Filter by dish_type (entree, plat, dessert, accompagnement, viande, gouter)
+    if dish_type:
+        recipes = [r for r in recipes if r.get("dish_type", "") == dish_type.lower()]
+    
     total = len(recipes)
     paginated = recipes[offset:offset + limit]
+    
+    # Get enhanced stats including dish_type
+    stats = get_recipes_stats()
+    
+    # Add dish_type stats from sample
+    dish_type_stats = {}
+    for r in SAMPLE_RECIPES:
+        dt = r.get("dish_type", "autre")
+        dish_type_stats[dt] = dish_type_stats.get(dt, 0) + 1
+    stats["by_dish_type"] = dish_type_stats
     
     return {
         "recipes": paginated, 
         "total": total,
         "limit": limit,
         "offset": offset,
-        "stats": get_recipes_stats()
+        "stats": stats
     }
 
 @api_router.get("/recipes/stats")
