@@ -523,13 +523,20 @@ export default function WorkoutsPage() {
             {programs.length > 0 ? (
               <div className="space-y-3">
                 {programs.map((program, index) => (
-                  <Card key={index}>
+                  <Card 
+                    key={index} 
+                    className="cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => setSelectedProgram(program)}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-semibold">{program.workout_plan?.program_name || 'Programme personnalisé'}</h3>
+                          <h3 className="font-semibold">{program.workout_plan?.name || program.workout_plan?.program_name || 'Programme personnalisé'}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {program.workout_plan?.duration || '4 semaines'} • {program.workout_plan?.workouts?.length || 0} séances
+                            {program.workout_plan?.weeks?.length || 0} semaines • {program.workout_plan?.weeks?.reduce((acc, w) => acc + (w.days?.length || 0), 0) || 0} séances
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Créé le {new Date(program.created_at).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
                         <ChevronRight className="w-5 h-5 text-muted-foreground" />
