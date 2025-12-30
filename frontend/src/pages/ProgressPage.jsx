@@ -178,79 +178,87 @@ export default function ProgressPage() {
       doc.setFontSize(10);
       doc.setTextColor(60);
       doc.text(`Généré le: ${new Date().toLocaleDateString('fr-FR')}`, 20, 45);
-      doc.text(`Utilisateur: ${data.user.name}`, 20, 52);
-      doc.text(`Membre depuis: ${new Date(data.user.created_at).toLocaleDateString('fr-FR')}`, 20, 59);
-      doc.text(`Jours actifs: ${data.user.days_active}`, 20, 66);
+      doc.text(`Utilisateur: ${data.user?.name || 'Non défini'}`, 20, 52);
+      doc.text(`Membre depuis: ${data.user?.created_at ? new Date(data.user.created_at).toLocaleDateString('fr-FR') : 'Non défini'}`, 20, 59);
+      doc.text(`Jours actifs: ${data.user?.days_active || 0}`, 20, 66);
       
       // Profile section
       doc.setFontSize(14);
       doc.setTextColor(0);
       doc.text('Profil', 20, 82);
       
-      doc.autoTable({
-        startY: 87,
+      let lastY = 87;
+      
+      autoTable(doc, {
+        startY: lastY,
         head: [['Paramètre', 'Valeur']],
         body: [
-          ['Âge', `${data.profile.age} ans`],
-          ['Taille', `${data.profile.height} cm`],
-          ['Objectif calories', `${data.profile.daily_calorie_target} kcal/jour`],
-          ['Poids objectif', `${data.profile.target_weight} kg`],
+          ['Âge', `${data.profile?.age || 'N/A'} ans`],
+          ['Taille', `${data.profile?.height || 'N/A'} cm`],
+          ['Objectif calories', `${data.profile?.daily_calorie_target || 'N/A'} kcal/jour`],
+          ['Poids objectif', `${data.profile?.target_weight || 'N/A'} kg`],
         ],
         theme: 'grid',
         headStyles: { fillColor: [244, 114, 182] },
         styles: { fontSize: 9 }
       });
       
+      lastY = doc.lastAutoTable.finalY + 15;
+      
       // Weight progress section
       doc.setFontSize(14);
-      doc.text('Progression du poids', 20, doc.lastAutoTable.finalY + 15);
+      doc.text('Progression du poids', 20, lastY);
       
-      doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 20,
+      autoTable(doc, {
+        startY: lastY + 5,
         head: [['Métrique', 'Valeur']],
         body: [
-          ['Poids initial', `${data.weight_progress.start_weight} kg`],
-          ['Poids actuel', `${data.weight_progress.current_weight} kg`],
-          ['Variation', `${data.weight_progress.weight_change > 0 ? '+' : ''}${data.weight_progress.weight_change} kg`],
-          ['IMC initial', `${data.weight_progress.bmi_start}`],
-          ['IMC actuel', `${data.weight_progress.bmi_current}`],
-          ['Pesées enregistrées', `${data.weight_progress.entries_count}`],
+          ['Poids initial', `${data.weight_progress?.start_weight || 'N/A'} kg`],
+          ['Poids actuel', `${data.weight_progress?.current_weight || 'N/A'} kg`],
+          ['Variation', `${(data.weight_progress?.weight_change || 0) > 0 ? '+' : ''}${data.weight_progress?.weight_change || 0} kg`],
+          ['IMC initial', `${data.weight_progress?.bmi_start || 'N/A'}`],
+          ['IMC actuel', `${data.weight_progress?.bmi_current || 'N/A'}`],
+          ['Pesées enregistrées', `${data.weight_progress?.entries_count || 0}`],
         ],
         theme: 'grid',
-        headStyles: { fillColor: [163, 230, 53] }, // Secondary color
+        headStyles: { fillColor: [163, 230, 53] },
         styles: { fontSize: 9 }
       });
+      
+      lastY = doc.lastAutoTable.finalY + 15;
       
       // Nutrition stats
       doc.setFontSize(14);
-      doc.text('Statistiques nutritionnelles', 20, doc.lastAutoTable.finalY + 15);
+      doc.text('Statistiques nutritionnelles', 20, lastY);
       
-      doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 20,
+      autoTable(doc, {
+        startY: lastY + 5,
         head: [['Métrique', 'Valeur']],
         body: [
-          ['Repas enregistrés', `${data.nutrition_stats.total_meals_logged}`],
-          ['Calories totales', `${data.nutrition_stats.total_calories_logged.toLocaleString()} kcal`],
-          ['Moyenne journalière', `${data.nutrition_stats.avg_daily_calories} kcal`],
-          ['Objectif journalier', `${data.nutrition_stats.target_calories} kcal`],
+          ['Repas enregistrés', `${data.nutrition_stats?.total_meals_logged || 0}`],
+          ['Calories totales', `${(data.nutrition_stats?.total_calories_logged || 0).toLocaleString()} kcal`],
+          ['Moyenne journalière', `${data.nutrition_stats?.avg_daily_calories || 0} kcal`],
+          ['Objectif journalier', `${data.nutrition_stats?.target_calories || 0} kcal`],
         ],
         theme: 'grid',
-        headStyles: { fillColor: [251, 191, 36] }, // Accent color
+        headStyles: { fillColor: [251, 191, 36] },
         styles: { fontSize: 9 }
       });
       
+      lastY = doc.lastAutoTable.finalY + 15;
+      
       // Activity stats
       doc.setFontSize(14);
-      doc.text('Activité physique', 20, doc.lastAutoTable.finalY + 15);
+      doc.text('Activité physique', 20, lastY);
       
-      doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 20,
+      autoTable(doc, {
+        startY: lastY + 5,
         head: [['Métrique', 'Valeur']],
         body: [
-          ['Pas totaux', `${data.activity_stats.total_steps.toLocaleString()}`],
-          ['Calories brûlées', `${data.activity_stats.total_calories_burned.toLocaleString()} kcal`],
-          ['Moyenne journalière', `${data.activity_stats.avg_daily_steps.toLocaleString()} pas`],
-          ['Jours suivis', `${data.activity_stats.days_tracked}`],
+          ['Pas totaux', `${(data.activity_stats?.total_steps || 0).toLocaleString()}`],
+          ['Calories brûlées', `${(data.activity_stats?.total_calories_burned || 0).toLocaleString()} kcal`],
+          ['Moyenne journalière', `${(data.activity_stats?.avg_daily_steps || 0).toLocaleString()} pas`],
+          ['Jours suivis', `${data.activity_stats?.days_tracked || 0}`],
         ],
         theme: 'grid',
         headStyles: { fillColor: [147, 51, 234] },
@@ -277,7 +285,7 @@ export default function ProgressPage() {
       
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error('Erreur lors de la génération du rapport');
+      toast.error('Erreur lors de la génération du rapport: ' + (error.message || 'Erreur inconnue'));
     } finally {
       setGeneratingPdf(false);
     }
