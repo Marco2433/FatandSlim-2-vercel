@@ -1724,6 +1724,326 @@ async def get_workout_logs(user: dict = Depends(get_current_user)):
     ).sort("logged_at", -1).to_list(50)
     return logs
 
+# ==================== WORKOUT VIDEOS ENDPOINTS ====================
+
+# Mock workout videos data (in production, would use YouTube API)
+WORKOUT_VIDEOS = [
+    {
+        "id": "v1",
+        "title": "HIIT Brûle-Graisse 20 min - Sans équipement",
+        "thumbnail": "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400",
+        "duration": "20:00",
+        "category": "cardio",
+        "level": "intermediate",
+        "views": 125000,
+        "publishedAt": (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(),
+    },
+    {
+        "id": "v2",
+        "title": "Gainage Complet - 15 min pour des abdos en béton",
+        "thumbnail": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400",
+        "duration": "15:00",
+        "category": "gainage",
+        "level": "beginner",
+        "views": 89000,
+        "publishedAt": (datetime.now(timezone.utc) - timedelta(days=5)).isoformat(),
+    },
+    {
+        "id": "v3",
+        "title": "Musculation à la maison - Full Body",
+        "thumbnail": "https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=400",
+        "duration": "35:00",
+        "category": "home",
+        "level": "intermediate",
+        "views": 156000,
+        "publishedAt": (datetime.now(timezone.utc) - timedelta(days=3)).isoformat(),
+    },
+    {
+        "id": "v4",
+        "title": "Entraînement Jambes & Fessiers - Salle",
+        "thumbnail": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+        "duration": "45:00",
+        "category": "gym",
+        "level": "expert",
+        "views": 78000,
+        "publishedAt": (datetime.now(timezone.utc) - timedelta(days=7)).isoformat(),
+    },
+    {
+        "id": "v5",
+        "title": "Fitness Dance - Cardio Fun 30 min",
+        "thumbnail": "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400",
+        "duration": "30:00",
+        "category": "fitness",
+        "level": "beginner",
+        "views": 234000,
+        "publishedAt": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
+    },
+    {
+        "id": "v6",
+        "title": "Musculation Haut du Corps - Prise de masse",
+        "thumbnail": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400",
+        "duration": "40:00",
+        "category": "musculation",
+        "level": "expert",
+        "views": 145000,
+        "publishedAt": (datetime.now(timezone.utc) - timedelta(days=10)).isoformat(),
+    },
+    {
+        "id": "v7",
+        "title": "Yoga Flow Matinal - 20 min",
+        "thumbnail": "https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?w=400",
+        "duration": "20:00",
+        "category": "home",
+        "level": "beginner",
+        "views": 98000,
+        "publishedAt": (datetime.now(timezone.utc) - timedelta(days=4)).isoformat(),
+    },
+    {
+        "id": "v8",
+        "title": "Cardio Boxing - Séance Intense",
+        "thumbnail": "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=400",
+        "duration": "25:00",
+        "category": "cardio",
+        "level": "expert",
+        "views": 167000,
+        "publishedAt": (datetime.now(timezone.utc) - timedelta(days=6)).isoformat(),
+    },
+]
+
+@api_router.get("/workouts/videos")
+async def get_workout_videos(category: Optional[str] = None):
+    """Get workout videos, optionally filtered by category"""
+    videos = WORKOUT_VIDEOS.copy()
+    
+    # Filter by category if provided
+    if category:
+        videos = [v for v in videos if v["category"] == category]
+    
+    # Sort by publishedAt (most recent first)
+    videos.sort(key=lambda x: x["publishedAt"], reverse=True)
+    
+    return videos
+
+@api_router.post("/badges/award")
+async def award_video_badge(data: dict, user: dict = Depends(get_current_user)):
+    """Award a badge for completing a workout video"""
+    badge_type = data.get("type", "video_complete")
+    video_id = data.get("video_id")
+    video_title = data.get("video_title", "Vidéo")
+    
+    # Check if badge already earned for this video
+    existing = await db.badges.find_one({
+        "user_id": user["user_id"],
+        "video_id": video_id
+    })
+    
+    if existing:
+        return {"message": "Badge already earned", "badge": None}
+    
+    # Create badge
+    badge_icons = ["🏋️", "💪", "🔥", "⭐", "🎯", "🏆", "🥇", "💎"]
+    badge = {
+        "badge_id": f"badge_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "type": badge_type,
+        "video_id": video_id,
+        "name": f"Séance {video_title[:20]}...",
+        "icon": random.choice(badge_icons),
+        "earned_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.badges.insert_one({**badge, "_id": None})
+    del badge["_id"] if "_id" in badge else None
+    
+    return {"message": "Badge awarded!", "badge": badge}
+
+# ==================== COACH IA ENDPOINTS ====================
+
+@api_router.post("/workouts/coach/generate")
+async def generate_coach_program(config: dict, user: dict = Depends(get_current_user)):
+    """Generate personalized workout program using AI"""
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    duration = config.get("duration", "month")
+    time_of_day = config.get("timeOfDay", "morning")
+    daily_duration = int(config.get("dailyDuration", "30"))
+    body_parts = config.get("bodyParts", ["full_body"])
+    equipment = config.get("equipment", "none")
+    goals = config.get("goals", "")
+    injuries = config.get("injuries", "")
+    
+    # Duration mapping
+    duration_weeks = {
+        "week": 1,
+        "15days": 2,
+        "month": 4,
+        "3months": 12,
+        "6months": 24,
+        "year": 52
+    }
+    
+    weeks = duration_weeks.get(duration, 4)
+    
+    # Build AI prompt
+    prompt = f"""Génère un programme d'entraînement personnalisé en français.
+
+Profil utilisateur:
+- Âge: {profile.get('age', 30) if profile else 30} ans
+- Sexe: {profile.get('gender', 'non spécifié') if profile else 'non spécifié'}
+- Poids actuel: {profile.get('weight', 70) if profile else 70} kg
+- Objectif: {profile.get('goal', 'maintien') if profile else 'maintien'}
+- Niveau fitness: {profile.get('fitness_level', 'intermediate') if profile else 'intermediate'}
+
+Configuration du programme:
+- Durée: {weeks} semaines
+- Moment de la journée: {time_of_day}
+- Durée par séance: {daily_duration} minutes
+- Parties du corps: {', '.join(body_parts)}
+- Équipement: {equipment}
+- Objectifs spécifiques: {goals or 'Aucun'}
+- Blessures/Limitations: {injuries or 'Aucune'}
+
+Génère un programme structuré avec:
+1. Un nom accrocheur pour le programme
+2. Une description courte
+3. Pour chaque semaine (minimum 2 semaines à détailler):
+   - 3-5 jours d'entraînement
+   - Pour chaque jour: liste d'exercices avec séries, répétitions et repos
+
+Format JSON attendu:
+{{
+  "name": "Nom du programme",
+  "description": "Description courte",
+  "weeks": [
+    {{
+      "week_number": 1,
+      "days": [
+        {{
+          "day_number": 1,
+          "name": "Jour 1 - Focus",
+          "exercises": [
+            {{"name": "Exercice", "sets": 3, "reps": "12", "rest": "60s"}}
+          ]
+        }}
+      ]
+    }}
+  ]
+}}"""
+
+    try:
+        from emergentintegrations.llm.chat import chat, Message
+        
+        response = await chat(
+            api_key=os.environ.get('EMERGENT_LLM_KEY'),
+            messages=[Message(role="user", content=prompt)],
+            model="gpt-4o",
+            temperature=0.7
+        )
+        
+        # Parse JSON from response
+        import re
+        json_match = re.search(r'\{[\s\S]*\}', response.message)
+        if json_match:
+            program = json.loads(json_match.group())
+        else:
+            raise ValueError("Could not parse program JSON")
+            
+    except Exception as e:
+        print(f"AI generation error: {e}")
+        # Fallback to basic program
+        program = {
+            "name": f"Programme {', '.join([p.replace('_', ' ').title() for p in body_parts[:2]])}",
+            "description": f"Programme personnalisé de {weeks} semaines pour atteindre vos objectifs",
+            "weeks": [
+                {
+                    "week_number": w + 1,
+                    "days": [
+                        {
+                            "day_number": d + 1,
+                            "name": f"Jour {d + 1} - {'Cardio' if d % 2 == 0 else 'Renforcement'}",
+                            "exercises": [
+                                {"name": "Échauffement", "sets": 1, "reps": "5 min", "rest": "0"},
+                                {"name": "Squats", "sets": 3, "reps": "15", "rest": "45s"},
+                                {"name": "Pompes", "sets": 3, "reps": "12", "rest": "45s"},
+                                {"name": "Planche", "sets": 3, "reps": "30s", "rest": "30s"},
+                                {"name": "Burpees", "sets": 3, "reps": "10", "rest": "60s"},
+                                {"name": "Étirements", "sets": 1, "reps": "5 min", "rest": "0"},
+                            ]
+                        }
+                        for d in range(min(3 + (w % 2), 5))
+                    ]
+                }
+                for w in range(min(weeks, 4))
+            ]
+        }
+    
+    # Save program
+    program_doc = {
+        "program_id": f"prog_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "config": config,
+        "workout_plan": program,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.workout_programs.insert_one(program_doc)
+    
+    return program
+
+@api_router.post("/workouts/coach/add-to-agenda")
+async def add_program_to_agenda(data: dict, user: dict = Depends(get_current_user)):
+    """Add generated program to user's agenda with reminders"""
+    program = data.get("program")
+    config = data.get("config", {})
+    
+    if not program:
+        raise HTTPException(status_code=400, detail="Program data required")
+    
+    time_of_day_hours = {
+        "morning": "08:00",
+        "noon": "12:00",
+        "afternoon": "15:00",
+        "evening": "19:00"
+    }
+    
+    default_time = time_of_day_hours.get(config.get("timeOfDay", "morning"), "08:00")
+    
+    appointments_added = 0
+    today = datetime.now(timezone.utc)
+    
+    for week in program.get("weeks", []):
+        week_num = week.get("week_number", 1)
+        
+        for day in week.get("days", []):
+            day_num = day.get("day_number", 1)
+            
+            # Calculate date
+            days_offset = (week_num - 1) * 7 + day_num - 1
+            workout_date = (today + timedelta(days=days_offset)).strftime("%Y-%m-%d")
+            
+            # Create appointment
+            appointment = {
+                "appointment_id": f"apt_{uuid.uuid4().hex[:8]}",
+                "user_id": user["user_id"],
+                "title": day.get("name", f"Entraînement Jour {day_num}"),
+                "type": "sport",
+                "date": workout_date,
+                "time": default_time,
+                "notes": f"Programme: {program.get('name', 'Coach IA')}\n{len(day.get('exercises', []))} exercices",
+                "pinned": day_num == 1 and week_num == 1,  # Pin first workout
+                "reminder": True,
+                "program_id": program.get("program_id"),
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            
+            await db.appointments.insert_one(appointment)
+            appointments_added += 1
+    
+    return {
+        "message": f"{appointments_added} séances ajoutées à l'agenda",
+        "appointments_added": appointments_added
+    }
+
 # ==================== PROGRESS & STATS ENDPOINTS ====================
 
 @api_router.post("/progress/weight")
