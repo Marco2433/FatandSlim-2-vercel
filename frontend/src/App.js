@@ -111,6 +111,7 @@ function AppRouter() {
         <Route path="/workouts" element={<ProtectedRoute><WorkoutsPage /></ProtectedRoute>} />
         <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/social" element={<ProtectedRoute><SocialPage /></ProtectedRoute>} />
         
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
