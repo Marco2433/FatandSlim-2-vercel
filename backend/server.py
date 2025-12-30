@@ -2137,9 +2137,6 @@ async def get_motivation_message(user: dict = Depends(get_current_user)):
         "day_of_year": day_of_year
     }
 
-# Include router
-app.include_router(api_router)
-
 # ==================== STATIC FILES FOR PWA (ICONS, MANIFEST) ====================
 # Serve PWA static files directly to bypass React Router redirect
 # These are served via /api/pwa/* to ensure they are accessible
