@@ -2185,6 +2185,454 @@ async def get_pwa_maskable_512():
         return FileResponse(icon_path, media_type="image/png")
     raise HTTPException(status_code=404, detail="Icon not found")
 
+# ==================== USER STATS & BADGES ====================
+
+@api_router.get("/user/stats")
+async def get_user_stats(user: dict = Depends(get_current_user)):
+    """Get user stats including days active and badges"""
+    user_doc = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    created_at = user_doc.get("created_at")
+    if isinstance(created_at, str):
+        from dateutil import parser
+        created_at = parser.parse(created_at)
+    elif not created_at:
+        created_at = datetime.now(timezone.utc)
+    
+    days_active = (datetime.now(timezone.utc) - created_at.replace(tzinfo=timezone.utc)).days + 1
+    
+    # Calculate consecutive days (streak)
+    streak = await calculate_streak(user["user_id"])
+    
+    # Get badges
+    badges = await get_user_badges(user["user_id"], days_active, streak)
+    
+    return {
+        "days_active": days_active,
+        "streak": streak,
+        "badges": badges,
+        "badges_count": len([b for b in badges if b["earned"]]),
+        "created_at": created_at.isoformat()
+    }
+
+async def calculate_streak(user_id: str) -> int:
+    """Calculate consecutive days of activity"""
+    today = datetime.now(timezone.utc).date()
+    streak = 0
+    current_date = today
+    
+    for _ in range(365):  # Check up to 1 year
+        date_str = current_date.strftime("%Y-%m-%d")
+        # Check if user logged food or weight on this day
+        food_log = await db.food_logs.find_one({"user_id": user_id, "date": date_str})
+        weight_log = await db.weight_entries.find_one({"user_id": user_id, "date": date_str})
+        
+        if food_log or weight_log:
+            streak += 1
+            current_date -= timedelta(days=1)
+        else:
+            break
+    
+    return streak
+
+async def get_user_badges(user_id: str, days_active: int, streak: int) -> list:
+    """Get user badges based on activity"""
+    badge_definitions = [
+        {"id": "first_day", "name": "Premier Pas", "description": "Premier jour sur l'app", "icon": "🌟", "requirement": 1, "type": "days"},
+        {"id": "3_days", "name": "Débutant", "description": "3 jours d'utilisation", "icon": "🥉", "requirement": 3, "type": "days"},
+        {"id": "5_days", "name": "Motivé", "description": "5 jours d'utilisation", "icon": "💪", "requirement": 5, "type": "days"},
+        {"id": "7_days", "name": "Semaine Complète", "description": "7 jours d'utilisation", "icon": "🏅", "requirement": 7, "type": "days"},
+        {"id": "10_days", "name": "Persévérant", "description": "10 jours d'utilisation", "icon": "🎯", "requirement": 10, "type": "days"},
+        {"id": "15_days", "name": "Discipliné", "description": "15 jours d'utilisation", "icon": "🥈", "requirement": 15, "type": "days"},
+        {"id": "30_days", "name": "Champion", "description": "30 jours d'utilisation", "icon": "🥇", "requirement": 30, "type": "days"},
+        {"id": "60_days", "name": "Expert", "description": "60 jours d'utilisation", "icon": "🏆", "requirement": 60, "type": "days"},
+        {"id": "100_days", "name": "Légende", "description": "100 jours d'utilisation", "icon": "👑", "requirement": 100, "type": "days"},
+        {"id": "streak_3", "name": "Série de 3", "description": "3 jours de suite", "icon": "🔥", "requirement": 3, "type": "streak"},
+        {"id": "streak_7", "name": "Série de 7", "description": "7 jours de suite", "icon": "🔥🔥", "requirement": 7, "type": "streak"},
+        {"id": "streak_14", "name": "Série de 14", "description": "14 jours de suite", "icon": "🔥🔥🔥", "requirement": 14, "type": "streak"},
+    ]
+    
+    badges = []
+    for badge in badge_definitions:
+        if badge["type"] == "days":
+            earned = days_active >= badge["requirement"]
+        elif badge["type"] == "streak":
+            earned = streak >= badge["requirement"]
+        else:
+            earned = False
+        
+        badges.append({**badge, "earned": earned})
+    
+    return badges
+
+# ==================== APPOINTMENTS / RDV AGENDA ====================
+
+@api_router.get("/appointments")
+async def get_appointments(user: dict = Depends(get_current_user)):
+    """Get all user appointments"""
+    appointments = await db.appointments.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("date", 1).to_list(100)
+    return appointments
+
+@api_router.post("/appointments")
+async def create_appointment(data: dict, user: dict = Depends(get_current_user)):
+    """Create a new appointment"""
+    apt = {
+        "appointment_id": f"apt_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "title": data.get("title", "Rendez-vous"),
+        "type": data.get("type", "medical"),  # medical, sport, wellness
+        "date": data.get("date"),
+        "time": data.get("time"),
+        "location": data.get("location", ""),
+        "notes": data.get("notes", ""),
+        "pinned": data.get("pinned", False),
+        "reminder": data.get("reminder", True),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.appointments.insert_one(apt)
+    return {"message": "Appointment created", "appointment_id": apt["appointment_id"]}
+
+@api_router.put("/appointments/{appointment_id}")
+async def update_appointment(appointment_id: str, data: dict, user: dict = Depends(get_current_user)):
+    """Update an appointment"""
+    result = await db.appointments.update_one(
+        {"appointment_id": appointment_id, "user_id": user["user_id"]},
+        {"$set": {k: v for k, v in data.items() if k not in ["appointment_id", "user_id"]}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    return {"message": "Appointment updated"}
+
+@api_router.delete("/appointments/{appointment_id}")
+async def delete_appointment(appointment_id: str, user: dict = Depends(get_current_user)):
+    """Delete an appointment"""
+    result = await db.appointments.delete_one(
+        {"appointment_id": appointment_id, "user_id": user["user_id"]}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    return {"message": "Appointment deleted"}
+
+@api_router.get("/appointments/today")
+async def get_today_appointments(user: dict = Depends(get_current_user)):
+    """Get today's appointments for alert"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    appointments = await db.appointments.find(
+        {"user_id": user["user_id"], "date": today},
+        {"_id": 0}
+    ).sort("time", 1).to_list(50)
+    return appointments
+
+# ==================== STEP COUNTER & CALORIES BURNED ====================
+
+@api_router.post("/steps/log")
+async def log_steps(data: dict, user: dict = Depends(get_current_user)):
+    """Log steps from device"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    steps = data.get("steps", 0)
+    source = data.get("source", "manual")  # manual, google_fit, health_connect
+    
+    # Get user profile for calorie calculation
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    # Calculate calories burned (simple formula)
+    # Calories = steps * weight_factor * 0.04
+    weight = profile.get("weight", 70) if profile else 70
+    weight_factor = weight / 70  # Normalize to 70kg
+    calories_burned = round(steps * weight_factor * 0.04)
+    
+    step_doc = {
+        "user_id": user["user_id"],
+        "date": today,
+        "steps": steps,
+        "calories_burned": calories_burned,
+        "source": source,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.step_logs.update_one(
+        {"user_id": user["user_id"], "date": today},
+        {"$set": step_doc},
+        upsert=True
+    )
+    
+    return {
+        "message": "Steps logged",
+        "steps": steps,
+        "calories_burned": calories_burned,
+        "date": today
+    }
+
+@api_router.get("/steps/today")
+async def get_today_steps(user: dict = Depends(get_current_user)):
+    """Get today's step count and goals"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    step_log = await db.step_logs.find_one(
+        {"user_id": user["user_id"], "date": today},
+        {"_id": 0}
+    )
+    
+    # Default step goal based on activity level
+    activity_goals = {
+        "sedentary": 5000,
+        "light": 7500,
+        "moderate": 10000,
+        "active": 12500,
+        "very_active": 15000
+    }
+    activity_level = profile.get("activity_level", "moderate") if profile else "moderate"
+    step_goal = activity_goals.get(activity_level, 10000)
+    
+    return {
+        "date": today,
+        "steps": step_log.get("steps", 0) if step_log else 0,
+        "calories_burned": step_log.get("calories_burned", 0) if step_log else 0,
+        "goal": step_goal,
+        "progress": round((step_log.get("steps", 0) / step_goal * 100) if step_log else 0, 1),
+        "source": step_log.get("source", "none") if step_log else "none"
+    }
+
+@api_router.get("/steps/history")
+async def get_steps_history(days: int = 7, user: dict = Depends(get_current_user)):
+    """Get step history for the past N days"""
+    end_date = datetime.now(timezone.utc)
+    start_date = end_date - timedelta(days=days)
+    
+    logs = await db.step_logs.find(
+        {
+            "user_id": user["user_id"],
+            "date": {
+                "$gte": start_date.strftime("%Y-%m-%d"),
+                "$lte": end_date.strftime("%Y-%m-%d")
+            }
+        },
+        {"_id": 0}
+    ).sort("date", 1).to_list(days)
+    
+    return logs
+
+# ==================== SMART RECOMMENDATIONS ====================
+
+@api_router.get("/recommendations/smart")
+async def get_smart_recommendation(user: dict = Depends(get_current_user)):
+    """Get a personalized smart recommendation based on user profile and activity"""
+    import random
+    
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Get today's data
+    food_logs = await db.food_logs.find({"user_id": user["user_id"], "date": today}, {"_id": 0}).to_list(100)
+    step_log = await db.step_logs.find_one({"user_id": user["user_id"], "date": today}, {"_id": 0})
+    
+    total_calories = sum(log.get("calories", 0) for log in food_logs)
+    total_steps = step_log.get("steps", 0) if step_log else 0
+    goal = profile.get("goal", "maintain") if profile else "maintain"
+    activity_level = profile.get("activity_level", "moderate") if profile else "moderate"
+    
+    # Categories of recommendations
+    recommendations = {
+        "activity": [
+            "🚶 Nous vous recommandons de marcher un minimum de 15 minutes aujourd'hui pour rester actif !",
+            "🏃 Une petite marche digestive après le repas aide à mieux assimiler les nutriments.",
+            "💃 Dansez 10 minutes sur votre musique préférée, c'est bon pour le moral et la forme !",
+            "🧘 Quelques étirements pendant 5 minutes peuvent faire une grande différence dans votre journée.",
+            "🚴 Si possible, privilégiez le vélo ou la marche pour vos petits trajets.",
+            "⬆️ Prenez les escaliers plutôt que l'ascenseur, vos jambes vous remercieront !",
+        ],
+        "nutrition_general": [
+            "🥗 En choisissant les légumes à volonté plutôt qu'un plat trop calorique, je me fais plaisir en qualité et en quantité !",
+            "🍎 Si vous n'avez pas consommé de fruits aujourd'hui, il est grand temps de se fendre la poire !",
+            "💧 Pensez à boire au moins 1,5L d'eau aujourd'hui pour rester bien hydraté.",
+            "🥦 Les légumes verts sont vos meilleurs alliés pour un repas rassasiant et peu calorique.",
+            "🥚 Les protéines au petit-déjeuner aident à tenir jusqu'au déjeuner sans fringale.",
+            "🍵 Une tisane en fin de journée aide à la digestion et prépare un bon sommeil.",
+        ],
+        "motivation": [
+            "💪 Les efforts commencent à payer, ne pas abandonner c'est se dépasser !",
+            "🌟 Chaque petit pas compte, vous êtes sur la bonne voie !",
+            "🎯 Votre constance est admirable, continuez ainsi !",
+            "🔥 La motivation vous a amené ici, la discipline vous fera continuer !",
+            "⭐ Vous êtes plus fort(e) que vous ne le pensez, croyez en vous !",
+            "🏆 Le succès est la somme de petits efforts répétés jour après jour.",
+            "✨ Chaque jour est une nouvelle opportunité de devenir meilleur(e) !",
+        ],
+        "tracking": [
+            "📊 Pensez à bien renseigner votre poids dans votre profil afin d'actualiser vos progrès.",
+            "📝 N'oubliez pas de noter vos repas pour un suivi optimal de votre alimentation.",
+            "📈 Consultez régulièrement vos statistiques pour mesurer vos progrès !",
+            "🎯 Définir des objectifs clairs vous aide à rester motivé(e) sur le long terme.",
+        ],
+        "sleep_wellness": [
+            "😴 Un bon sommeil est essentiel pour la récupération et la gestion du poids.",
+            "🧘‍♀️ La méditation de 5 minutes par jour réduit le stress et les envies de grignotage.",
+            "☀️ Exposez-vous à la lumière naturelle le matin pour réguler votre rythme circadien.",
+            "📵 Évitez les écrans 1h avant le coucher pour un sommeil réparateur.",
+        ]
+    }
+    
+    # Choose category based on context
+    if total_steps < 3000 and activity_level in ["sedentary", "light"]:
+        category = "activity"
+    elif len(food_logs) == 0:
+        category = "tracking"
+    elif total_calories < 500 and datetime.now(timezone.utc).hour > 12:
+        category = "nutrition_general"
+    else:
+        category = random.choice(["motivation", "nutrition_general", "activity", "sleep_wellness"])
+    
+    # Get a random recommendation from the chosen category
+    message = random.choice(recommendations[category])
+    
+    # Make sure we don't repeat the same message (store in session/cache)
+    last_recommendations = await db.user_recommendations.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(5)
+    
+    last_messages = [r.get("message") for r in last_recommendations]
+    attempts = 0
+    while message in last_messages and attempts < 10:
+        message = random.choice(recommendations[random.choice(list(recommendations.keys()))])
+        attempts += 1
+    
+    # Store this recommendation
+    await db.user_recommendations.insert_one({
+        "user_id": user["user_id"],
+        "message": message,
+        "category": category,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {
+        "message": message,
+        "category": category,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+# ==================== PDF REPORT GENERATION ====================
+
+@api_router.get("/reports/progress-pdf")
+async def generate_progress_pdf(user: dict = Depends(get_current_user)):
+    """Generate a comprehensive PDF report of user progress"""
+    from io import BytesIO
+    import base64
+    
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    user_doc = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    if not profile:
+        raise HTTPException(status_code=400, detail="Profile not found")
+    
+    # Get all data
+    weight_entries = await db.weight_entries.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("date", 1).to_list(1000)
+    
+    food_logs = await db.food_logs.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    step_logs = await db.step_logs.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).to_list(365)
+    
+    # Calculate statistics
+    created_at = user_doc.get("created_at", datetime.now(timezone.utc).isoformat())
+    if isinstance(created_at, str):
+        from dateutil import parser
+        created_at = parser.parse(created_at)
+    
+    days_active = (datetime.now(timezone.utc) - created_at.replace(tzinfo=timezone.utc)).days + 1
+    
+    # Weight stats
+    if weight_entries:
+        weights = [e["weight"] for e in weight_entries]
+        weight_start = weights[0]
+        weight_current = weights[-1]
+        weight_change = weight_current - weight_start
+        weight_min = min(weights)
+        weight_max = max(weights)
+    else:
+        weight_start = weight_current = profile.get("weight", 0)
+        weight_change = 0
+        weight_min = weight_max = profile.get("weight", 0)
+    
+    # Food stats
+    total_meals_logged = len(food_logs)
+    total_calories_logged = sum(log.get("calories", 0) for log in food_logs)
+    avg_daily_calories = round(total_calories_logged / max(days_active, 1))
+    
+    # Steps stats
+    total_steps = sum(log.get("steps", 0) for log in step_logs)
+    total_calories_burned = sum(log.get("calories_burned", 0) for log in step_logs)
+    avg_daily_steps = round(total_steps / max(len(step_logs), 1))
+    
+    # BMI calculation
+    height_m = profile.get("height", 170) / 100
+    bmi_start = round(weight_start / (height_m ** 2), 1) if weight_start else 0
+    bmi_current = round(weight_current / (height_m ** 2), 1) if weight_current else 0
+    
+    # Prepare report data
+    report_data = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "user": {
+            "name": user_doc.get("name", "Utilisateur"),
+            "email": user_doc.get("email", ""),
+            "created_at": created_at.isoformat(),
+            "days_active": days_active
+        },
+        "profile": {
+            "age": profile.get("age"),
+            "gender": profile.get("gender"),
+            "height": profile.get("height"),
+            "goal": profile.get("goal"),
+            "activity_level": profile.get("activity_level"),
+            "daily_calorie_target": profile.get("daily_calorie_target"),
+            "target_weight": profile.get("target_weight")
+        },
+        "weight_progress": {
+            "start_weight": weight_start,
+            "current_weight": weight_current,
+            "target_weight": profile.get("target_weight"),
+            "weight_change": round(weight_change, 1),
+            "weight_min": weight_min,
+            "weight_max": weight_max,
+            "bmi_start": bmi_start,
+            "bmi_current": bmi_current,
+            "entries_count": len(weight_entries),
+            "entries": weight_entries[-30:]  # Last 30 entries
+        },
+        "nutrition_stats": {
+            "total_meals_logged": total_meals_logged,
+            "total_calories_logged": total_calories_logged,
+            "avg_daily_calories": avg_daily_calories,
+            "target_calories": profile.get("daily_calorie_target", 2000)
+        },
+        "activity_stats": {
+            "total_steps": total_steps,
+            "total_calories_burned": total_calories_burned,
+            "avg_daily_steps": avg_daily_steps,
+            "days_tracked": len(step_logs)
+        }
+    }
+    
+    return report_data
+
+# Add dateutil to requirements
+# pip install python-dateutil
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
