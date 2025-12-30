@@ -14,6 +14,7 @@ import MealPlansPage from "@/pages/MealPlansPage";
 import WorkoutsPage from "@/pages/WorkoutsPage";
 import ProgressPage from "@/pages/ProgressPage";
 import ProfilePage from "@/pages/ProfilePage";
+import SocialPage from "@/pages/SocialPage";
 import AuthCallback from "@/pages/AuthCallback";
 import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 
