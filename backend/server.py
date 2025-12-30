@@ -1895,9 +1895,28 @@ async def generate_workout(user: dict = Depends(get_current_user)):
     from emergentintegrations.llm.chat import LlmChat, UserMessage
     import json
     
+    # ===== AI LIMIT CHECK =====
+    await enforce_ai_limit(user["user_id"], "/workouts/generate")
+    
     profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
     if not profile:
         raise HTTPException(status_code=400, detail="Complete onboarding first")
+    
+    user_context_hash = get_user_context_hash(profile)
+    
+    # ===== CHECK CACHE FIRST =====
+    prompt_for_cache = f"workout plan goal:{profile.get('goal', '')} fitness:{profile.get('fitness_level', '')}"
+    cached = await get_cached_ai_response(prompt_for_cache, "workouts-generate", user_context_hash)
+    if cached:
+        plan_doc = {
+            "program_id": f"workout_{uuid.uuid4().hex[:8]}",
+            "user_id": user["user_id"],
+            "workout_plan": cached,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "from_cache": True
+        }
+        await db.workout_programs.insert_one(plan_doc)
+        return {"program_id": plan_doc["program_id"], "workout_plan": cached, "from_cache": True}
     
     try:
         chat = LlmChat(
@@ -1946,6 +1965,13 @@ Create effective, progressive workouts that can be done at home or gym. Return J
         json_start = response.find('{')
         json_end = response.rfind('}') + 1
         workout_plan = json.loads(response[json_start:json_end])
+        
+        # ===== CACHE THE RESULT & INCREMENT USAGE =====
+        await store_cached_ai_response(prompt_for_cache, workout_plan, "workouts-generate", user_context_hash)
+        await increment_ai_usage(user["user_id"], "/workouts/generate")
+        
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"AI workout generation error: {e}")
         # Return fallback workout plan
