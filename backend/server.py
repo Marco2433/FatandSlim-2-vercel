@@ -1853,7 +1853,7 @@ async def award_video_badge(data: dict, user: dict = Depends(get_current_user)):
     }
     
     await db.badges.insert_one({**badge, "_id": None})
-    del badge["_id"] if "_id" in badge else None
+    badge.pop("_id", None)
     
     return {"message": "Badge awarded!", "badge": badge}
 
