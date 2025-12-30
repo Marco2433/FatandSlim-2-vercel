@@ -2770,7 +2770,69 @@ async def get_challenges(user: dict = Depends(get_current_user)):
     # Select 4 challenges for today (random but consistent for the day)
     selected_challenges = random.sample(daily_challenges, min(4, len(daily_challenges)))
     
-    return {"daily": selected_challenges, "weekly": []}
+    # Get user's total challenge points (never resets)
+    user_points = await db.user_points.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    total_points = user_points.get("total_points", 0) if user_points else 0
+    
+    # Check if any challenges were completed and award points
+    completed_today = await db.challenge_completions.find(
+        {"user_id": user["user_id"], "date": today},
+        {"_id": 0}
+    ).to_list(100)
+    completed_ids = {c["challenge_id"] for c in completed_today}
+    
+    points_earned_today = 0
+    for challenge in selected_challenges:
+        if challenge["completed"] and challenge["id"] not in completed_ids:
+            # Award points for newly completed challenge
+            points_earned_today += challenge["reward"]
+            await db.challenge_completions.insert_one({
+                "user_id": user["user_id"],
+                "challenge_id": challenge["id"],
+                "date": today,
+                "points": challenge["reward"],
+                "completed_at": datetime.now(timezone.utc).isoformat()
+            })
+    
+    # Update total points if any earned
+    if points_earned_today > 0:
+        await db.user_points.update_one(
+            {"user_id": user["user_id"]},
+            {
+                "$inc": {"total_points": points_earned_today},
+                "$set": {"last_updated": datetime.now(timezone.utc).isoformat()}
+            },
+            upsert=True
+        )
+        total_points += points_earned_today
+    
+    # Mark already completed challenges
+    for challenge in selected_challenges:
+        challenge["already_claimed"] = challenge["id"] in completed_ids
+    
+    return {
+        "daily": selected_challenges, 
+        "weekly": [],
+        "total_points": total_points,
+        "points_earned_today": points_earned_today
+    }
+
+@api_router.get("/challenges/points")
+async def get_challenge_points(user: dict = Depends(get_current_user)):
+    """Get user's total challenge points"""
+    user_points = await db.user_points.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    total_points = user_points.get("total_points", 0) if user_points else 0
+    
+    # Get points history
+    history = await db.challenge_completions.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("completed_at", -1).to_list(50)
+    
+    return {
+        "total_points": total_points,
+        "history": history
+    }
 
 # ==================== MOTIVATION MESSAGES ====================
 
