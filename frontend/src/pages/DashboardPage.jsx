@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
@@ -8,6 +8,10 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { 
   Flame, 
@@ -27,7 +31,17 @@ import {
   Search,
   Loader2,
   ListPlus,
-  BookOpen
+  BookOpen,
+  Calendar,
+  CalendarPlus,
+  Pin,
+  Bell,
+  Award,
+  X,
+  MapPin,
+  Edit,
+  Trash2,
+  AlertCircle
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -43,6 +57,30 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
   
+  // User stats & badges
+  const [userStats, setUserStats] = useState(null);
+  
+  // Appointments
+  const [appointments, setAppointments] = useState([]);
+  const [todayAppointments, setTodayAppointments] = useState([]);
+  const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState(null);
+  const [newAppointment, setNewAppointment] = useState({
+    title: '',
+    type: 'medical',
+    date: new Date().toISOString().split('T')[0],
+    time: '09:00',
+    location: '',
+    notes: '',
+    pinned: false
+  });
+  
+  // Smart recommendation popup
+  const [showRecommendation, setShowRecommendation] = useState(false);
+  const [recommendation, setRecommendation] = useState(null);
+  const lastRecommendationTime = useRef(Date.now());
+  const RECOMMENDATION_INTERVAL = 45 * 60 * 1000; // 45 minutes
+  
   // AI Recipe Search state
   const [recipeSearchQuery, setRecipeSearchQuery] = useState('');
   const [searchedRecipe, setSearchedRecipe] = useState(null);
@@ -55,19 +93,17 @@ export default function DashboardPage() {
       if (today !== currentDate) {
         console.log('New day detected, refreshing data...');
         setCurrentDate(today);
-        // Reset daily summary to force refresh
         setDailySummary(null);
         fetchDashboardData();
       }
     };
 
-    // Check every minute for date change
     const interval = setInterval(checkDateChange, 60000);
     
-    // Also check on visibility change (when user returns to app)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         checkDateChange();
+        checkRecommendationTimer();
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -78,15 +114,51 @@ export default function DashboardPage() {
     };
   }, [currentDate]);
 
+  // Smart recommendation timer
+  const checkRecommendationTimer = useCallback(async () => {
+    const now = Date.now();
+    if (now - lastRecommendationTime.current >= RECOMMENDATION_INTERVAL) {
+      lastRecommendationTime.current = now;
+      await fetchSmartRecommendation();
+    }
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(checkRecommendationTimer, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [checkRecommendationTimer]);
+
   useEffect(() => {
     fetchDashboardData();
+    fetchUserStats();
+    fetchAppointments();
+    
+    // Show recommendation after 45 minutes of first load
+    const initialTimeout = setTimeout(() => {
+      fetchSmartRecommendation();
+    }, RECOMMENDATION_INTERVAL);
+    
+    return () => clearTimeout(initialTimeout);
   }, []);
+
+  // Show today's appointments alert on load
+  useEffect(() => {
+    if (todayAppointments.length > 0 && !sessionStorage.getItem('todayAppointmentsShown')) {
+      sessionStorage.setItem('todayAppointmentsShown', 'true');
+      toast.info(`📅 Vous avez ${todayAppointments.length} rendez-vous aujourd'hui !`, {
+        duration: 5000,
+        action: {
+          label: 'Voir',
+          onClick: () => document.getElementById('appointments-section')?.scrollIntoView({ behavior: 'smooth' })
+        }
+      });
+    }
+  }, [todayAppointments]);
 
   const fetchDashboardData = async () => {
     const today = new Date().toISOString().split('T')[0];
     
     try {
-      // Fetch data in parallel but handle failures independently
       const [statsRes, summaryRes, challengesRes, motivationRes, recipesRes] = await Promise.allSettled([
         axios.get(`${API}/progress/stats`, { withCredentials: true }),
         axios.get(`${API}/food/daily-summary?date=${today}`, { withCredentials: true }),
@@ -97,12 +169,10 @@ export default function DashboardPage() {
       
       if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
       if (summaryRes.status === 'fulfilled') {
-        // Verify the date matches today
         const summaryData = summaryRes.value.data;
         if (summaryData.date === today) {
           setDailySummary(summaryData);
         } else {
-          // Data is stale, set to zero
           setDailySummary({
             date: today,
             consumed: { calories: 0, protein: 0, carbs: 0, fat: 0 },
@@ -122,6 +192,39 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchUserStats = async () => {
+    try {
+      const response = await axios.get(`${API}/user/stats`, { withCredentials: true });
+      setUserStats(response.data);
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    }
+  };
+
+  const fetchAppointments = async () => {
+    try {
+      const [allRes, todayRes] = await Promise.allSettled([
+        axios.get(`${API}/appointments`, { withCredentials: true }),
+        axios.get(`${API}/appointments/today`, { withCredentials: true }),
+      ]);
+      
+      if (allRes.status === 'fulfilled') setAppointments(allRes.value.data || []);
+      if (todayRes.status === 'fulfilled') setTodayAppointments(todayRes.value.data || []);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+    }
+  };
+
+  const fetchSmartRecommendation = async () => {
+    try {
+      const response = await axios.get(`${API}/recommendations/smart`, { withCredentials: true });
+      setRecommendation(response.data);
+      setShowRecommendation(true);
+    } catch (error) {
+      console.error('Error fetching recommendation:', error);
+    }
+  };
+
   const addRecipeToFavorites = async (recipe) => {
     try {
       await axios.post(`${API}/recipes/favorites`, { recipe }, { withCredentials: true });
@@ -131,7 +234,7 @@ export default function DashboardPage() {
         toast.error('Recette déjà dans les favoris');
       } else {
         console.error('Error adding to favorites:', error);
-        toast.error('Erreur lors de l\'ajout: ' + (error.response?.data?.detail || 'Veuillez réessayer'));
+        toast.error('Erreur lors de l\'ajout');
       }
     }
   };
@@ -153,10 +256,10 @@ export default function DashboardPage() {
       }
       
       const response = await axios.post(`${API}/shopping-list/bulk`, { items }, { withCredentials: true });
-      toast.success(`${response.data.added_count || items.length} ingrédients ajoutés à la liste de courses !`);
+      toast.success(`${response.data.added_count || items.length} ingrédients ajoutés !`);
     } catch (error) {
       console.error('Error adding ingredients:', error);
-      toast.error('Erreur lors de l\'ajout: ' + (error.response?.data?.detail || 'Veuillez réessayer'));
+      toast.error('Erreur lors de l\'ajout');
     }
   };
 
@@ -171,7 +274,6 @@ export default function DashboardPage() {
     return colors[score] || 'bg-gray-400';
   };
 
-  // AI Recipe Search
   const searchRecipeByAI = async () => {
     if (!recipeSearchQuery.trim()) {
       toast.error('Veuillez entrer une description de recette');
@@ -194,39 +296,69 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Error searching recipe:', error);
-      toast.error('Erreur lors de la recherche: ' + (error.response?.data?.detail || 'Veuillez réessayer'));
+      toast.error('Erreur lors de la recherche');
     } finally {
       setLoadingSearch(false);
     }
   };
 
-  const calorieProgress = dailySummary 
-    ? Math.min(100, (dailySummary.consumed.calories / dailySummary.targets.calories) * 100)
-    : 0;
+  const handleSaveAppointment = async () => {
+    if (!newAppointment.title || !newAppointment.date || !newAppointment.time) {
+      toast.error('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+    
+    try {
+      if (editingAppointment) {
+        await axios.put(`${API}/appointments/${editingAppointment.appointment_id}`, newAppointment, { withCredentials: true });
+        toast.success('Rendez-vous modifié');
+      } else {
+        await axios.post(`${API}/appointments`, newAppointment, { withCredentials: true });
+        toast.success('Rendez-vous créé');
+      }
+      
+      setShowAppointmentDialog(false);
+      setEditingAppointment(null);
+      setNewAppointment({
+        title: '',
+        type: 'medical',
+        date: new Date().toISOString().split('T')[0],
+        time: '09:00',
+        location: '',
+        notes: '',
+        pinned: false
+      });
+      fetchAppointments();
+    } catch (error) {
+      toast.error('Erreur lors de la sauvegarde');
+    }
+  };
 
-  const macros = dailySummary ? [
-    { 
-      name: 'Protéines', 
-      value: dailySummary.consumed.protein, 
-      target: dailySummary.targets.protein, 
-      unit: 'g',
-      color: 'bg-secondary'
-    },
-    { 
-      name: 'Glucides', 
-      value: dailySummary.consumed.carbs, 
-      target: dailySummary.targets.carbs, 
-      unit: 'g',
-      color: 'bg-accent'
-    },
-    { 
-      name: 'Lipides', 
-      value: dailySummary.consumed.fat, 
-      target: dailySummary.targets.fat, 
-      unit: 'g',
-      color: 'bg-chart-4'
-    },
-  ] : [];
+  const handleDeleteAppointment = async (appointmentId) => {
+    try {
+      await axios.delete(`${API}/appointments/${appointmentId}`, { withCredentials: true });
+      toast.success('Rendez-vous supprimé');
+      fetchAppointments();
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
+  };
+
+  const togglePinAppointment = async (apt) => {
+    try {
+      await axios.put(`${API}/appointments/${apt.appointment_id}`, { pinned: !apt.pinned }, { withCredentials: true });
+      fetchAppointments();
+    } catch (error) {
+      toast.error('Erreur lors de l\'épinglage');
+    }
+  };
+
+  const appointmentTypeLabels = {
+    medical: { label: 'Médical', icon: '🏥', color: 'bg-red-100 text-red-700' },
+    sport: { label: 'Sport', icon: '🏃', color: 'bg-green-100 text-green-700' },
+    wellness: { label: 'Bien-être', icon: '🧘', color: 'bg-purple-100 text-purple-700' },
+    nutrition: { label: 'Nutrition', icon: '🥗', color: 'bg-orange-100 text-orange-700' }
+  };
 
   if (loading) {
     return (
@@ -239,212 +371,349 @@ export default function DashboardPage() {
     );
   }
 
+  const calorieProgress = dailySummary 
+    ? Math.min((dailySummary.consumed.calories / dailySummary.targets.calories) * 100, 100)
+    : 0;
+
+  // Sort appointments: pinned first, then today, then by date
+  const sortedAppointments = [...appointments].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    const today = new Date().toISOString().split('T')[0];
+    if (a.date === today && b.date !== today) return -1;
+    if (a.date !== today && b.date === today) return 1;
+    return new Date(a.date) - new Date(b.date);
+  });
+
   return (
     <div className="min-h-screen bg-background pb-safe" data-testid="dashboard-page">
       {/* Header */}
-      <header className="px-4 pt-6 pb-4">
+      <header className="sticky top-0 z-10 px-4 py-4 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">Bonjour,</p>
-            <h1 className="font-heading text-2xl font-bold">{user?.name || 'Utilisateur'}</h1>
+            <h1 className="font-heading text-xl font-bold">
+              Bonjour, {user?.name?.split(' ')[0]} 👋
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
           </div>
           <Button 
             variant="ghost" 
             size="icon"
             onClick={() => navigate('/profile')}
-            className="rounded-full"
-            data-testid="profile-btn"
+            className="relative"
           >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold">
-              {user?.name?.charAt(0) || 'U'}
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+              {user?.picture ? (
+                <img src={user.picture} alt="Profile" className="w-full h-full rounded-full object-cover" />
+              ) : (
+                <span className="text-white font-bold">{user?.name?.[0]}</span>
+              )}
             </div>
           </Button>
         </div>
+      </header>
 
-        {/* Streak */}
-        {stats?.streak && (
-          <div className="mt-4 flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 w-fit">
-            <Flame className="w-5 h-5 text-accent" />
-            <span className="text-sm font-medium">
-              {stats.streak.current} jours de suite
-            </span>
+      <main className="p-4 space-y-4 max-w-lg mx-auto">
+        {/* Days Counter & Badges */}
+        {userStats && (
+          <div className="flex gap-2">
+            <Card className="flex-1 bg-gradient-to-br from-primary/10 to-primary/5">
+              <CardContent className="p-3 text-center">
+                <p className="text-2xl font-bold text-primary">{userStats.days_active}</p>
+                <p className="text-xs text-muted-foreground">jours sur l'app</p>
+              </CardContent>
+            </Card>
+            <Card className="flex-1 bg-gradient-to-br from-secondary/10 to-secondary/5">
+              <CardContent className="p-3 text-center">
+                <p className="text-2xl font-bold text-secondary">{userStats.streak}</p>
+                <p className="text-xs text-muted-foreground">jours de suite</p>
+              </CardContent>
+            </Card>
+            <Card className="flex-1 bg-gradient-to-br from-accent/10 to-accent/5">
+              <CardContent className="p-3 text-center">
+                <p className="text-2xl font-bold text-accent">{userStats.badges_count}</p>
+                <p className="text-xs text-muted-foreground">badges</p>
+              </CardContent>
+            </Card>
           </div>
         )}
-        
-        {/* Motivation Message */}
-        {motivation && (
-          <Card className="mt-4 bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
+
+        {/* Badges Display */}
+        {userStats?.badges && (
+          <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+            {userStats.badges.filter(b => b.earned).map((badge) => (
+              <div 
+                key={badge.id}
+                className="flex-shrink-0 px-3 py-2 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30"
+                title={badge.description}
+              >
+                <span className="text-lg mr-1">{badge.icon}</span>
+                <span className="text-xs font-medium">{badge.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Today's Appointments Alert */}
+        {todayAppointments.length > 0 && (
+          <Card className="border-primary/50 bg-primary/5">
             <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-primary" />
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">{motivation.message}</p>
-                  {motivation.bonus && (
-                    <p className="text-sm text-muted-foreground mt-1">{motivation.bonus}</p>
-                  )}
+                <div className="flex-1">
+                  <p className="font-medium text-sm">RDV aujourd'hui</p>
+                  {todayAppointments.slice(0, 2).map((apt, i) => (
+                    <p key={i} className="text-xs text-muted-foreground">
+                      {apt.time} - {apt.title}
+                    </p>
+                  ))}
                 </div>
+                <Button variant="ghost" size="sm" onClick={() => document.getElementById('appointments-section')?.scrollIntoView({ behavior: 'smooth' })}>
+                  Voir
+                </Button>
               </div>
             </CardContent>
           </Card>
         )}
-      </header>
 
-      <main className="px-4 space-y-6 pb-24">
-        {/* Calories Card */}
-        <Card className="overflow-hidden" data-testid="calories-card">
+        {/* Daily Calories Progress */}
+        <Card data-testid="calories-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                  <Flame className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Calories aujourd'hui</p>
-                  <p className="font-heading text-2xl font-bold">
-                    {dailySummary?.consumed.calories || 0} 
-                    <span className="text-sm font-normal text-muted-foreground ml-1">
-                      / {dailySummary?.targets.calories || 2000} kcal
-                    </span>
-                  </p>
-                </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Calories aujourd'hui</p>
+                <p className="text-3xl font-bold font-heading">
+                  {dailySummary?.consumed.calories || 0}
+                  <span className="text-lg font-normal text-muted-foreground">
+                    {' '}/ {dailySummary?.targets.calories || 2000} kcal
+                  </span>
+                </p>
+              </div>
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                calorieProgress >= 100 ? 'bg-destructive/20' : 'bg-primary/20'
+              }`}>
+                <Flame className={`w-8 h-8 ${
+                  calorieProgress >= 100 ? 'text-destructive' : 'text-primary'
+                }`} />
               </div>
             </div>
+            <Progress 
+              value={calorieProgress} 
+              className="h-3"
+            />
             
-            <Progress value={calorieProgress} className="h-3 mb-4" />
-            
-            <div className="grid grid-cols-3 gap-4">
-              {macros.map((macro) => (
-                <div key={macro.name} className="space-y-1">
-                  <p className="text-xs text-muted-foreground">{macro.name}</p>
-                  <div className="macro-bar">
-                    <div 
-                      className={`macro-bar-fill ${macro.color}`}
-                      style={{ width: `${Math.min(100, (macro.value / macro.target) * 100)}%` }}
-                    />
-                  </div>
-                  <p className="text-xs font-medium">
-                    {macro.value}/{macro.target}{macro.unit}
-                  </p>
-                </div>
-              ))}
+            {/* Macros */}
+            <div className="grid grid-cols-3 gap-4 mt-4">
+              <div className="text-center p-2 rounded-lg bg-muted/50">
+                <p className="text-lg font-bold">{dailySummary?.consumed.protein || 0}g</p>
+                <p className="text-xs text-muted-foreground">
+                  / {dailySummary?.targets.protein || 100}g Prot.
+                </p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-muted/50">
+                <p className="text-lg font-bold">{dailySummary?.consumed.carbs || 0}g</p>
+                <p className="text-xs text-muted-foreground">
+                  / {dailySummary?.targets.carbs || 250}g Gluc.
+                </p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-muted/50">
+                <p className="text-lg font-bold">{dailySummary?.consumed.fat || 0}g</p>
+                <p className="text-xs text-muted-foreground">
+                  / {dailySummary?.targets.fat || 65}g Lip.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card 
-            className="cursor-pointer card-interactive hover:shadow-glow-purple"
+        <div className="grid grid-cols-4 gap-3">
+          <Button
+            variant="outline"
+            className="flex flex-col items-center gap-1 h-auto py-4 card-interactive"
             onClick={() => navigate('/scanner')}
-            data-testid="scanner-card"
           >
-            <CardContent className="p-4 flex flex-col items-center text-center">
-              <div className="w-14 h-14 rounded-2xl bg-secondary/10 flex items-center justify-center mb-3">
-                <Camera className="w-7 h-7 text-secondary" />
-              </div>
-              <h3 className="font-heading font-semibold">Scanner</h3>
-              <p className="text-xs text-muted-foreground">Analyser un repas</p>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer card-interactive hover:shadow-glow"
+            <Camera className="w-6 h-6 text-primary" />
+            <span className="text-xs">Scanner</span>
+          </Button>
+          <Button
+            variant="outline"
+            className="flex flex-col items-center gap-1 h-auto py-4 card-interactive"
             onClick={() => navigate('/nutrition')}
-            data-testid="nutrition-card"
           >
-            <CardContent className="p-4 flex flex-col items-center text-center">
-              <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mb-3">
-                <Apple className="w-7 h-7 text-accent" />
-              </div>
-              <h3 className="font-heading font-semibold">Nutrition</h3>
-              <p className="text-xs text-muted-foreground">Voir mes repas</p>
-            </CardContent>
-          </Card>
+            <Apple className="w-6 h-6 text-secondary" />
+            <span className="text-xs">Nutrition</span>
+          </Button>
+          <Button
+            variant="outline"
+            className="flex flex-col items-center gap-1 h-auto py-4 card-interactive"
+            onClick={() => navigate('/workouts')}
+          >
+            <Dumbbell className="w-6 h-6 text-accent" />
+            <span className="text-xs">Sport</span>
+          </Button>
+          <Button
+            variant="outline"
+            className="flex flex-col items-center gap-1 h-auto py-4 card-interactive"
+            onClick={() => navigate('/progress')}
+          >
+            <TrendingUp className="w-6 h-6 text-primary" />
+            <span className="text-xs">Progrès</span>
+          </Button>
         </div>
 
-        {/* Weight Progress */}
-        {stats && (
-          <Card data-testid="weight-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="font-heading text-lg flex items-center gap-2">
-                <Target className="w-5 h-5 text-primary" />
-                Objectif poids
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end justify-between mb-4">
+        {/* Motivation Message */}
+        {motivation && (
+          <Card className="border-secondary/30 bg-gradient-to-r from-secondary/10 to-secondary/5">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Sparkles className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-3xl font-bold font-heading">{stats.current_weight} kg</p>
-                  <p className="text-sm text-muted-foreground">
-                    {stats.weight_change > 0 ? '+' : ''}{stats.weight_change} kg depuis le début
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Objectif</p>
-                  <p className="font-semibold">{stats.target_weight} kg</p>
+                  <p className="text-sm font-medium text-secondary">Citation du jour</p>
+                  <p className="text-sm text-muted-foreground mt-1">{motivation.message}</p>
                 </div>
               </div>
-              <Progress 
-                value={Math.max(0, Math.min(100, ((stats.current_weight - stats.target_weight) / (stats.current_weight - stats.target_weight + 10)) * 100))}
-                className="h-2"
-              />
             </CardContent>
           </Card>
         )}
 
-        {/* Daily Recipes - Recettes du jour */}
+        {/* Appointments Section */}
+        <div id="appointments-section">
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <CardTitle className="font-heading text-lg flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                Mes rendez-vous
+              </CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowAppointmentDialog(true)}
+              >
+                <CalendarPlus className="w-4 h-4 mr-1" />
+                Ajouter
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {sortedAppointments.length > 0 ? (
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {sortedAppointments.slice(0, 5).map((apt) => {
+                    const typeInfo = appointmentTypeLabels[apt.type] || appointmentTypeLabels.medical;
+                    const isToday = apt.date === new Date().toISOString().split('T')[0];
+                    
+                    return (
+                      <div 
+                        key={apt.appointment_id}
+                        className={`flex items-center gap-3 p-3 rounded-xl border ${
+                          isToday ? 'border-primary/50 bg-primary/5' : 'border-border'
+                        } ${apt.pinned ? 'ring-2 ring-primary/30' : ''}`}
+                      >
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${typeInfo.color}`}>
+                          {typeInfo.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm truncate">{apt.title}</p>
+                            {apt.pinned && <Pin className="w-3 h-3 text-primary" />}
+                            {isToday && <Badge variant="outline" className="text-xs">Aujourd'hui</Badge>}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(apt.date).toLocaleDateString('fr-FR')} à {apt.time}
+                            {apt.location && ` • ${apt.location}`}
+                          </p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => togglePinAppointment(apt)}
+                          >
+                            <Pin className={`w-4 h-4 ${apt.pinned ? 'text-primary fill-primary' : ''}`} />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => {
+                              setEditingAppointment(apt);
+                              setNewAppointment(apt);
+                              setShowAppointmentDialog(true);
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">Aucun rendez-vous</p>
+                  <Button 
+                    variant="link" 
+                    size="sm" 
+                    onClick={() => setShowAppointmentDialog(true)}
+                  >
+                    Ajouter un rendez-vous
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Daily Recipes */}
         {dailyRecipes.length > 0 && (
           <Card data-testid="daily-recipes-card">
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <CardTitle className="font-heading text-lg flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-secondary" />
                 Recettes du jour
               </CardTitle>
+              <Badge variant="outline" className="text-xs">
+                {dailyRecipes.length} recettes
+              </Badge>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {dailyRecipes.map((recipe) => (
+            <CardContent className="space-y-3">
+              {dailyRecipes.slice(0, 6).map((recipe, index) => (
                 <div 
-                  key={recipe.id}
-                  className="flex gap-3 p-3 rounded-xl border border-border hover:border-primary/30 transition-colors"
+                  key={index}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/30 transition-colors"
                 >
-                  {/* Recipe Image */}
-                  <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                  {recipe.image && (
                     <img 
                       src={recipe.image} 
                       alt={recipe.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400';
-                      }}
+                      className="w-14 h-14 rounded-lg object-cover"
+                      onError={(e) => e.target.style.display = 'none'}
                     />
-                  </div>
-                  
-                  {/* Recipe Info */}
+                  )}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold text-sm truncate">{recipe.name}</h4>
-                      <span className={`w-5 h-5 rounded text-white text-xs flex items-center justify-center font-bold flex-shrink-0 ${getNutriScoreColor(recipe.nutri_score)}`}>
-                        {recipe.nutri_score}
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm truncate">{recipe.name}</p>
+                      {recipe.nutri_score && (
+                        <span className={`w-5 h-5 rounded text-white text-xs flex items-center justify-center font-bold ${getNutriScoreColor(recipe.nutri_score)}`}>
+                          {recipe.nutri_score}
+                        </span>
+                      )}
                     </div>
-                    
-                    <div className="flex gap-2 text-xs text-muted-foreground mb-2">
+                    <div className="flex gap-2 text-xs text-muted-foreground">
                       <span>{recipe.calories} kcal</span>
                       <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {recipe.prep_time}
-                      </span>
+                      <span>{recipe.prep_time}</span>
                     </div>
-                    
-                    {/* Actions */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mt-1">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-7 text-xs"
+                        className="h-6 text-xs px-2"
                         onClick={() => addRecipeToFavorites(recipe)}
                       >
                         <Heart className="w-3 h-3 mr-1" />
@@ -453,7 +722,7 @@ export default function DashboardPage() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-7 text-xs"
+                        className="h-6 text-xs px-2"
                         onClick={() => addIngredientsToShoppingList(recipe.ingredients)}
                       >
                         <ShoppingCart className="w-3 h-3 mr-1" />
@@ -485,9 +754,6 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Décrivez la recette que vous cherchez !
-            </p>
             <Textarea
               placeholder='Ex: "Recette avec crevettes et riz en 30 min, saine"'
               value={recipeSearchQuery}
@@ -514,9 +780,8 @@ export default function DashboardPage() {
               )}
             </Button>
             
-            {/* Search Result */}
             {searchedRecipe && (
-              <div className="mt-3 p-3 rounded-xl border border-primary/30 bg-background space-y-3">
+              <div className="mt-3 p-3 rounded-xl border border-primary/30 bg-background space-y-2">
                 <div className="flex items-center gap-2">
                   <h4 className="font-semibold text-sm">{searchedRecipe.name}</h4>
                   {searchedRecipe.nutri_score && (
@@ -552,14 +817,6 @@ export default function DashboardPage() {
                     </Button>
                   )}
                 </div>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="text-xs p-0 h-auto"
-                  onClick={() => navigate('/nutrition')}
-                >
-                  Voir détails dans Nutrition →
-                </Button>
               </div>
             )}
           </CardContent>
@@ -578,7 +835,7 @@ export default function DashboardPage() {
               <div className="flex-1">
                 <h3 className="font-heading font-semibold">Base de recettes</h3>
                 <p className="text-xs text-muted-foreground">
-                  + de 1000 recettes classées par Nutri-Score
+                  50 000 recettes classées par Nutri-Score
                 </p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -608,57 +865,166 @@ export default function DashboardPage() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      challenge.completed ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      challenge.completed ? 'bg-primary text-white' : 'bg-muted'
                     }`}>
-                      {challenge.completed ? (
-                        <Zap className="w-4 h-4" />
-                      ) : (
-                        <span className="text-xs font-bold">{challenge.progress}/{challenge.target}</span>
-                      )}
+                      {challenge.completed ? '✓' : challenge.icon}
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{challenge.name}</p>
-                      <p className="text-xs text-muted-foreground">{challenge.xp} XP</p>
+                      <p className="font-medium text-sm">{challenge.title}</p>
+                      <p className="text-xs text-muted-foreground">{challenge.reward} pts</p>
                     </div>
                   </div>
-                  {challenge.completed && (
-                    <span className="text-xs font-medium text-primary">Complété !</span>
-                  )}
+                  <Badge variant={challenge.completed ? 'default' : 'outline'}>
+                    {challenge.completed ? 'Fait' : 'À faire'}
+                  </Badge>
                 </div>
               ))}
             </CardContent>
           </Card>
         )}
-
-        {/* Weekly Stats */}
-        {stats?.weekly_stats && (
-          <Card data-testid="weekly-stats-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="font-heading text-lg flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-chart-4" />
-                Cette semaine
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="p-3 rounded-xl bg-muted/50">
-                  <p className="text-2xl font-bold font-heading">{stats.weekly_stats.workouts_completed}</p>
-                  <p className="text-xs text-muted-foreground">Entraînements</p>
-                </div>
-                <div className="p-3 rounded-xl bg-muted/50">
-                  <p className="text-2xl font-bold font-heading">{stats.weekly_stats.workout_minutes}</p>
-                  <p className="text-xs text-muted-foreground">Minutes sport</p>
-                </div>
-                <div className="p-3 rounded-xl bg-muted/50">
-                  <p className="text-2xl font-bold font-heading">{stats.weekly_stats.avg_daily_calories}</p>
-                  <p className="text-xs text-muted-foreground">Moy. kcal/jour</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </main>
+
+      {/* Appointment Dialog */}
+      <Dialog open={showAppointmentDialog} onOpenChange={setShowAppointmentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingAppointment ? 'Modifier le rendez-vous' : 'Nouveau rendez-vous'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="apt-title">Titre *</Label>
+              <Input
+                id="apt-title"
+                value={newAppointment.title}
+                onChange={(e) => setNewAppointment(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Ex: RDV Médecin"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="apt-type">Type</Label>
+              <Select
+                value={newAppointment.type}
+                onValueChange={(value) => setNewAppointment(prev => ({ ...prev, type: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="medical">🏥 Médical</SelectItem>
+                  <SelectItem value="sport">🏃 Sport</SelectItem>
+                  <SelectItem value="wellness">🧘 Bien-être</SelectItem>
+                  <SelectItem value="nutrition">🥗 Nutrition</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="apt-date">Date *</Label>
+                <Input
+                  id="apt-date"
+                  type="date"
+                  value={newAppointment.date}
+                  onChange={(e) => setNewAppointment(prev => ({ ...prev, date: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="apt-time">Heure *</Label>
+                <Input
+                  id="apt-time"
+                  type="time"
+                  value={newAppointment.time}
+                  onChange={(e) => setNewAppointment(prev => ({ ...prev, time: e.target.value }))}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="apt-location">Lieu</Label>
+              <Input
+                id="apt-location"
+                value={newAppointment.location}
+                onChange={(e) => setNewAppointment(prev => ({ ...prev, location: e.target.value }))}
+                placeholder="Ex: Cabinet Dr. Martin"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="apt-notes">Notes</Label>
+              <Textarea
+                id="apt-notes"
+                value={newAppointment.notes}
+                onChange={(e) => setNewAppointment(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Informations supplémentaires..."
+                rows={2}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label htmlFor="apt-pinned">Épingler ce rendez-vous</Label>
+              <Switch
+                id="apt-pinned"
+                checked={newAppointment.pinned}
+                onCheckedChange={(checked) => setNewAppointment(prev => ({ ...prev, pinned: checked }))}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="flex gap-2">
+            {editingAppointment && (
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  handleDeleteAppointment(editingAppointment.appointment_id);
+                  setShowAppointmentDialog(false);
+                  setEditingAppointment(null);
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Supprimer
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => {
+              setShowAppointmentDialog(false);
+              setEditingAppointment(null);
+            }}>
+              Annuler
+            </Button>
+            <Button onClick={handleSaveAppointment}>
+              {editingAppointment ? 'Modifier' : 'Créer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Smart Recommendation Popup */}
+      <Dialog open={showRecommendation} onOpenChange={setShowRecommendation}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Recommandation
+            </DialogTitle>
+          </DialogHeader>
+          
+          {recommendation && (
+            <div className="py-4">
+              <p className="text-sm leading-relaxed">{recommendation.message}</p>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button onClick={() => setShowRecommendation(false)} className="w-full">
+              Merci !
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
