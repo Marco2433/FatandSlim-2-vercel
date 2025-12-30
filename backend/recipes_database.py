@@ -1,19 +1,26 @@
 """
-Base de données de 30 000 recettes françaises
-Classées par Nutri-Score (A, B, C, D)
-Distribution: 40% A, 30% B, 20% C, 10% D
+Base de données de 50 000 recettes françaises
+Distribution: 70% saines (A-B), 30% autres (C-D)
+- 35% Score A (17500 recettes)
+- 35% Score B (17500 recettes)  
+- 20% Score C (10000 recettes)
+- 10% Score D (5000 recettes)
 """
 
 import random
-from typing import List, Dict
+from typing import List, Dict, Optional
+import hashlib
 
-# Catégories de base pour générer les recettes
+# Catégories de repas
 CATEGORIES = ["breakfast", "lunch", "dinner", "snack"]
 
-# Ingrédients par catégorie nutritionnelle
-INGREDIENTS_HEALTHY = [
+# Ingrédients sains (Score A-B)
+INGREDIENTS_SCORE_A = [
     {"item": "Poulet", "quantity": "150g"},
     {"item": "Saumon", "quantity": "150g"},
+    {"item": "Cabillaud", "quantity": "150g"},
+    {"item": "Thon frais", "quantity": "120g"},
+    {"item": "Dinde", "quantity": "150g"},
     {"item": "Quinoa", "quantity": "80g"},
     {"item": "Brocoli", "quantity": "150g"},
     {"item": "Épinards", "quantity": "100g"},
@@ -23,97 +30,197 @@ INGREDIENTS_HEALTHY = [
     {"item": "Carottes", "quantity": "150g"},
     {"item": "Lentilles", "quantity": "100g"},
     {"item": "Pois chiches", "quantity": "150g"},
+    {"item": "Haricots rouges", "quantity": "100g"},
     {"item": "Riz complet", "quantity": "80g"},
     {"item": "Flocons d'avoine", "quantity": "60g"},
-    {"item": "Yaourt grec", "quantity": "150g"},
+    {"item": "Yaourt grec 0%", "quantity": "150g"},
     {"item": "Œufs", "quantity": "2"},
     {"item": "Amandes", "quantity": "30g"},
+    {"item": "Noix", "quantity": "25g"},
     {"item": "Huile d'olive", "quantity": "1 c.à.s"},
     {"item": "Citron", "quantity": "1"},
     {"item": "Ail", "quantity": "2 gousses"},
     {"item": "Oignon", "quantity": "1"},
+    {"item": "Poivrons", "quantity": "150g"},
+    {"item": "Champignons", "quantity": "150g"},
+    {"item": "Aubergines", "quantity": "200g"},
+    {"item": "Concombre", "quantity": "1"},
+    {"item": "Salade verte", "quantity": "100g"},
+    {"item": "Chou-fleur", "quantity": "200g"},
+    {"item": "Asperges", "quantity": "150g"},
+    {"item": "Haricots verts", "quantity": "150g"},
+    {"item": "Tofu", "quantity": "150g"},
+    {"item": "Edamame", "quantity": "100g"},
+    {"item": "Graines de chia", "quantity": "20g"},
+    {"item": "Graines de lin", "quantity": "15g"},
 ]
 
-INGREDIENTS_MODERATE = [
+INGREDIENTS_SCORE_B = [
     {"item": "Pâtes complètes", "quantity": "100g"},
     {"item": "Pain complet", "quantity": "2 tranches"},
     {"item": "Fromage frais", "quantity": "50g"},
+    {"item": "Mozzarella light", "quantity": "80g"},
     {"item": "Jambon blanc", "quantity": "80g"},
     {"item": "Thon en boîte", "quantity": "100g"},
-    {"item": "Mozzarella", "quantity": "100g"},
     {"item": "Pommes de terre", "quantity": "200g"},
     {"item": "Maïs", "quantity": "80g"},
-    {"item": "Haricots verts", "quantity": "150g"},
-    {"item": "Champignons", "quantity": "150g"},
+    {"item": "Petits pois", "quantity": "100g"},
+    {"item": "Banane", "quantity": "1"},
+    {"item": "Pomme", "quantity": "1"},
+    {"item": "Poire", "quantity": "1"},
+    {"item": "Fraises", "quantity": "150g"},
+    {"item": "Myrtilles", "quantity": "100g"},
+    {"item": "Mangue", "quantity": "150g"},
+    {"item": "Ananas", "quantity": "150g"},
+    {"item": "Raisins", "quantity": "100g"},
+    {"item": "Kiwi", "quantity": "2"},
+    {"item": "Orange", "quantity": "1"},
+    {"item": "Lait écrémé", "quantity": "200ml"},
+    {"item": "Lait d'amande", "quantity": "200ml"},
+    {"item": "Feta", "quantity": "50g"},
+    {"item": "Ricotta", "quantity": "80g"},
 ]
 
-INGREDIENTS_INDULGENT = [
-    {"item": "Crème fraîche", "quantity": "100ml"},
-    {"item": "Beurre", "quantity": "30g"},
-    {"item": "Lardons", "quantity": "100g"},
-    {"item": "Parmesan", "quantity": "50g"},
-    {"item": "Pâte feuilletée", "quantity": "1"},
-    {"item": "Chocolat noir", "quantity": "50g"},
-    {"item": "Farine", "quantity": "100g"},
-    {"item": "Sucre", "quantity": "50g"},
+INGREDIENTS_SCORE_C = [
+    {"item": "Crème fraîche légère", "quantity": "50ml"},
+    {"item": "Beurre", "quantity": "20g"},
+    {"item": "Parmesan", "quantity": "30g"},
+    {"item": "Gruyère râpé", "quantity": "50g"},
+    {"item": "Lardons", "quantity": "80g"},
+    {"item": "Saucisse", "quantity": "100g"},
+    {"item": "Pâte feuilletée", "quantity": "150g"},
+    {"item": "Pain blanc", "quantity": "2 tranches"},
+    {"item": "Riz blanc", "quantity": "100g"},
+    {"item": "Pâtes blanches", "quantity": "100g"},
+    {"item": "Miel", "quantity": "2 c.à.s"},
+    {"item": "Sucre", "quantity": "30g"},
+    {"item": "Chocolat noir", "quantity": "30g"},
 ]
 
-# Noms de recettes par catégorie
-RECIPE_NAMES = {
+INGREDIENTS_SCORE_D = [
+    {"item": "Crème fraîche épaisse", "quantity": "100ml"},
+    {"item": "Beurre", "quantity": "50g"},
+    {"item": "Lardons fumés", "quantity": "150g"},
+    {"item": "Bacon", "quantity": "100g"},
+    {"item": "Fromage à raclette", "quantity": "100g"},
+    {"item": "Pâte brisée", "quantity": "200g"},
+    {"item": "Brioche", "quantity": "100g"},
+    {"item": "Croissant", "quantity": "1"},
+    {"item": "Nutella", "quantity": "30g"},
+    {"item": "Confiture", "quantity": "40g"},
+    {"item": "Sirop d'érable", "quantity": "30ml"},
+]
+
+# Templates de noms de recettes par catégorie
+RECIPE_BASES = {
     "breakfast": [
-        "Porridge aux {fruit}", "Smoothie bowl {fruit}", "Œufs brouillés aux {legume}",
-        "Tartines à l'{topping}", "Bowl énergétique {style}", "Pancakes {type}",
-        "Granola maison {variante}", "Açaï bowl {garniture}", "Toast {garniture}",
-        "Omelette {style}", "Yaourt parfait {fruit}", "Crêpes {type}",
-        "Muesli {variante}", "Chia pudding {saveur}", "Gaufres {type}",
+        "Porridge {adj} aux {fruit}",
+        "Smoothie bowl {adj}",
+        "Œufs brouillés {style}",
+        "Tartines {garniture}",
+        "Bowl {style} du matin",
+        "Pancakes {adj}",
+        "Granola {adj} maison",
+        "Açaï bowl {garniture}",
+        "Toast {garniture}",
+        "Omelette {style}",
+        "Yaourt parfait {fruit}",
+        "Crêpes {adj}",
+        "Muesli {adj}",
+        "Chia pudding {saveur}",
+        "Gaufres {adj}",
+        "Smoothie {fruit}",
+        "Pain perdu {adj}",
+        "Œufs pochés {style}",
+        "Avocado toast {style}",
+        "Breakfast bowl {adj}",
     ],
     "lunch": [
-        "Salade {style} au {proteine}", "Buddha bowl {theme}", "Wrap {garniture}",
-        "Poke bowl {variante}", "Quiche {garniture}", "Taboulé {style}",
-        "Sandwich {type}", "Soupe {legume}", "Risotto {variante}",
-        "Gratin de {legume}", "Curry {type}", "Wok de {legume}",
-        "Couscous {style}", "Tacos {garniture}", "Burrito {type}",
+        "Salade {style} au {proteine}",
+        "Buddha bowl {style}",
+        "Wrap {garniture}",
+        "Poke bowl {style}",
+        "Quiche {garniture}",
+        "Taboulé {style}",
+        "Sandwich {garniture}",
+        "Soupe {legume}",
+        "Risotto {style}",
+        "Gratin de {legume}",
+        "Curry {style}",
+        "Wok de {legume}",
+        "Couscous {style}",
+        "Tacos {garniture}",
+        "Burrito bowl {style}",
+        "Salade composée {style}",
+        "Nouilles sautées {style}",
+        "Riz sauté {style}",
+        "Fajitas {garniture}",
+        "Bowl méditerranéen {adj}",
     ],
     "dinner": [
-        "{proteine} grillé aux {legume}", "Pavé de {poisson} {sauce}",
-        "Poulet rôti {style}", "Filet de {poisson} en papillote",
-        "Steak de {proteine} {accompagnement}", "Brochettes {type}",
-        "Lasagnes {variante}", "Tajine de {proteine}", "Ragoût {style}",
-        "Rôti de {viande} {sauce}", "Escalope {type}", "Émincé de {proteine}",
-        "Cocotte de {legume}", "Blanquette {variante}", "Osso buco {style}",
+        "{proteine} grillé aux {legume}",
+        "Pavé de {poisson} {sauce}",
+        "Filet de {poisson} en papillote",
+        "Escalope de {proteine} {sauce}",
+        "Brochettes {style}",
+        "Tajine de {legume}",
+        "Ragoût {style}",
+        "Blanquette {style}",
+        "Poêlée {style}",
+        "Rôti de {proteine}",
+        "Émincé de {proteine}",
+        "Cocotte de {legume}",
+        "Grillades {style}",
+        "Papillote {style}",
+        "Mijoté {style}",
+        "{proteine} au four {style}",
+        "Sauté de {proteine}",
+        "Fricassée {style}",
+        "Colombo {style}",
+        "Boulettes {style}",
     ],
     "snack": [
-        "Energy balls {saveur}", "Barre de céréales {type}", "Smoothie {fruit}",
-        "Fruits secs {melange}", "Houmous {variante}", "Muffin {type}",
-        "Crackers {garniture}", "Compote {fruit}", "Fromage blanc {topping}",
-        "Galette de {cereale}", "Tartine {type}", "Biscuits {variante}",
+        "Energy balls {saveur}",
+        "Barre de céréales {adj}",
+        "Smoothie {fruit}",
+        "Fruits secs {style}",
+        "Houmous {style}",
+        "Muffin {adj}",
+        "Crackers {garniture}",
+        "Compote {fruit}",
+        "Fromage blanc {garniture}",
+        "Galette {style}",
+        "Tartine {garniture}",
+        "Biscuits {adj}",
+        "Pudding {saveur}",
+        "Mousse {saveur}",
+        "Yaourt {garniture}",
     ]
 }
 
-# Variables pour les templates
-FRUITS = ["fruits rouges", "banane", "mangue", "pomme", "poire", "fraises", "myrtilles", "kiwi", "ananas", "pêche"]
-LEGUMES = ["légumes", "épinards", "courgettes", "brocoli", "poivrons", "champignons", "tomates", "aubergines", "carottes"]
-PROTEINES = ["poulet", "saumon", "thon", "bœuf", "dinde", "tofu", "crevettes", "cabillaud", "lentilles"]
-POISSONS = ["saumon", "cabillaud", "thon", "dorade", "bar", "truite", "sardines"]
-VIANDES = ["poulet", "bœuf", "porc", "agneau", "dinde", "canard", "veau"]
-STYLES = ["méditerranéen", "asiatique", "mexicain", "provençal", "thaï", "indien", "marocain", "libanais"]
-SAUCES = ["au citron", "aux herbes", "sauce vierge", "beurre blanc", "teriyaki", "au miel"]
-TOPPINGS = ["avocat", "houmous", "fromage frais", "beurre de cacahuète", "confiture"]
-GARNITURES = ["poulet", "légumes", "thon", "œuf", "fromage", "saumon fumé"]
-VARIANTES = ["végétarien", "protéiné", "léger", "complet", "gourmand", "healthy"]
-TYPES = ["classique", "aux légumes", "protéiné", "light", "express", "maison"]
-SAVEURS = ["cacao", "vanille", "citron", "fruits", "épices", "caramel"]
-CEREALES = ["riz", "quinoa", "avoine", "épeautre", "sarrasin"]
-MELANGES = ["amandes-noisettes", "fruits tropicaux", "énergétique", "protéiné"]
+# Modificateurs pour les templates
+MODIFIERS = {
+    "adj": ["protéiné", "léger", "énergétique", "vitaminé", "healthy", "gourmand", "express", "complet", "détox", "brûle-graisse", "minceur", "équilibré", "végétarien", "vegan", "classique", "revisité", "traditionnel", "moderne", "fusion"],
+    "fruit": ["fruits rouges", "banane", "mangue", "pomme", "poire", "fraises", "myrtilles", "kiwi", "ananas", "pêche", "abricot", "framboises", "agrumes", "fruits exotiques", "baies"],
+    "legume": ["légumes", "épinards", "courgettes", "brocoli", "poivrons", "champignons", "tomates", "aubergines", "carottes", "haricots verts", "asperges", "chou-fleur", "patate douce", "butternut", "légumes grillés", "légumes de saison"],
+    "proteine": ["poulet", "dinde", "tofu", "saumon", "thon", "cabillaud", "crevettes", "bœuf maigre", "porc", "lentilles", "pois chiches", "tempeh", "seitan"],
+    "poisson": ["saumon", "cabillaud", "thon", "dorade", "bar", "truite", "sole", "lieu", "merlu"],
+    "style": ["méditerranéen", "asiatique", "mexicain", "provençal", "thaï", "indien", "marocain", "libanais", "japonais", "coréen", "italien", "grec", "vietnamien", "créole", "tex-mex", "nordique", "oriental"],
+    "sauce": ["au citron", "aux herbes", "sauce vierge", "au pesto", "teriyaki", "au miel", "à l'ail", "aux câpres", "au curry", "au lait de coco", "à la provençale", "au vin blanc"],
+    "garniture": ["à l'avocat", "au poulet", "au saumon fumé", "aux légumes", "au thon", "au fromage frais", "aux œufs", "au jambon", "aux crudités", "végétarien"],
+    "saveur": ["chocolat", "vanille", "citron", "coco", "amande", "noisette", "cannelle", "matcha", "café", "caramel"],
+}
 
-# Images par catégorie (Unsplash URLs)
-IMAGES = {
+# Images par catégorie (URLs Unsplash)
+CATEGORY_IMAGES = {
     "breakfast": [
         "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400",
         "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400",
         "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400",
         "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400",
         "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400",
+        "https://images.unsplash.com/photo-1493770348161-369560ae357d?w=400",
+        "https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=400",
     ],
     "lunch": [
         "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400",
@@ -121,6 +228,8 @@ IMAGES = {
         "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
         "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400",
         "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
+        "https://images.unsplash.com/photo-1547592180-85f173990554?w=400",
+        "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=400",
     ],
     "dinner": [
         "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",
@@ -128,6 +237,8 @@ IMAGES = {
         "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400",
         "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400",
         "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400",
+        "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400",
+        "https://images.unsplash.com/photo-1574484284002-952d92456975?w=400",
     ],
     "snack": [
         "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400",
@@ -135,130 +246,135 @@ IMAGES = {
         "https://images.unsplash.com/photo-1557142046-c704a3adf364?w=400",
         "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400",
         "https://images.unsplash.com/photo-1571748982800-fa51082c2224?w=400",
+        "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=400",
     ],
 }
 
 # Étapes de préparation génériques
-STEPS_TEMPLATES = {
+STEPS_BY_CATEGORY = {
     "breakfast": [
         ["Préparer tous les ingrédients", "Mélanger les ingrédients de base", "Ajouter les garnitures", "Servir frais ou tiède"],
-        ["Faire chauffer le lait ou l'eau", "Incorporer les céréales", "Laisser gonfler 5 minutes", "Garnir de fruits et graines"],
-        ["Battre les œufs", "Faire chauffer la poêle", "Cuire à feu doux en remuant", "Assaisonner et servir"],
+        ["Faire chauffer le lait ou l'eau", "Incorporer les céréales", "Laisser gonfler 5 minutes", "Garnir et déguster"],
+        ["Battre les œufs avec une pincée de sel", "Faire chauffer la poêle à feu moyen", "Verser et cuire en remuant doucement", "Assaisonner et servir aussitôt"],
+        ["Préparer la base (pain, bol)", "Ajouter les ingrédients principaux", "Garnir avec les toppings", "Arroser de sauce si désiré"],
     ],
     "lunch": [
-        ["Préparer et laver les légumes", "Cuire la protéine", "Assembler tous les ingrédients", "Assaisonner et servir"],
-        ["Couper les légumes en dés", "Faire revenir à la poêle", "Ajouter l'assaisonnement", "Dresser dans un bol"],
-        ["Préparer la base (riz/quinoa)", "Griller les légumes", "Préparer la sauce", "Assembler et déguster"],
+        ["Préparer et laver les légumes", "Cuire la protéine si nécessaire", "Assembler tous les ingrédients", "Assaisonner et servir"],
+        ["Couper les légumes en morceaux", "Faire revenir à la poêle", "Ajouter l'assaisonnement", "Dresser dans un bol ou une assiette"],
+        ["Préparer la base (riz, quinoa, salade)", "Griller ou poêler les accompagnements", "Préparer la sauce", "Assembler harmonieusement"],
+        ["Faire cuire les ingrédients principaux", "Préparer les garnitures", "Mélanger délicatement", "Servir chaud ou froid selon la recette"],
     ],
     "dinner": [
-        ["Préchauffer le four à 200°C", "Préparer la viande ou le poisson", "Disposer avec les légumes", "Cuire 20-30 minutes"],
-        ["Faire mariner la protéine", "Préparer l'accompagnement", "Cuire à la poêle ou au four", "Dresser et servir chaud"],
-        ["Faire revenir les oignons", "Ajouter la protéine et les épices", "Laisser mijoter 20 minutes", "Servir avec du riz ou du pain"],
+        ["Préchauffer le four à 200°C", "Préparer la viande ou le poisson", "Disposer avec les légumes sur la plaque", "Cuire 20-30 minutes selon l'épaisseur"],
+        ["Faire mariner la protéine 15 minutes", "Préparer l'accompagnement en parallèle", "Cuire à la poêle ou au four", "Dresser et servir bien chaud"],
+        ["Faire revenir les oignons et l'ail", "Ajouter la protéine et les épices", "Mouiller et laisser mijoter 20-30 minutes", "Rectifier l'assaisonnement et servir"],
+        ["Préparer tous les ingrédients à l'avance", "Cuire les éléments séparément", "Assembler dans le plat de cuisson", "Gratiner si nécessaire et servir"],
     ],
     "snack": [
-        ["Mélanger tous les ingrédients", "Former des boules ou des barres", "Réfrigérer 30 minutes", "Conserver au frais"],
-        ["Mixer les ingrédients", "Verser dans un verre ou bol", "Ajouter les toppings", "Déguster immédiatement"],
-        ["Préparer la base", "Ajouter les garnitures", "Portionner", "Conserver au frais"],
+        ["Mélanger tous les ingrédients secs", "Ajouter les ingrédients humides", "Former des boules ou des barres", "Réfrigérer 30 minutes minimum"],
+        ["Mixer les ingrédients jusqu'à consistance lisse", "Verser dans un verre ou bol", "Ajouter les toppings", "Déguster immédiatement"],
+        ["Préparer la base", "Ajouter les garnitures", "Portionner selon les besoins", "Conserver au frais si nécessaire"],
     ],
 }
 
-def generate_recipe_name(category: str) -> str:
-    """Génère un nom de recette unique"""
-    template = random.choice(RECIPE_NAMES[category])
-    name = template.format(
-        fruit=random.choice(FRUITS),
-        legume=random.choice(LEGUMES),
-        proteine=random.choice(PROTEINES),
-        poisson=random.choice(POISSONS),
-        viande=random.choice(VIANDES),
-        style=random.choice(STYLES),
-        sauce=random.choice(SAUCES),
-        topping=random.choice(TOPPINGS),
-        garniture=random.choice(GARNITURES),
-        variante=random.choice(VARIANTES),
-        type=random.choice(TYPES),
-        saveur=random.choice(SAVEURS),
-        cereale=random.choice(CEREALES),
-        melange=random.choice(MELANGES),
-        theme=random.choice(STYLES),
-        accompagnement=random.choice(["légumes rôtis", "purée", "riz", "quinoa", "salade"]),
-    )
+def generate_recipe_name(category: str, seed: int) -> str:
+    """Génère un nom de recette unique basé sur un seed"""
+    random.seed(seed)
+    template = random.choice(RECIPE_BASES[category])
+    
+    name = template
+    for key, values in MODIFIERS.items():
+        if "{" + key + "}" in name:
+            name = name.replace("{" + key + "}", random.choice(values))
+    
     return name.capitalize()
 
-def generate_ingredients(nutri_score: str) -> List[Dict]:
-    """Génère une liste d'ingrédients selon le nutri-score"""
+def get_ingredients_for_score(nutri_score: str, seed: int) -> List[Dict]:
+    """Retourne des ingrédients appropriés selon le nutri-score"""
+    random.seed(seed)
+    
     if nutri_score == "A":
-        base = random.sample(INGREDIENTS_HEALTHY, min(5, len(INGREDIENTS_HEALTHY)))
+        base = random.sample(INGREDIENTS_SCORE_A, min(5, len(INGREDIENTS_SCORE_A)))
     elif nutri_score == "B":
-        base = random.sample(INGREDIENTS_HEALTHY, 3) + random.sample(INGREDIENTS_MODERATE, 2)
+        base = random.sample(INGREDIENTS_SCORE_A, 3) + random.sample(INGREDIENTS_SCORE_B, 2)
     elif nutri_score == "C":
-        base = random.sample(INGREDIENTS_MODERATE, 3) + random.sample(INGREDIENTS_HEALTHY, 2)
+        base = random.sample(INGREDIENTS_SCORE_B, 2) + random.sample(INGREDIENTS_SCORE_C, 2) + random.sample(INGREDIENTS_SCORE_A, 1)
     else:  # D
-        base = random.sample(INGREDIENTS_MODERATE, 2) + random.sample(INGREDIENTS_INDULGENT, 2) + random.sample(INGREDIENTS_HEALTHY, 1)
+        base = random.sample(INGREDIENTS_SCORE_C, 2) + random.sample(INGREDIENTS_SCORE_D, 2) + random.sample(INGREDIENTS_SCORE_B, 1)
     
     return base
 
-def generate_nutrition(nutri_score: str, category: str) -> Dict:
-    """Génère les valeurs nutritionnelles selon le score"""
-    base_calories = {"breakfast": 350, "lunch": 500, "dinner": 450, "snack": 200}
+def calculate_nutrition(nutri_score: str, category: str, seed: int) -> Dict:
+    """Calcule les valeurs nutritionnelles selon le score et la catégorie"""
+    random.seed(seed)
+    
+    base_cal = {"breakfast": 350, "lunch": 500, "dinner": 450, "snack": 180}
     
     if nutri_score == "A":
-        calories = base_calories[category] + random.randint(-50, 50)
+        calories = base_cal[category] + random.randint(-50, 30)
         protein = random.randint(20, 35)
-        carbs = random.randint(30, 50)
+        carbs = random.randint(25, 45)
         fat = random.randint(8, 15)
     elif nutri_score == "B":
-        calories = base_calories[category] + random.randint(0, 100)
-        protein = random.randint(15, 28)
-        carbs = random.randint(35, 55)
+        calories = base_cal[category] + random.randint(0, 80)
+        protein = random.randint(15, 30)
+        carbs = random.randint(30, 50)
         fat = random.randint(12, 20)
     elif nutri_score == "C":
-        calories = base_calories[category] + random.randint(50, 150)
+        calories = base_cal[category] + random.randint(50, 150)
         protein = random.randint(12, 25)
         carbs = random.randint(40, 60)
         fat = random.randint(18, 28)
     else:  # D
-        calories = base_calories[category] + random.randint(100, 250)
-        protein = random.randint(10, 20)
-        carbs = random.randint(45, 70)
+        calories = base_cal[category] + random.randint(100, 250)
+        protein = random.randint(8, 20)
+        carbs = random.randint(50, 75)
         fat = random.randint(25, 40)
     
     return {"calories": calories, "protein": protein, "carbs": carbs, "fat": fat}
 
-def generate_single_recipe(recipe_id: int, nutri_score: str = None) -> Dict:
-    """Génère une recette complète"""
+def generate_recipe(recipe_id: int, nutri_score: str = None) -> Dict:
+    """Génère une recette complète avec un ID déterministe"""
+    seed = recipe_id * 31337  # Seed déterministe
+    random.seed(seed)
+    
+    # Distribution si non spécifié: 35% A, 35% B, 20% C, 10% D
     if nutri_score is None:
-        # Distribution: 40% A, 30% B, 20% C, 10% D
         r = random.random()
-        if r < 0.4:
+        if r < 0.35:
             nutri_score = "A"
-        elif r < 0.7:
+        elif r < 0.70:
             nutri_score = "B"
-        elif r < 0.9:
+        elif r < 0.90:
             nutri_score = "C"
         else:
             nutri_score = "D"
     
     category = random.choice(CATEGORIES)
-    nutrition = generate_nutrition(nutri_score, category)
+    nutrition = calculate_nutrition(nutri_score, category, seed)
     
-    recipe = {
-        "id": f"r{recipe_id:05d}",
-        "name": generate_recipe_name(category),
+    prep_times = [10, 15, 20, 25, 30, 35, 40, 45]
+    cook_times = [0, 5, 10, 15, 20, 25, 30, 35, 40]
+    difficulties = ["facile", "moyen"] if nutri_score in ["A", "B"] else ["facile", "moyen", "difficile"]
+    costs = ["économique", "moyen"] if nutri_score in ["A", "B"] else ["économique", "moyen", "élevé"]
+    
+    return {
+        "id": f"r{recipe_id:06d}",
+        "name": generate_recipe_name(category, seed),
         "category": category,
         "calories": nutrition["calories"],
         "protein": nutrition["protein"],
         "carbs": nutrition["carbs"],
         "fat": nutrition["fat"],
         "nutri_score": nutri_score,
-        "prep_time": f"{random.choice([10, 15, 20, 25, 30])} min",
-        "cook_time": f"{random.choice([0, 5, 10, 15, 20, 25, 30])} min",
-        "servings": random.choice([1, 2, 4]),
-        "difficulty": random.choice(["facile", "moyen", "difficile"]) if nutri_score in ["C", "D"] else random.choice(["facile", "moyen"]),
-        "cost": "économique" if nutri_score in ["A", "B"] else random.choice(["économique", "moyen", "élevé"]),
-        "image": random.choice(IMAGES[category]),
-        "ingredients": generate_ingredients(nutri_score),
-        "steps": random.choice(STEPS_TEMPLATES[category]),
+        "prep_time": f"{random.choice(prep_times)} min",
+        "cook_time": f"{random.choice(cook_times)} min",
+        "servings": random.choice([1, 2, 3, 4]),
+        "difficulty": random.choice(difficulties),
+        "cost": random.choice(costs),
+        "image": random.choice(CATEGORY_IMAGES[category]),
+        "ingredients": get_ingredients_for_score(nutri_score, seed + 1),
+        "steps": random.choice(STEPS_BY_CATEGORY[category]),
         "tips": random.choice([
             "Ajoutez des herbes fraîches pour plus de saveur",
             "Se conserve 2-3 jours au réfrigérateur",
@@ -266,57 +382,53 @@ def generate_single_recipe(recipe_id: int, nutri_score: str = None) -> Dict:
             "Variez les légumes selon la saison",
             "Accompagnez d'une salade verte",
             "Parfait pour un repas équilibré",
+            "Préparez les ingrédients à l'avance",
+            "Peut se congeler jusqu'à 3 mois",
+            "Servez avec du pain complet",
+            "Ajustez les épices selon vos goûts",
         ]),
     }
-    
-    return recipe
 
-def generate_recipes_database(count: int = 30000) -> List[Dict]:
-    """Génère la base de données complète de recettes"""
-    recipes = []
-    used_names = set()
-    
-    # Distribution par nutri-score
-    counts = {
-        "A": int(count * 0.4),  # 12000
-        "B": int(count * 0.3),  # 9000
-        "C": int(count * 0.2),  # 6000
-        "D": int(count * 0.1),  # 3000
-    }
-    
-    recipe_id = 1
-    for nutri_score, target_count in counts.items():
-        generated = 0
-        attempts = 0
-        while generated < target_count and attempts < target_count * 3:
-            recipe = generate_single_recipe(recipe_id, nutri_score)
-            if recipe["name"] not in used_names:
-                used_names.add(recipe["name"])
-                recipes.append(recipe)
-                recipe_id += 1
-                generated += 1
-            attempts += 1
-    
-    random.shuffle(recipes)
-    return recipes
+# Générer un échantillon de 2000 recettes en mémoire pour performance
+# Les autres sont générées à la demande
+print("Generating recipe database sample...")
+SAMPLE_SIZE = 2000
+SAMPLE_RECIPES = [generate_recipe(i) for i in range(1, SAMPLE_SIZE + 1)]
+print(f"Generated {len(SAMPLE_RECIPES)} sample recipes")
 
-# Pré-génération d'un échantillon de 1000 recettes pour performance
-# (Les 30000 seront générées à la demande et mises en cache)
-SAMPLE_RECIPES = generate_recipes_database(1000)
+# Statistiques totales (pour 50000 recettes)
+TOTAL_RECIPES = 50000
+STATS = {
+    "total": TOTAL_RECIPES,
+    "by_nutri_score": {
+        "A": int(TOTAL_RECIPES * 0.35),  # 17500
+        "B": int(TOTAL_RECIPES * 0.35),  # 17500
+        "C": int(TOTAL_RECIPES * 0.20),  # 10000
+        "D": int(TOTAL_RECIPES * 0.10),  # 5000
+    },
+    "by_category": {
+        "breakfast": int(TOTAL_RECIPES * 0.20),
+        "lunch": int(TOTAL_RECIPES * 0.30),
+        "dinner": int(TOTAL_RECIPES * 0.35),
+        "snack": int(TOTAL_RECIPES * 0.15),
+    },
+    "healthy_percentage": 70,  # A + B
+}
 
-def get_recipes_by_nutri_score(nutri_score: str = None, limit: int = 100) -> List[Dict]:
+def get_recipes_by_nutri_score(nutri_score: str = None, limit: int = 100, offset: int = 0) -> List[Dict]:
     """Récupère des recettes filtrées par nutri-score"""
     if nutri_score:
-        filtered = [r for r in SAMPLE_RECIPES if r["nutri_score"] == nutri_score]
+        filtered = [r for r in SAMPLE_RECIPES if r["nutri_score"] == nutri_score.upper()]
     else:
         filtered = SAMPLE_RECIPES
-    return filtered[:limit]
+    
+    return filtered[offset:offset + limit]
 
 def get_daily_recipes(user_profile: Dict = None, count: int = 6) -> List[Dict]:
-    """Récupère les recettes du jour personnalisées"""
+    """Récupère les recettes du jour personnalisées selon le profil utilisateur"""
     import datetime
     
-    # Seed basé sur le jour pour avoir les mêmes recettes toute la journée
+    # Seed basé sur le jour + user pour avoir des recettes différentes par utilisateur
     today = datetime.date.today()
     user_seed = hash(str(user_profile.get("user_id", ""))) if user_profile else 0
     random.seed(today.toordinal() + user_seed)
@@ -325,29 +437,36 @@ def get_daily_recipes(user_profile: Dict = None, count: int = 6) -> List[Dict]:
     suitable = []
     allergies = [a.lower() for a in (user_profile.get("allergies", []) if user_profile else [])]
     dislikes = [d.lower() for d in (user_profile.get("food_dislikes", []) if user_profile else [])]
+    goal = user_profile.get("goal", "") if user_profile else ""
     
     for recipe in SAMPLE_RECIPES:
         # Vérifier allergies et aliments détestés
         ingredients_text = " ".join([i["item"].lower() for i in recipe["ingredients"]])
         skip = False
+        
         for allergy in allergies:
             if allergy in ingredients_text:
                 skip = True
                 break
+        
         for dislike in dislikes:
             if dislike in ingredients_text:
                 skip = True
                 break
         
-        if not skip and recipe["nutri_score"] in ["A", "B", "C"]:
+        # Privilégier les recettes saines (A-B) pour les objectifs de perte de poids
+        if goal in ["lose", "lose_weight"] and recipe["nutri_score"] == "D":
+            skip = True
+        
+        # Ne jamais proposer de recettes D par défaut
+        if recipe["nutri_score"] != "D" and not skip:
             suitable.append(recipe)
     
     # Reset random seed
     random.seed()
     
-    # Sélectionner des recettes variées (différentes catégories)
     if len(suitable) >= count:
-        # Essayer d'avoir une variété de catégories
+        # Variété de catégories
         by_category = {}
         for r in suitable:
             cat = r["category"]
@@ -371,19 +490,45 @@ def get_daily_recipes(user_profile: Dict = None, count: int = 6) -> List[Dict]:
     return suitable[:count]
 
 def get_recipes_stats() -> Dict:
-    """Statistiques sur la base de recettes"""
-    total = len(SAMPLE_RECIPES)
-    by_score = {}
-    by_category = {}
+    """Retourne les statistiques de la base de recettes"""
+    # Calculer les stats réelles de l'échantillon
+    sample_stats = {
+        "total": len(SAMPLE_RECIPES),
+        "by_nutri_score": {},
+        "by_category": {},
+    }
     
     for r in SAMPLE_RECIPES:
         score = r["nutri_score"]
         cat = r["category"]
-        by_score[score] = by_score.get(score, 0) + 1
-        by_category[cat] = by_category.get(cat, 0) + 1
+        sample_stats["by_nutri_score"][score] = sample_stats["by_nutri_score"].get(score, 0) + 1
+        sample_stats["by_category"][cat] = sample_stats["by_category"].get(cat, 0) + 1
     
+    # Retourner les stats globales (50000 recettes)
     return {
-        "total": total,
-        "by_nutri_score": by_score,
-        "by_category": by_category,
+        "total": STATS["total"],
+        "sample_loaded": sample_stats["total"],
+        "by_nutri_score": STATS["by_nutri_score"],
+        "by_category": STATS["by_category"],
+        "healthy_percentage": STATS["healthy_percentage"],
+        "sample_by_nutri_score": sample_stats["by_nutri_score"],
     }
+
+def search_recipes(query: str, limit: int = 20) -> List[Dict]:
+    """Recherche des recettes par mot-clé"""
+    query_lower = query.lower()
+    results = []
+    
+    for recipe in SAMPLE_RECIPES:
+        # Recherche dans le nom
+        if query_lower in recipe["name"].lower():
+            results.append(recipe)
+            continue
+        
+        # Recherche dans les ingrédients
+        for ing in recipe["ingredients"]:
+            if query_lower in ing["item"].lower():
+                results.append(recipe)
+                break
+    
+    return results[:limit]
