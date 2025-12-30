@@ -1134,12 +1134,32 @@ async def generate_meal_plan(data: dict = {}, user: dict = Depends(get_current_u
     from emergentintegrations.llm.chat import LlmChat, UserMessage
     import json
     
+    # ===== AI LIMIT CHECK =====
+    await enforce_ai_limit(user["user_id"], "/meals/generate")
+    
     profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
     if not profile:
         raise HTTPException(status_code=400, detail="Complete onboarding first")
     
     # Get plan type: daily or weekly
     plan_type = data.get("type", "weekly")
+    user_context_hash = get_user_context_hash(profile)
+    
+    # ===== CHECK CACHE FIRST =====
+    prompt_for_cache = f"meal plan {plan_type} goal:{profile.get('goal', '')}"
+    cached = await get_cached_ai_response(prompt_for_cache, "meals-generate", user_context_hash)
+    if cached:
+        # Still save to user's plans
+        plan_doc = {
+            "plan_id": f"plan_{uuid.uuid4().hex[:8]}",
+            "user_id": user["user_id"],
+            "type": plan_type,
+            "meal_plan": cached,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "from_cache": True
+        }
+        await db.meal_plans.insert_one(plan_doc)
+        return {"plan_id": plan_doc["plan_id"], "type": plan_type, "meal_plan": cached, "from_cache": True}
     
     try:
         chat = LlmChat(
