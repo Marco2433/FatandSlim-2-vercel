@@ -1232,7 +1232,13 @@ Réponds UNIQUEMENT avec ce JSON (tous les textes en français):
         json_start = response.find('{')
         json_end = response.rfind('}') + 1
         meal_plan = json.loads(response[json_start:json_end])
-    except Exception as e:
+        
+        # ===== CACHE THE RESULT & INCREMENT USAGE =====
+        await store_cached_ai_response(prompt_for_cache, meal_plan, "meals-generate", user_context_hash)
+        await increment_ai_usage(user["user_id"], "/meals/generate")
+        
+    except HTTPException:
+        raise
         logger.error(f"AI meal plan error: {e}")
         # Return a fallback meal plan in French
         if plan_type == "daily":
