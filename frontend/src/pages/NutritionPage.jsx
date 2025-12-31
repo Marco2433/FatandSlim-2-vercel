@@ -578,6 +578,12 @@ export default function NutritionPage() {
     }
   };
 
+  // Request recipes with warning
+  const requestRecipes = () => {
+    setPendingAIAction(() => generateRecipes);
+    setShowAIWarning(true);
+  };
+
   // Regenerate recipes
   const regenerateRecipes = () => {
     generateRecipes();
