@@ -189,8 +189,16 @@ export default function NutritionPage() {
   const shareArticle = async (article) => {
     try {
       await axios.post(`${API}/social/post`, {
-        content: `📰 Article intéressant : "${article.title}"\n\n${article.summary}`,
-        type: 'article'
+        content: `📰 **${article.title}**\n\n${article.content || article.summary}\n\n📖 Source : ${article.source || 'Fat & Slim'} • ⏱️ ${article.read_time || '3 min'}`,
+        type: 'share_article',
+        image_url: article.image || null,
+        shared_item: {
+          title: article.title,
+          summary: article.summary,
+          category: article.category,
+          source: article.source,
+          image: article.image
+        }
       }, { withCredentials: true });
       toast.success('Article partagé sur le mur !');
     } catch (error) {

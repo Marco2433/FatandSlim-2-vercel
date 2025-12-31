@@ -768,9 +768,9 @@ export default function DashboardPage() {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => navigate('/nutrition')}
+                onClick={() => navigate('/nutrition?tab=catalog')}
               >
-                Voir plus de recettes
+                Voir le catalogue de recettes
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </CardContent>
