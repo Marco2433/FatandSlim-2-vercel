@@ -249,6 +249,15 @@ export default function OnboardingPage() {
         return true; // Dietary/allergies optional
       case 8:
         return formData.time_constraint && formData.budget;
+      case 9:
+        // Bariatric step 1 - surgery info
+        if (formData.bariatric_surgery) {
+          return formData.bariatric_surgery_date && formData.bariatric_parcours;
+        }
+        return true;
+      case 10:
+        // Bariatric step 2 - medical team (optional)
+        return true;
       default:
         return false;
     }
