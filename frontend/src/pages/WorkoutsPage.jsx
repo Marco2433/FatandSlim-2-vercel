@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import AIWarningDialog from '@/components/AIWarningDialog';
 import { 
   Dumbbell, 
   ArrowLeft,
