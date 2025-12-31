@@ -2147,6 +2147,50 @@ Nutri-Score guidelines:
     
     return result
 
+# --- Scan History Endpoints ---
+@api_router.get("/food/scan-history")
+async def get_scan_history(user: dict = Depends(get_current_user)):
+    """Get user's scan history grouped by category, ordered by date"""
+    scans = await db.scan_history.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("scanned_at", -1).to_list(200)
+    
+    # Group by category
+    categories = {}
+    for scan in scans:
+        cat = scan.get("category", "Autre")
+        if cat not in categories:
+            categories[cat] = []
+        categories[cat].append(scan)
+    
+    return {
+        "scans": scans,
+        "by_category": categories,
+        "total": len(scans)
+    }
+
+@api_router.get("/food/scan/{scan_id}")
+async def get_scan_detail(scan_id: str, user: dict = Depends(get_current_user)):
+    """Get details of a specific scan"""
+    scan = await db.scan_history.find_one(
+        {"scan_id": scan_id, "user_id": user["user_id"]},
+        {"_id": 0}
+    )
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    return scan
+
+@api_router.delete("/food/scan/{scan_id}")
+async def delete_scan(scan_id: str, user: dict = Depends(get_current_user)):
+    """Delete a scan from history"""
+    result = await db.scan_history.delete_one(
+        {"scan_id": scan_id, "user_id": user["user_id"]}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    return {"message": "Scan deleted"}
+
 @api_router.post("/food/recommend-alternatives")
 async def recommend_alternatives(entry: dict, user: dict = Depends(get_current_user)):
     """Get AI recommendations for healthier alternatives - IN FRENCH"""
