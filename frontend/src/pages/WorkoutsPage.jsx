@@ -51,6 +51,12 @@ const VIDEO_CATEGORIES = [
   { id: 'cardio', label: 'Cardio', icon: Heart },
   { id: 'musculation', label: 'Musculation', icon: Dumbbell },
   { id: 'fitness', label: 'Fitness', icon: Zap },
+  { id: 'yoga', label: 'Yoga', icon: Heart },
+  { id: 'hiit', label: 'HIIT', icon: Flame },
+  { id: 'stretching', label: 'Étirements', icon: Timer },
+  { id: 'abdos', label: 'Abdos', icon: Target },
+  { id: 'jambes', label: 'Jambes', icon: Dumbbell },
+  { id: 'bras', label: 'Bras', icon: Dumbbell },
 ];
 
 // Difficulty levels
