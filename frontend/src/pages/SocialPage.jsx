@@ -656,7 +656,7 @@ export default function SocialPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {groupFeed.map(post => <PostCard key={post.post_id} post={post} />)}
+              {groupFeed.map(post => renderPostCard(post))}
             </div>
           )}
         </div>
@@ -731,7 +731,7 @@ export default function SocialPage() {
               </Card>
             ) : (
               <div className="space-y-4">
-                {publicFeed.map(post => <PostCard key={post.post_id} post={post} showGroupBadge />)}
+                {publicFeed.map(post => renderPostCard(post, true))}
               </div>
             )}
           </TabsContent>
