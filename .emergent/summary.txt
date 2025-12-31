@@ -1,194 +1,223 @@
 <analysis>**original_problem_statement:**
-L'utilisateur souhaite continuer le développement de son application de coaching sportif Fat and Slim.
+L'utilisateur a demandé une série de nouvelles fonctionnalités et de corrections de bugs importantes, faisant suite au développement précédent :
 
-Les demandes initiales de cette session étaient les suivantes :
-1.  **Correction de bugs critiques** : L'application était devenue inutilisable (déconnexion, génération IA, etc.), l'IMC ne s'affichait pas, le rapport PDF ne se générait pas, et les programmes de l'IA coach n'étaient pas consultables.
-2.  **Plein écran PWA** : Forcer le mode plein écran pour supprimer définitivement la barre de navigation du navigateur sur l'AAB.
-3.  **Fonctionnalités d'entraînement** :
-    *   Intégrer des vidéos YouTube classées par catégories.
-    *   Créer un Coach IA pour générer des programmes d'entraînement personnalisés sur plusieurs étapes.
-4.  **Améliorations diverses** :
-    *   Améliorer les défis du jour sur le dashboard.
-    *   Assurer la cohérence des images de recettes avec les plats.
-    *   Créer une page de politique de confidentialité pour le Play Store.
-5.  **Optimisation des coûts** : Mettre en place une limitation d'usage et un système de cache pour toutes les fonctionnalités IA afin de réduire la consommation de crédits Emergent.
+**Fonctionnalités sociales (Priorité la plus élevée):**
+1.  **Amélioration du fil d'actualité** :
+    *   Permettre aux utilisateurs de télécharger des photos dans leurs publications.
+    *   Le fil principal doit être public, affichant les publications de TOUS les membres de l'application.
+    *   Ajouter une fonctionnalité de commentaires sous chaque publication.
+    *   Corriger le bug où les nouvelles publications n'apparaissent pas instantanément.
+2.  **Communautés thématiques** :
+    *   Créer des groupes thématiques (Fitness, Cardio, etc.) où les utilisateurs peuvent s'inscrire.
+    *   Chaque groupe doit avoir son propre fil d'actualité privé, visible uniquement par ses membres.
+    *   Intégrer des défis quotidiens aléatoires au sein des groupes, avec des points à gagner.
+3.  **Classements** : Mettre en place 3 types de classements : amis, tous les membres de l'application, et par membres de chaque communauté thématique.
+4.  **Partage de contenu** :
+    *   Permettre le partage des programmes d'entraînement générés par l'IA sur le fil de la communauté.
+    *   Permettre le partage des recettes (catalogue et IA) sur le fil de la communauté.
+5.  **Simulation d'activité** : Créer une centaine de faux profils (60% femmes, 40% hommes) complets (photos, badges) pour générer des interactions quotidiennes (posts, likes) et rendre la communauté vivante.
+
+**Améliorations UI/UX :**
+1.  **Liste de courses** : Catégoriser les articles par famille d'aliments et permettre la modification des portions/quantités.
+2.  **Dashboard** :
+    *   Corriger le bug où la photo de profil n'apparaît pas.
+    *   Afficher les 2 derniers badges obtenus à côté du badge Premier pas.
+3.  **Page Progrès** :
+    *   Améliorer le design du rapport PDF pour inclure des graphiques.
+    *   Assurer la mise à jour immédiate du poids après une nouvelle saisie.
+4.  **Page Nutrition** :
+    *   Ajouter un bouton pour planifier les recettes/plans repas générés par l'IA dans l'agenda.
+    *   Afficher 1 à 3 articles d'actualité (santé, sport, nutrition) chaque jour, récupérés de sites français, avec possibilité de les partager.
+5.  **Page Entraînements** :
+    *   Corriger le défilement horizontal des catégories de vidéos.
+    *   Ajouter plus de catégories et de vidéos de test.
+6.  **Général** :
+    *   Supprimer la marge vide en haut de l'écran sur mobile.
+    *   Afficher un message d'avertissement avant chaque utilisation de l'IA, rappelant la limite de 2 appels gratuits par jour.
+
+**Intégrations :**
+1.  **Google Calendar** : Synchroniser l'agenda Google de l'utilisateur avec celui de l'application (lecture seule). (Cette tâche a été reportée).
 
 **User's preferred language**: Français
 
 **what currently exists?**
-L'application Fat and Slim est une application full-stack (React/FastAPI) fonctionnelle et riche en fonctionnalités. Elle comprend une authentification complète (JWT + Google), une base de données de 50 000 recettes avec des filtres avancés (Nutri-Score, type de plat), un suivi de la nutrition et des progrès (poids, IMC, pas), un système de gamification (badges, streaks, défis), un agenda intelligent, et la génération de rapports PDF. Récemment, la page Entraînements a été entièrement reconstruite avec des (fausses) vidéos YouTube et un coach IA multi-étapes pour créer des programmes personnalisés. Un mécanisme a été mis en place pour forcer le mode plein écran de la PWA via un fichier  configuré avec le SHA256 de l'utilisateur.
+L'application Fat and Slim est une PWA full-stack (React/FastAPI/MongoDB) de coaching sportif. Elle inclut l'authentification (JWT + Google), une base de données de recettes, le suivi de la nutrition et des progrès, la gamification (badges, points), un coach IA, et la génération de rapports PDF. Un système de limitation (2/jour) et de cache pour les appels IA a été récemment implémenté avec succès. Des fonctionnalités sociales de base (amis, profils, messagerie) ont été ajoutées et sont en cours d'extension majeure.
 
 **Last working item**:
-- **Last item agent was working**: Implémentation d'un système pour limiter et mettre en cache les appels à l'IA. L'objectif est de limiter chaque utilisateur à 2 appels IA par jour (hors recommandations automatiques) et de mettre en cache les requêtes similaires pour réduire drastiquement la consommation de crédits, comme demandé par l'utilisateur.
+- **Last item agent was working**: L'agent a commencé l'implémentation de la refonte majeure des fonctionnalités sociales demandée par l'utilisateur. Il a modifié le fichier  pour ajouter la logique de seed de faux utilisateurs, les commentaires, le support des images dans les posts, les groupes thématiques et les classements. Le travail était concentré sur le backend.
 - **Status**: IN PROGRESS
 - **Agent Testing Done**: N
-- **Which testing method agent to use?**: backend testing agent. L'agent devra créer des tests pour valider le comptage des appels par utilisateur, le blocage après la limite, la réinitialisation quotidienne, et le fonctionnement du cache pour des prompts identiques ou très similaires.
+- **Which testing method agent to use?**: both. Le backend nécessite des tests via  ou des scripts pour valider la création des faux utilisateurs, les nouveaux endpoints de feed, les commentaires et les classements. Le frontend nécessite des tests via  pour valider toutes les nouvelles interfaces (upload d'images, fils d'actualité multiples, commentaires, etc.).
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-- **Issue 1**: Finaliser le système de limitation et de cache pour l'IA (P0 - HIGHEST PRIORITY)
+- **Issue 1**: Finaliser l'implémentation de toutes les fonctionnalités sociales et UI/UX (P0 - HIGHEST PRIORITY)
 - **Issue 2**: Le mode plein écran de la PWA n'est pas encore validé par l'utilisateur (P1)
 - **Issue 3**: Le comptage automatique des pas n'est pas possible en PWA (P2)
+- **Issue 4**: L'intégration d'un scanner de codes-barres n'est pas commencée (P2)
+- **Issue 5**: L'intégration de vraies vidéos YouTube via l'API n'est pas commencée (P3)
+- **Issue 6**: L'intégration Google Calendar est bloquée (P3)
 
 **Issues Detail**:
-- **Issue 1: Finaliser le système de limitation et de cache pour l'IA**
-    - **Attempted fixes**: L'agent précédent a identifié tous les endpoints du backend qui utilisent l'IA (, , , etc.) et a commencé à concevoir l'architecture en créant des placeholders pour les fonctions utilitaires dans .
+- **Issue 1: Finaliser l'implémentation des nouvelles fonctionnalités**
+    - **Attempted fixes**: L'agent a massivement modifié  en ajoutant de nouveaux endpoints et une logique pour les faux utilisateurs, les groupes, les classements, et les commentaires. Il a également mis à jour  pour corriger le défilement et ajouter du contenu.
     - **Next debug checklist**:
-        1.  Créer une nouvelle collection MongoDB  pour suivre les appels par  et Tue Dec 30 19:32:10 UTC 2025.
-        2.  Créer une nouvelle collection  pour stocker les résultats des prompts ( et ).
-        3.  Implémenter un décorateur ou une dépendance FastAPI  qui sera appliquée à tous les endpoints IA. Cette fonction devra :
-            - Vérifier le nombre d'appels pour l'utilisateur aujourd'hui.
-            - Lever une  429 (Too Many Requests) si la limite est dépassée.
-            - Incrémenter le compteur si l'appel est autorisé.
-        4.  Implémenter une fonction de cache qui :
-            - Génère un hash du prompt de l'utilisateur.
-            - Vérifie si ce hash existe dans  et renvoie le résultat si c'est le cas.
-            - Si non, appelle l'IA, puis stocke le nouveau résultat dans le cache avant de le renvoyer.
-        5.  Intégrer ce décorateur/dépendance et la logique de cache dans tous les endpoints IA identifiés.
-    - **Why fix this issue and what will be achieved with the fix?**: Répond à une demande cruciale de l'utilisateur pour maîtriser ses coûts de crédits Emergent.
+        1.  **Backend**:
+            - Finaliser l'endpoint  pour qu'il génère des profils complets et réalistes.
+            - Implémenter la logique pour que les faux profils interagissent (posts, likes).
+            - Mettre à jour  pour qu'il renvoie un fil public (tous les utilisateurs).
+            - Implémenter les endpoints de commentaires ().
+            - Implémenter les feeds par groupe ().
+            - Implémenter les défis quotidiens dans les groupes.
+            - Implémenter les 3 classements (amis, global, par groupe).
+            - Ajouter les endpoints pour partager les programmes d'entraînement et les recettes sur le fil social.
+            - Implémenter l'upload d'images pour les posts (nécessite un stockage, ex: S3 ou stockage local persistant).
+        2.  **Frontend**:
+            - Dans , ajouter le composant d'upload d'image, le support des commentaires, la vue des différents classements et la navigation entre les groupes thématiques.
+            - Ajouter les boutons Partager sur la communauté dans  et .
+            - Corriger la mise à jour instantanée du fil d'actualité après un nouveau post.
+            - Implémenter une modale ou un toast d'avertissement avant chaque appel IA.
+            - Améliorer le rapport PDF () pour y inclure des graphiques.
+            - Finaliser la fonctionnalité d'ajout de repas à l'agenda depuis la page .
+    - **Why fix this issue and what will be achieved with the fix?**: C'est la demande principale et la plus importante de l'utilisateur pour la version 2.0 de son application.
     - **Status**: IN PROGRESS
     - **Is recurring issue?** N
-    - **Should Test frontend/backend/both after fix?**: backend
+    - **Should Test frontend/backend/both after fix?**: both
     - **Blocked on other issue**: None
 
 - **Issue 2: Le mode plein écran de la PWA n'est pas encore validé**
-    - **Attempted fixes**: L'agent a créé le fichier , a ajouté l'endpoint backend pour le servir, et a mis à jour le fichier avec la clé SHA256 fournie par l'utilisateur. Le  est configuré sur .
-    - **Next debug checklist**: Confirmer avec l'utilisateur s'il a pu générer une nouvelle AAB et si la barre de navigation du navigateur a bien disparu après l'installation de cette nouvelle version.
-    - **Why fix this issue and what will be achieved with the fix?**: C'est une demande esthétique et d'immersion très importante pour l'utilisateur.
     - **Status**: USER VERIFICATION PENDING
-    - **Is recurring issue?** Y
-    - **Should Test frontend/backend/both after fix?**: frontend (via l'utilisateur sur son appareil)
-    - **Blocked on other issue**: None
+    - **Why fix this issue and what will be achieved with the fix?**: C'est une demande esthétique et d'immersion très importante pour l'utilisateur.
 
-- **Issue 3: Le comptage automatique des pas n'est pas possible en PWA**
-    - **Attempted fixes**: L'agent a expliqué à l'utilisateur que l'accès aux capteurs de pas du téléphone n'est pas possible depuis une PWA, et que la solution actuelle (entrée manuelle) est la seule faisable sans passer à une application native ou une intégration API (Google Fit).
-    - **Next debug checklist**: Aucune action de débogage. L'agent doit attendre une décision de l'utilisateur pour savoir s'il souhaite explorer l'intégration de l'API Google Fit.
-    - **Why fix this issue and what will be achieved with the fix?**: Automatiserait une fonctionnalité clé de l'application de fitness.
-    - **Status**: BLOCKED (en attente de décision utilisateur)
-    - **Is recurring issue?** N
-    - **Should Test frontend/backend/both after fix?**: both (si l'intégration est demandée)
-    - **Blocked on other issue**: None
+- **Issue 6: L'intégration Google Calendar est bloquée**
+    - **Status**: BLOCKED. L'utilisateur n'a pas réussi à configurer les identifiants sur Google Cloud Console. La décision a été prise de reporter cette fonctionnalité.
 
 **In progress Task List**:
-- **Task 1: Implémenter le système de limitation et de cache pour l'IA (P0)**
-    - **Where to resume**: Dans , après les imports. L'agent doit écrire les fonctions utilitaires pour la limitation et le cache, puis les appliquer aux endpoints IA.
-    - **What will be achieved with this?**: Une réduction significative de la consommation de crédits IA et un contrôle de l'utilisation par utilisateur.
+- **Task 1: Finir la refonte sociale et les améliorations UI/UX (P0)**
+    - **Where to resume**: Dans , finaliser la logique des faux utilisateurs et des interactions automatiques. Puis, passer au frontend (, , etc.) pour implémenter toutes les nouvelles interfaces correspondantes.
+    - **What will be achieved with this?**: Une application beaucoup plus interactive et engageante, avec une économie de crédits IA optimisée.
     - **Status**: IN PROGRESS
-    - **Should Test frontend/backend/both after fix?**: backend
+    - **Should Test frontend/backend/both after fix?**: both
     - **Blocked on something**: None
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
--   **Scanner de codes-barres (P1)**: Intégrer une bibliothèque de scan sur  et connecter à une API comme OpenFoodFacts. C'est une demande très récurrente.
--   **Intégration YouTube (P1)**: Remplacer les données de vidéos d'entraînement simulées par de vraies vidéos via l'API YouTube Data v3. Nécessitera une clé API de l'utilisateur.
--   **Synchronisation Google Calendar (P2)**: Implémenter la lecture (read-only) des événements de l'agenda Google de l'utilisateur pour les afficher dans l'agenda de l'application.
+-   **Scanner de codes-barres (P1)**: Intégrer une bibliothèque de scan sur  et connecter à l'API OpenFoodFacts.
+-   **Intégration YouTube (P2)**: Remplacer les données de vidéos simulées par de vraies vidéos via l'API YouTube Data v3.
+-   **Synchronisation Google Calendar (P3 - BLOCKED)**: Intégrer la lecture des événements du calendrier Google de l'utilisateur.
 
 **Future Tasks:**
--   Développer les fonctionnalités de réseau social (messagerie, partage de badges/recettes).
+-   Développer davantage les fonctionnalités de réseau social.
 -   Mettre en place la monétisation via un abonnement Premium.
 
 **Completed work in this session**
-- **Stabilité de l'application**: L'état cassé de l'application a été résolu. Toutes les fonctionnalités de base (connexion, dashboard, nutrition, etc.) ont été testées et confirmées comme fonctionnelles.
-- **Filtres de recettes**: Ajout de filtres par type de plat (, , ...) au catalogue de recettes.
-- **Correction des images de recettes**: La cohérence entre les images et les noms de plats a été assurée via un mapping par mots-clés dans .
-- **Correction de l'IMC**: Le calcul et l'affichage de l'Indice de Masse Corporelle sur la page Progrès ont été réparés.
-- **Refonte de la page Entraînements**: La page a été entièrement réécrite avec un coach IA multi-étapes, un navigateur de (fausses) vidéos, et la possibilité de consulter les programmes générés.
-- **Correction du rapport PDF**: La génération du rapport PDF est de nouveau fonctionnelle.
-- **Amélioration des défis du jour**: Les défis sur le dashboard sont maintenant plus variés et visuellement plus attractifs.
-- **Préparation PWA plein écran**: Création et configuration du fichier  avec la clé SHA256 de l'utilisateur pour forcer le mode plein écran.
-- **Création de la politique de confidentialité**: Une page et une route () ont été créées pour la conformité avec le Play Store.
-- **Audit de l'application**: Un rapport complet sur les statistiques, fonctionnalités, endpoints et lignes de code de l'application a été fourni.
+- **Système de limitation et de cache IA**: Implémenté et testé. Limite les appels IA à 2/jour/utilisateur et met en cache les requêtes similaires.
+- **Améliorations des badges et points**: Ajout d'un compteur de points permanent pour les défis et d'une section prochains badges à gagner sur la page Progrès.
+- **Correctifs UI Dashboard**: La photo de profil s'affiche correctement, et les 2 derniers badges obtenus sont visibles.
+- **Liste de courses améliorée**: Les articles sont maintenant catégorisés, et les quantités/portions sont modifiables.
+- **Articles d'actualité**: Un endpoint backend () et une section sur la page Nutrition affichent des articles quotidiens sur la santé.
+- **Correctif de mise en page**: La marge vide en haut de l'application sur mobile a été supprimée.
+- **Préparation pour l'AAB v2.0**: Le manifest a été mis à jour avec une nouvelle version, des raccourcis et l'URL de démarrage.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: Scanner de codes-barres**
-    - **Debug checklist**:
-        1.  Choisir et installer une bibliothèque React pour le scan de codes-barres (ex: ).
-        2.  Implémenter le composant de scan dans .
-        3.  Créer un endpoint backend qui prend un code-barres, interroge l'API OpenFoodFacts, et renvoie les données nutritionnelles.
-    - **Why to solve this issue and what will be achieved with this?**: C'est une fonctionnalité essentielle pour une app de nutrition, demandée à plusieurs reprises par l'utilisateur.
+    - **Debug checklist**: Choisir et installer une bibliothèque React (), l'implémenter dans , et créer un endpoint backend pour interroger l'API OpenFoodFacts.
+    - **Why to solve this issue and what will be achieved with this?**: C'est une fonctionnalité essentielle pour une app de nutrition, demandée à plusieurs reprises.
     - **Should Test frontend/backend/both after fix?**: both
     - **Is recurring issue?** Y
 
+-   **Issue 2: Amélioration du rapport PDF**
+    - **Debug checklist**: Utiliser une bibliothèque comme  pour générer des images de graphiques, puis les insérer dans le PDF généré avec .
+    - **Why to solve this issue and what will be achieved with this?**: Pour fournir un rapport plus visuel et utile à l'utilisateur.
+    - **Should Test frontend/backend/both after fix?**: backend (génération du PDF)
+    - **Is recurring issue?** N
+
 **Known issue recurrence from previous fork**
 -   **Issue récurrence**: Problème de PWA en plein écran.
--   **Recurrence count**: 2
--   **Status**: USER VERIFICATION PENDING (une solution a été implémentée avec  et attend la validation de l'utilisateur après la génération d'une nouvelle AAB).
+-   **Recurrence count**: 3
+-   **Status**: USER VERIFICATION PENDING (la solution  est en place et attend la validation de l'utilisateur après la génération d'une nouvelle AAB).
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Backend**: FastAPI, MongoDB (motor), .
-- **Frontend**: React, Tailwind CSS, shadcn/ui, Recharts, Axios, **jspdf, jspdf-autotable**.
-- **Authentication**: JWT & Google OAuth.
-- **PWA**: , Service Worker, et maintenant **** pour la validation de la Trusted Web Activity (TWA) afin de forcer le mode plein écran.
-- **IA**:  avec . Un système de limitation et de cache est en cours d'implémentation.
+- **Backend**: FastAPI, MongoDB (motor),  (pour le cache IA),  (pour l'intégration Calendar reportée).
+- **Frontend**: React, Tailwind CSS, shadcn/ui, Recharts, Axios, jspdf.
+- **IA**:  avec , avec un système de cache et de limitation personnalisé.
 
 **key DB schema**
-- (Existant) , , , , , , , , etc.
-- (A créer) : 
-- (A créer) : 
+- **(Créé)** : 
+- **(Créé)** : 
+- **(Créé)** : 
+- **(Créé)** :  (schéma étendu)
+- **(Créé/Étendu)** , , , 
 
 **All files of reference**
-*   : Fichier principal pour l'implémentation du système de limitation et de cache IA.
-*   : Fichier clé pour le mode plein écran, maintenant configuré.
-*   : Page entièrement réécrite, contient le coach IA.
-*   : Contient la logique corrigée pour la génération de PDF.
-*   : Nouvelle page pour la politique de confidentialité.
-*   : Fichier de routing, mis à jour avec la nouvelle route de confidentialité.
-*   : Mis à jour pour ne pas bloquer l'accès à la page de confidentialité.
+*   : Le fichier principal du backend, massivement étendu.
+*   : Nouvelle page pour toutes les fonctionnalités sociales.
+*   : Mis à jour pour la photo de profil et les badges.
+*   : Mis à jour pour la liste de courses, les articles et l'agenda.
+*   : Mis à jour pour corriger le défilement des catégories.
+*   : Mis à jour pour les badges à débloquer.
+*   : Mis à jour pour la nouvelle version de l'AAB.
 
 **Areas that need refactoring**:
--   **** est devenu excessivement volumineux (près de 3000 lignes) et doit être **impérativement** découpé en plusieurs fichiers  par fonctionnalité (ex: , , ). La complexité actuelle rend la maintenance très difficile.
+-   **** est maintenant dangereusement volumineux (+4500 lignes). Il est **impératif** de le découper en plusieurs fichiers  par fonctionnalité (ex: , ) dès que la vague de fonctionnalités actuelle sera terminée. Proposer ce plan à l'utilisateur sera crucial pour la pérennité du projet.
 
 **key api endpoints**
-- : (GET) Sert le fichier de validation pour la PWA.
-- : (GET) Fournit une liste (simulée) de vidéos d'entraînement.
-- : (POST) Gère la logique multi-étapes pour le coach IA.
-- : (GET) Endpoint amélioré pour les défis du jour.
-- : (GET) Endpoint qui collecte les données pour le rapport PDF.
-- : (GET) Sert la page de politique de confidentialité.
+-  (POST): Pour créer les faux profils.
+-  (GET): Pour obtenir le fil d'actualité (doit devenir public).
+-  (GET),  (POST): Gestion des groupes.
+-  (GET): Pour obtenir les classements.
+-  (POST): Pour créer une publication (doit supporter les images).
+-  (GET): Pour récupérer les articles d'actualité.
+-  (GET): Endpoint étendu pour inclure la photo de profil et les badges récents.
+-  (PUT, DELETE): Endpoints étendus pour gérer les quantités/portions.
+- , : Endpoints préparés pour l'intégration Google Calendar (reportée).
 
 **Critical Info for New Agent**
-- **Priorité 1 : Économie de crédits**. L'utilisateur est très sensible au coût. La première tâche est de terminer et de tester le système de limitation et de cache pour l'IA. N'utilisez l'IA que lorsque c'est explicitement demandé et inévitable.
-- **Priorité 2 : PWA plein écran**. L'agent a configuré . Il faut maintenant confirmer avec l'utilisateur si, après avoir généré et installé une nouvelle AAB, le problème de la barre de navigation est résolu. Soyez prêt à déboguer si ce n'est pas le cas.
-- **Refactorisation du backend**: Le fichier  est un monstre. Proposez à l'utilisateur un plan de refactorisation pour le diviser en plusieurs routeurs dès que la tâche actuelle sera terminée. C'est essentiel pour la maintenabilité du projet.
-- **Clés API externes**: L'intégration de YouTube (et potentiellement Google Calendar) nécessitera des clés API que l'utilisateur devra fournir.
+- **Priorité Absolue**: Finaliser la très longue liste de fonctionnalités demandée par l'utilisateur (réseau social avancé, UI/UX). L'agent a commencé le backend, mais une grande partie du travail reste à faire, notamment sur le frontend.
+- **Refactorisation Backend Critique**: Le fichier  est devenu ingérable. Dès la livraison des fonctionnalités en cours, il faudra proposer et exécuter un plan de découpage en modules. C'est un risque majeur pour la stabilité et la maintenance.
+- **Google Calendar en Pause**: N'essayez pas de travailler sur l'intégration Google Calendar. Elle est bloquée côté utilisateur. Attendez que l'utilisateur fournisse les identifiants requis.
+- **Attention aux Crédits IA**: L'utilisateur est très sensible aux coûts. Le système de limitation est en place, mais l'agent a oublié d'implémenter l'alerte UI avant chaque appel. C'est une petite tâche importante à ne pas oublier.
 
 **documents and test reports created in this job**
 - 
 - 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **#473**: Demande d'implémenter une limitation stricte (2 fois/jour/utilisateur) et un système de cache pour toutes les fonctionnalités IA afin d'économiser des crédits.
-2.  **#469, #471, #467**: L'utilisateur s'interroge sur le coût et la consommation des crédits Emergent, en particulier pour les générations IA.
-3.  **#463**: Demande de rédiger une description brève et complète pour la fiche de l'application sur le Play Store.
-4.  **#453**: Fournit la clé SHA256 de Google Play et demande de mettre à jour la configuration pour supprimer définitivement la barre de navigation.
-5.  **#413**: Demande l'URL de la page de politique de confidentialité pour le Play Store.
-6.  **#399**: Insiste sur le fait que la barre de navigation du navigateur doit être complètement masquée dans l'AAB et fournit l'explication technique d'un agent précédent (utilisant ).
-7.  **#328**: Signale plusieurs bugs : la barre de navigation est toujours visible, le rapport PDF ne fonctionne pas, les programmes du coach IA ne sont pas cliquables, et demande si le compteur de pas est automatique. Demande également d'améliorer les défis du jour.
-8.  **#322**: Demande de configurer le package ID  dans le .
-9.  **#318**: Demande quel est le package ID de l'application.
-10. **#283**: Demande de corriger les erreurs liées aux icônes PWA pour la génération de l'AAB.
+1.  **#369**: Demande massive de nouvelles fonctionnalités : refonte sociale (photos, commentaires, fils publics/privés, classements, faux utilisateurs), partage de programmes/recettes, correction du défilement des catégories d'entraînement, alerte avant utilisation de l'IA. (IN PROGRESS)
+2.  **#300**: Demande d'améliorations : liste de courses modifiable et catégorisée, ajout des repas à l'agenda, correction du bug de la photo de profil sur le dashboard, affichage des badges récents, amélioration du PDF, mise à jour instantanée du poids, articles d'actualité, suppression de la marge supérieure. (Partiellement implémenté)
+3.  **#296**: L'utilisateur accepte de reporter l'intégration Google Calendar et demande les informations pour générer l'AAB. (DONE)
+4.  **#294, #292, #290...**: Série de messages où l'utilisateur et l'agent tentent sans succès de configurer les identifiants Google Cloud. (BLOCKED)
+5.  **#281**: L'utilisateur demande une version simplifiée des étapes pour Google Cloud. (DONE)
+6.  **#258**: L'utilisateur demande les étapes pas à pas pour ajouter le scope Google Calendar. (DONE)
+7.  **#232**: L'utilisateur confirme son choix pour l'intégration Google Calendar et demande les informations pour l'AAB. (IN PROGRESS)
+8.  **#144**: Demande d'améliorer le mur des badges, d'ajouter un compteur de points permanent pour les défis, d'implémenter la synchronisation Google Calendar et de construire un réseau social complet. (Partiellement implémenté)
 
 **Project Health Check:**
-- **Working**: L'application est stable et la plupart des fonctionnalités sont opérationnelles. Les bugs critiques de la session précédente ont été corrigés. Les problèmes restants sont soit en cours de résolution (limitation IA), soit en attente de validation par l'utilisateur (PWA plein écran).
+- **Working, but complex**: L'application est fonctionnelle et riche en fonctionnalités, mais le code backend est devenu un monolithe difficile à maintenir. Les nouvelles fonctionnalités sociales sont à mi-chemin, avec un backend partiellement écrit et un frontend qui nécessite une refonte importante.
 
 **3rd Party Integrations**
-- **OpenAI GPT-4o**: Utilise la **Emergent LLM Key**. Son usage est en cours de limitation/mise en cache.
+- **OpenAI GPT-4o**: Utilise la Emergent LLM Key, avec un système de cache/limitation personnalisé.
 - **Google OAuth**: Pour l'authentification.
-- **jspdf, html2canvas, jspdf-autotable**: Pour la génération de PDF.
-- **YouTube Data API v3**: Intégration planifiée, nécessitera une **User API Key**.
-- **Google Calendar API**: Intégration planifiée, nécessitera un flux OAuth.
+- **jspdf, jspdf-autotable**: Pour la génération de PDF.
+- **Google Calendar API**: Intégration planifiée mais **BLOQUÉE**.
+- **YouTube Data API v3**: Intégration planifiée.
 
 **Testing status**
-- **Testing agent used after significant changes**: NO. L'agent a effectué des tests manuels approfondis avec  et  pour valider toutes les corrections et nouvelles fonctionnalités.
+- **Testing agent used after significant changes**: NO
 - **Troubleshoot agent used after agent stuck in loop**: NO
 - **Test files created**: []
-- **Known regressions**: Aucune régression majeure connue. L'instabilité générale de la session précédente a été résolue.
+- **Known regressions**: Aucune.
 
 **Credentials to test flow:**
 L'inscription est fonctionnelle. Créez un nouvel utilisateur via le formulaire d'inscription sur la page de l'application.
 
 **What agent forgot to execute**
-- Le **scanner de codes-barres** reste la fonctionnalité la plus demandée et non implémentée, malgré des demandes répétées sur plusieurs sessions.</analysis>
+- **Alerte IA**: Le message d'avertissement avant l'utilisation de l'IA n'a pas été implémenté sur le frontend.
+- **PDF avec graphiques**: Le rapport PDF n'a pas été amélioré pour inclure des graphiques.
+- **Ajout à l'agenda**: La fonctionnalité pour ajouter un repas généré à l'agenda depuis la page Nutrition n'est pas finalisée sur le frontend.
+- **Partage social**: Les boutons pour partager les programmes d'entraînement et les recettes sur la communauté n'ont pas été ajoutés au frontend.
+- **Mise à jour du poids**: Le problème de rafraîchissement non immédiat de l'affichage du poids sur la page Progrès n'a pas été activement résolu (l'agent a juste vérifié le code existant).
+- **Finalisation des fonctionnalités sociales**: La plupart des nouvelles fonctionnalités sociales (commentaires, groupes, classements, etc.) ne sont implémentées qu'en partie sur le backend et pas du tout sur le frontend.</analysis>
