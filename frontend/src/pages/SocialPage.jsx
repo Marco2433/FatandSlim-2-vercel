@@ -1151,7 +1151,7 @@ export default function SocialPage() {
 
       {/* Profile Dialog */}
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Profil</DialogTitle>
           </DialogHeader>
@@ -1163,15 +1163,47 @@ export default function SocialPage() {
                   <AvatarFallback className="text-xl">{selectedProfile.name?.[0]}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-bold text-lg">{selectedProfile.name}</p>
-                  <p className="text-sm text-muted-foreground">{selectedProfile.total_points} points • {selectedProfile.badges_count} badges</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-lg">{selectedProfile.name}</p>
+                    {selectedProfile.is_premium && <Crown className="w-4 h-4 text-yellow-500" />}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{selectedProfile.total_points || 0} points • {selectedProfile.badges_count || 0} badges</p>
                 </div>
               </div>
-              <div className="flex gap-2 flex-wrap">
-                {selectedProfile.badges?.slice(0, 6).map(b => (
-                  <Badge key={b.badge_id} variant="secondary">{b.badge_name}</Badge>
-                ))}
+              
+              {/* Stats Grid */}
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="p-2 rounded-lg bg-muted/50">
+                  <p className="text-lg font-bold text-primary">{selectedProfile.badges_count || 0}</p>
+                  <p className="text-xs text-muted-foreground">Badges</p>
+                </div>
+                <div className="p-2 rounded-lg bg-muted/50">
+                  <p className="text-lg font-bold text-secondary">{selectedProfile.challenge_points || selectedProfile.total_points || 0}</p>
+                  <p className="text-xs text-muted-foreground">Points défi</p>
+                </div>
+                <div className="p-2 rounded-lg bg-muted/50">
+                  <p className="text-lg font-bold">{selectedProfile.friends_count || 0}</p>
+                  <p className="text-xs text-muted-foreground">Amis</p>
+                </div>
               </div>
+              
+              {/* Objective */}
+              {(selectedProfile.objective || selectedProfile.goal) && (
+                <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
+                  <p className="text-xs text-muted-foreground mb-1">🎯 Objectif</p>
+                  <p className="font-medium text-sm">{selectedProfile.objective || selectedProfile.goal}</p>
+                </div>
+              )}
+              
+              {/* Badges */}
+              {selectedProfile.badges?.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {selectedProfile.badges?.slice(0, 6).map(b => (
+                    <Badge key={b.badge_id} variant="secondary">{b.badge_name || b.icon}</Badge>
+                  ))}
+                </div>
+              )}
+              
               {!selectedProfile.is_self && (
                 <div className="flex gap-2">
                   {selectedProfile.is_friend ? (
