@@ -3386,10 +3386,13 @@ async def get_assetlinks():
 
 @api_router.get("/user/stats")
 async def get_user_stats(user: dict = Depends(get_current_user)):
-    """Get user stats including days active and badges"""
+    """Get user stats including days active, badges and profile picture"""
     user_doc = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0})
     if not user_doc:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get profile for picture
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
     
     created_at = user_doc.get("created_at")
     if isinstance(created_at, str):
@@ -3406,12 +3409,43 @@ async def get_user_stats(user: dict = Depends(get_current_user)):
     # Get badges
     badges = await get_user_badges(user["user_id"], days_active, streak)
     
+    # Get earned badges sorted by most recent
+    earned_badges = [b for b in badges if b["earned"]]
+    
+    # Get recently earned badges from user_badges collection
+    recent_badges_docs = await db.user_badges.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("earned_at", -1).limit(3).to_list(3)
+    
+    # Map recent badges with full info
+    recent_badges = []
+    for rb in recent_badges_docs:
+        badge_info = next((b for b in badges if b["id"] == rb["badge_id"]), None)
+        if badge_info:
+            recent_badges.append({
+                **badge_info,
+                "earned_at": rb.get("earned_at")
+            })
+    
+    # If no recent badges from DB, use earned badges
+    if not recent_badges:
+        recent_badges = earned_badges[:3]
+    
+    # Get profile picture from profile or user doc
+    picture = profile.get("picture") if profile else None
+    if not picture:
+        picture = user_doc.get("picture")
+    
     return {
         "days_active": days_active,
         "streak": streak,
         "badges": badges,
-        "badges_count": len([b for b in badges if b["earned"]]),
-        "created_at": created_at.isoformat()
+        "badges_count": len(earned_badges),
+        "recent_badges": recent_badges,
+        "created_at": created_at.isoformat(),
+        "picture": picture,
+        "name": user_doc.get("name", "Utilisateur")
     }
 
 async def calculate_streak(user_id: str) -> int:
