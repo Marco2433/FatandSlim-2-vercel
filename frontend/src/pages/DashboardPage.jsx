@@ -60,6 +60,7 @@ export default function DashboardPage() {
   
   // User stats & badges
   const [userStats, setUserStats] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   
   // Appointments
   const [appointments, setAppointments] = useState([]);
