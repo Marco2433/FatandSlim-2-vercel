@@ -689,7 +689,7 @@ export default function SocialPage() {
             {friendRequests.received?.length > 0 && (
               <Card className="border-primary/50 bg-primary/5">
                 <CardContent className="p-4">
-                  <p className="font-medium mb-2">📬 {friendRequests.received.length} demande(s) d'ami</p>
+                  <p className="font-medium mb-2">📬 {friendRequests.received.length} demande(s) ami</p>
                   <div className="space-y-2">
                     {friendRequests.received.slice(0, 3).map(req => (
                       <div key={req.friendship_id} className="flex items-center justify-between">
