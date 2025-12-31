@@ -92,6 +92,7 @@ export default function NutritionPage() {
   
   // Shopping list state
   const [shoppingList, setShoppingList] = useState([]);
+  const [editingItem, setEditingItem] = useState(null);
   
   // Catalog state
   const [catalogRecipes, setCatalogRecipes] = useState([]);
@@ -99,6 +100,17 @@ export default function NutritionPage() {
   const [catalogDishType, setCatalogDishType] = useState('all');
   const [catalogStats, setCatalogStats] = useState(null);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
+  
+  // Articles state
+  const [articles, setArticles] = useState([]);
+  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [showArticleDialog, setShowArticleDialog] = useState(false);
+  
+  // Add to agenda state
+  const [showAgendaDialog, setShowAgendaDialog] = useState(false);
+  const [agendaItem, setAgendaItem] = useState(null);
+  const [agendaDate, setAgendaDate] = useState('');
+  const [agendaTime, setAgendaTime] = useState('12:00');
   
   // Note state
   const [newNote, setNewNote] = useState({ date: '', content: '' });
@@ -118,6 +130,7 @@ export default function NutritionPage() {
     fetchData();
     fetchFavoriteRecipes();
     fetchShoppingList();
+    fetchArticles();
   }, []);
 
   useEffect(() => {
@@ -132,6 +145,51 @@ export default function NutritionPage() {
       fetchShoppingList();
     }
   }, [activeTab, currentMonth]);
+
+  const fetchArticles = async () => {
+    try {
+      const response = await axios.get(`${API}/articles`, { withCredentials: true });
+      setArticles(response.data.articles || []);
+    } catch (error) {
+      console.error('Error fetching articles:', error);
+    }
+  };
+
+  const addToAgenda = async () => {
+    if (!agendaItem || !agendaDate) {
+      toast.error('Veuillez sélectionner une date');
+      return;
+    }
+    
+    try {
+      const appointmentData = {
+        title: agendaItem.name || agendaItem.title || 'Repas planifié',
+        description: agendaItem.description || `Recette: ${agendaItem.name}`,
+        datetime: `${agendaDate}T${agendaTime}:00`,
+        type: 'meal'
+      };
+      
+      await axios.post(`${API}/appointments`, appointmentData, { withCredentials: true });
+      toast.success('Ajouté à l\'agenda !');
+      setShowAgendaDialog(false);
+      setAgendaItem(null);
+      setAgendaDate('');
+    } catch (error) {
+      toast.error('Erreur lors de l\'ajout');
+    }
+  };
+
+  const shareArticle = async (article) => {
+    try {
+      await axios.post(`${API}/social/post`, {
+        content: `📰 Article intéressant : "${article.title}"\n\n${article.summary}`,
+        type: 'article'
+      }, { withCredentials: true });
+      toast.success('Article partagé sur le mur !');
+    } catch (error) {
+      toast.error('Erreur lors du partage');
+    }
+  };
 
   const fetchData = async () => {
     try {
