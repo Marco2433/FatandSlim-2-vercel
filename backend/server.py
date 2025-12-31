@@ -766,6 +766,145 @@ async def update_profile(data: dict, user: dict = Depends(get_current_user)):
 
 # ==================== BARIATRIC ENDPOINTS ====================
 
+def calculate_bmr(weight_kg: float, height_cm: float, age: int, gender: str) -> float:
+    """Calculate Basal Metabolic Rate using Mifflin St Jeor formula"""
+    if gender == "male":
+        return 10 * weight_kg + 6.25 * height_cm - 5 * age + 5
+    else:
+        return 10 * weight_kg + 6.25 * height_cm - 5 * age - 161
+
+def calculate_tdee(bmr: float, activity_level: str) -> float:
+    """Calculate Total Daily Energy Expenditure"""
+    factors = {"sedentary": 1.2, "moderate": 1.4, "active": 1.6}
+    return bmr * factors.get(activity_level, 1.2)
+
+def get_bariatric_nutrition_rules(phase: int, parcours: str, surgery_type: str, profile: dict) -> dict:
+    """Get nutrition rules based on phase and profile - NO AI, pure algorithm"""
+    weight = profile.get("weight", 70)
+    height = profile.get("height", 170)
+    age = profile.get("age", 40)
+    gender = profile.get("gender", "female")
+    activity = profile.get("activity_level", "sedentary")
+    
+    bmr = calculate_bmr(weight, height, age, gender)
+    tdee = calculate_tdee(bmr, activity)
+    
+    # PRE-OP RULES
+    if parcours == "pre_op" or phase == 0:
+        deficit = 0.22  # 22% deficit
+        calories_target = tdee * (1 - deficit)
+        min_cal = 1500 if gender == "male" else 1200
+        calories_target = max(calories_target, min_cal)
+        
+        return {
+            "phase_name": "Pré-opératoire",
+            "phase_description": "Réduction du foie et préparation à la chirurgie",
+            "calories": {"target": round(calories_target), "min": min_cal, "max": round(tdee * 0.85)},
+            "protein": {"target": round(weight * 1.3), "unit": "g", "ratio": "1.2-1.5g/kg"},
+            "fat": {"percent": 27, "grams": round(calories_target * 0.27 / 9)},
+            "carbs": {"percent": 43, "grams": round(calories_target * 0.43 / 4)},
+            "hydration": {"target": max(30 * weight, 1500), "unit": "ml", "tips": "Boire entre les repas"},
+            "meals_per_day": 4,
+            "portion_size": {"min": 150, "max": 200, "unit": "g"},
+            "texture": "normal",
+            "restrictions": ["Éviter sucres rapides", "Limiter graisses saturées", "Réduire sel"],
+            "priorities": ["Déficit calorique contrôlé", "Protéines suffisantes", "Hydratation optimale"],
+            "surgery_specific": {
+                "sleeve": ["Éviter boissons gazeuses", "Préparer l'estomac"],
+                "bypass": ["Éviter sucres rapides", "Habituer aux petites portions"]
+            }.get(surgery_type, [])
+        }
+    
+    # PHASE 1 - LIQUID (J1-J7)
+    if phase == 1:
+        return {
+            "phase_name": "Phase 1 - Liquide",
+            "phase_description": "Cicatrisation et réhydratation",
+            "calories": {"target": 500, "min": 400, "max": 600},
+            "protein": {"target": 60, "unit": "g", "ratio": "≥60g/jour"},
+            "fat": {"percent": 15, "grams": round(500 * 0.15 / 9)},
+            "carbs": {"percent": 25, "grams": round(500 * 0.25 / 4)},
+            "hydration": {"target": 1500, "unit": "ml", "tips": "Petites gorgées toutes les 10-15 min"},
+            "meals_per_day": 7,
+            "portion_size": {"min": 30, "max": 50, "unit": "ml"},
+            "texture": "liquid",
+            "restrictions": ["Aucun solide", "Pas de paille", "Pas de boissons gazeuses"],
+            "priorities": ["Cicatrisation", "Hydratation", "Protéines liquides"],
+            "allowed_foods": ["Bouillons clairs", "Eau", "Thé/infusions", "Protéines liquides", "Yaourt liquide"],
+            "surgery_specific": {
+                "sleeve": ["Attention au reflux", "Position semi-assise après repas"],
+                "bypass": ["Éviter tout sucre", "Risque dumping"]
+            }.get(surgery_type, [])
+        }
+    
+    # PHASE 2 - MIXED (S2-S3)
+    if phase == 2:
+        return {
+            "phase_name": "Phase 2 - Mixé",
+            "phase_description": "Réintroduction progressive",
+            "calories": {"target": 700, "min": 600, "max": 800},
+            "protein": {"target": 65, "unit": "g", "ratio": "60-70g/jour"},
+            "fat": {"percent": 25, "grams": round(700 * 0.25 / 9)},
+            "carbs": {"percent": 35, "grams": round(700 * 0.35 / 4)},
+            "hydration": {"target": 1650, "unit": "ml", "tips": "30 min avant/après repas"},
+            "meals_per_day": 6,
+            "portion_size": {"min": 60, "max": 100, "unit": "g"},
+            "texture": "mixed",
+            "restrictions": ["Texture lisse obligatoire", "Pas de morceaux", "Mâcher 20x"],
+            "priorities": ["Protéines d'abord", "Textures lisses", "Tolérance progressive"],
+            "allowed_foods": ["Purées légumes", "Compotes", "Œufs brouillés mous", "Fromage blanc", "Poisson mixé"],
+            "surgery_specific": {
+                "sleeve": ["Tester tolérance lentement", "Éviter acidité"],
+                "bypass": ["Protéines prioritaires", "Attention dumping"]
+            }.get(surgery_type, [])
+        }
+    
+    # PHASE 3 - SOFT (S4-S6)
+    if phase == 3:
+        return {
+            "phase_name": "Phase 3 - Mou",
+            "phase_description": "Diversification alimentaire",
+            "calories": {"target": 900, "min": 800, "max": 1000},
+            "protein": {"target": 75, "unit": "g", "ratio": "70-80g/jour"},
+            "fat": {"percent": 28, "grams": round(900 * 0.28 / 9)},
+            "carbs": {"percent": 37, "grams": round(900 * 0.37 / 4)},
+            "hydration": {"target": 1800, "unit": "ml", "tips": "Objectif 1.8L minimum"},
+            "meals_per_day": 5,
+            "portion_size": {"min": 80, "max": 120, "unit": "g"},
+            "texture": "soft",
+            "restrictions": ["Bien mâcher", "Éviter fibreux", "Pas de pain frais"],
+            "priorities": ["Protéines 70-80g", "Textures tendres", "Mastication 20-30x"],
+            "allowed_foods": ["Poisson tendre", "Poulet haché", "Légumes bien cuits", "Fruits mous", "Œufs"],
+            "surgery_specific": {
+                "sleeve": ["Éviter aliments coincés", "Manger lentement"],
+                "bypass": ["Suppléments essentiels", "Éviter sucres"]
+            }.get(surgery_type, [])
+        }
+    
+    # PHASE 4 - SOLID ADAPTED (>S6)
+    calories_target = max(tdee * 0.80, 1200)
+    protein_target = round(weight * 1.35)
+    
+    return {
+        "phase_name": "Phase 4 - Solide adapté",
+        "phase_description": "Alimentation normale adaptée",
+        "calories": {"target": round(calories_target), "min": 1200, "max": round(tdee * 0.9)},
+        "protein": {"target": protein_target, "unit": "g", "ratio": "1.2-1.5g/kg"},
+        "fat": {"percent": 30, "grams": round(calories_target * 0.30 / 9)},
+        "carbs": {"percent": 40, "grams": round(calories_target * 0.40 / 4)},
+        "hydration": {"target": round(30 * weight), "unit": "ml", "tips": "30ml/kg de poids"},
+        "meals_per_day": 4,
+        "portion_size": {"min": 100, "max": 150, "unit": "g"},
+        "texture": "solid_adapted",
+        "restrictions": ["Portions contrôlées", "Mâcher 20x min", "Pas de boissons pendant repas"],
+        "priorities": ["Protéines d'abord", "Légumes ensuite", "Féculents en dernier"],
+        "allowed_foods": ["Viandes tendres", "Poissons", "Légumes variés", "Fruits", "Féculents modérés"],
+        "surgery_specific": {
+            "sleeve": ["Éviter reflux", "Pas de boissons gazeuses", "Éviter alcool"],
+            "bypass": ["Suppléments à vie", "Attention dumping", "Éviter sucres rapides"]
+        }.get(surgery_type, [])
+    }
+
 def calculate_bariatric_phase(surgery_date_str: str) -> dict:
     """Calculate bariatric phase based on surgery date"""
     if not surgery_date_str:
@@ -787,6 +926,32 @@ def calculate_bariatric_phase(surgery_date_str: str) -> dict:
             return {"phase": 4, "phase_name": "Phase 4 - Solide adapté", "days_since_surgery": days_since, "texture": "solid_adapted", "weeks": "> S6"}
     except:
         return {"phase": None, "phase_name": None, "days_since_surgery": 0}
+
+@api_router.get("/bariatric/nutrition-rules")
+async def get_nutrition_rules(user: dict = Depends(get_current_user)):
+    """Get personalized nutrition rules based on phase - NO AI"""
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    if not profile or not profile.get("bariatric_surgery"):
+        raise HTTPException(status_code=404, detail="No bariatric profile found")
+    
+    phase_info = calculate_bariatric_phase(profile.get("bariatric_surgery_date"))
+    phase = phase_info.get("phase") or 4
+    parcours = profile.get("bariatric_parcours", "post_op")
+    surgery_type = profile.get("bariatric_surgery", "sleeve")
+    
+    rules = get_bariatric_nutrition_rules(phase, parcours, surgery_type, profile)
+    
+    return {
+        "phase": phase_info,
+        "rules": rules,
+        "profile_summary": {
+            "weight": profile.get("weight"),
+            "height": profile.get("height"),
+            "surgery_type": surgery_type,
+            "parcours": parcours
+        }
+    }
 
 @api_router.get("/bariatric/dashboard")
 async def get_bariatric_dashboard(user: dict = Depends(get_current_user)):
