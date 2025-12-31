@@ -659,15 +659,18 @@ export default function WorkoutsPage() {
 
           {/* Videos Tab */}
           <TabsContent value="videos" className="space-y-4 mt-4">
-            {/* Category Filter - Scrollable */}
-            <div className="overflow-x-auto pb-2 -mx-4 px-4 hide-scrollbar">
-              <div className="flex gap-2 min-w-max">
+            {/* Category Filter - Scrollable horizontal */}
+            <div className="relative -mx-4">
+              <div 
+                className="flex gap-2 px-4 pb-3 overflow-x-auto horizontal-scroll"
+                style={{ WebkitOverflowScrolling: 'touch', scrollSnapType: 'x proximity' }}
+              >
                 {VIDEO_CATEGORIES.map((cat) => (
                   <Button
                     key={cat.id}
                     variant={videoCategory === cat.id ? 'default' : 'outline'}
                     size="sm"
-                    className="flex-shrink-0 whitespace-nowrap"
+                    className="flex-shrink-0 whitespace-nowrap scroll-snap-align-start"
                     onClick={() => setVideoCategory(cat.id)}
                   >
                     <cat.icon className="w-4 h-4 mr-1" />
