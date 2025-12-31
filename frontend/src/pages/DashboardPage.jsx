@@ -537,6 +537,31 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
+        {/* Bariatric Access Card - Only for bariatric patients */}
+        {userProfile?.bariatric_surgery && (
+          <Card 
+            className="border-primary/30 bg-gradient-to-r from-primary/10 to-secondary/10 cursor-pointer hover:shadow-lg transition-all"
+            onClick={() => navigate('/bariatric')}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Stethoscope className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">
+                      Dossier {userProfile.bariatric_surgery === 'bypass' ? 'By-pass' : 'Sleeve'}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">Suivi bariatrique personnalisé</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Quick Actions */}
         <div className="grid grid-cols-4 gap-3">
           <Button
