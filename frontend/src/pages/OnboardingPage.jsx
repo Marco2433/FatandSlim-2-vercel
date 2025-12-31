@@ -773,6 +773,179 @@ export default function OnboardingPage() {
           </Card>
         )}
 
+        {/* Step 9: Bariatric Surgery Details (only if bariatric_surgery selected) */}
+        {step === 9 && formData.bariatric_surgery && (
+          <Card className="animate-fade-in">
+            <CardHeader>
+              <CardTitle className="font-heading text-2xl flex items-center gap-2">
+                <Stethoscope className="w-6 h-6 text-primary" />
+                Détails de votre {formData.bariatric_surgery === 'bypass' ? 'By-pass' : 'Sleeve'}
+              </CardTitle>
+              <CardDescription>
+                Ces informations nous permettent d'adapter votre parcours
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Date de l'opération *</Label>
+                <Input
+                  type="date"
+                  value={formData.bariatric_surgery_date}
+                  onChange={(e) => setFormData({ ...formData, bariatric_surgery_date: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Si date future, elle sera ajoutée à votre agenda
+                </p>
+              </div>
+
+              <div>
+                <Label>Parcours actuel *</Label>
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  {[
+                    { value: 'pre_op', label: 'Pré-opératoire', desc: 'Avant l\'opération' },
+                    { value: 'post_op', label: 'Post-opératoire', desc: 'Après l\'opération' },
+                  ].map((option) => (
+                    <div
+                      key={option.value}
+                      onClick={() => setFormData({ ...formData, bariatric_parcours: option.value })}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        formData.bariatric_parcours === option.value
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <span className="font-medium text-sm">{option.label}</span>
+                      <p className="text-xs text-muted-foreground">{option.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Poids pré-op (kg)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={formData.bariatric_pre_op_weight}
+                    onChange={(e) => setFormData({ ...formData, bariatric_pre_op_weight: e.target.value })}
+                    placeholder="Ex: 120"
+                  />
+                </div>
+                <div>
+                  <Label>Taille pré-op (cm)</Label>
+                  <Input
+                    type="number"
+                    value={formData.bariatric_pre_op_height}
+                    onChange={(e) => setFormData({ ...formData, bariatric_pre_op_height: e.target.value })}
+                    placeholder="Ex: 165"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>Intolérances alimentaires post-op</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {['Lactose', 'Sucre', 'Graisses', 'Viande rouge', 'Pain', 'Riz'].map((item) => (
+                    <div
+                      key={item}
+                      onClick={() => toggleArrayItem('bariatric_intolerances', item)}
+                      className={`px-3 py-1 rounded-full border cursor-pointer text-sm ${
+                        formData.bariatric_intolerances.includes(item)
+                          ? 'border-destructive bg-destructive/10'
+                          : 'border-border hover:border-destructive/50'
+                      }`}
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label>Suppléments prescrits</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {['Multivitamines', 'Fer', 'Vitamine B12', 'Calcium', 'Vitamine D', 'Zinc', 'Protéines'].map((supp) => (
+                    <div
+                      key={supp}
+                      onClick={() => toggleArrayItem('bariatric_supplements', supp)}
+                      className={`px-3 py-1 rounded-full border cursor-pointer text-sm ${
+                        formData.bariatric_supplements.includes(supp)
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <Pill className="w-3 h-3 inline mr-1" />
+                      {supp}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 10: Bariatric Medical Team (optional) */}
+        {step === 10 && formData.bariatric_surgery && (
+          <Card className="animate-fade-in">
+            <CardHeader>
+              <CardTitle className="font-heading text-2xl flex items-center gap-2">
+                <Hospital className="w-6 h-6 text-primary" />
+                Votre équipe médicale
+              </CardTitle>
+              <CardDescription>
+                Optionnel - Pour un suivi personnalisé
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Clinique / Hôpital</Label>
+                <Input
+                  value={formData.bariatric_clinic}
+                  onChange={(e) => setFormData({ ...formData, bariatric_clinic: e.target.value })}
+                  placeholder="Ex: CHU de Bordeaux"
+                />
+              </div>
+
+              <div>
+                <Label>Chirurgien</Label>
+                <Input
+                  value={formData.bariatric_surgeon}
+                  onChange={(e) => setFormData({ ...formData, bariatric_surgeon: e.target.value })}
+                  placeholder="Ex: Dr. Martin"
+                />
+              </div>
+
+              <div>
+                <Label>Nutritionniste / Diététicien</Label>
+                <Input
+                  value={formData.bariatric_nutritionist}
+                  onChange={(e) => setFormData({ ...formData, bariatric_nutritionist: e.target.value })}
+                  placeholder="Ex: Mme Dupont"
+                />
+              </div>
+
+              <div>
+                <Label>Psychologue</Label>
+                <Input
+                  value={formData.bariatric_psychologist}
+                  onChange={(e) => setFormData({ ...formData, bariatric_psychologist: e.target.value })}
+                  placeholder="Ex: Dr. Bernard"
+                />
+              </div>
+
+              <div className="p-4 bg-primary/10 border border-primary/30 rounded-lg mt-4">
+                <p className="text-sm flex items-center gap-2">
+                  <Info className="w-4 h-4 text-primary" />
+                  <span>
+                    Un <strong>dossier By-pass/Sleeve</strong> sera accessible depuis votre dashboard pour suivre votre parcours.
+                  </span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Navigation */}
         <div className="flex justify-between mt-6">
           <Button
