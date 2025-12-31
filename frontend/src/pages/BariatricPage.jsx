@@ -751,6 +751,59 @@ export default function BariatricPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Article Modal */}
+      <Dialog open={showArticleModal} onOpenChange={setShowArticleModal}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          {selectedArticle && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="pr-4">{selectedArticle.title}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                {selectedArticle.image && (
+                  <img 
+                    src={selectedArticle.image} 
+                    alt={selectedArticle.title}
+                    className="w-full h-48 rounded-lg object-cover"
+                  />
+                )}
+                
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Badge variant="secondary">{selectedArticle.category}</Badge>
+                  <span>📖 {selectedArticle.source}</span>
+                  <span>•</span>
+                  <span>⏱️ {selectedArticle.read_time}</span>
+                </div>
+                
+                <div className="prose prose-sm dark:prose-invert text-sm">
+                  <p className="whitespace-pre-wrap">{selectedArticle.content || selectedArticle.summary}</p>
+                </div>
+                
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setShowArticleModal(false)}
+                  >
+                    Fermer
+                  </Button>
+                  <Button 
+                    className="flex-1"
+                    onClick={() => {
+                      shareBariatricArticle(selectedArticle);
+                      setShowArticleModal(false);
+                    }}
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Partager
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
