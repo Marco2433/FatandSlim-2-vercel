@@ -1245,7 +1245,7 @@ export default function NutritionPage() {
                   className="resize-none"
                 />
                 <Button 
-                  onClick={searchRecipeByAI}
+                  onClick={requestSearchRecipe}
                   disabled={loadingSearch || !recipeSearchQuery.trim()}
                   className="w-full rounded-full"
                 >
