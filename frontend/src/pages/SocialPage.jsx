@@ -44,6 +44,82 @@ import {
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+// Post Card Component (moved outside to avoid nested component issue)
+const PostCard = ({ post, showGroupBadge = false, groups, onLike, onComment, onViewProfile }) => (
+  <Card key={post.post_id}>
+    <CardContent className="p-4">
+      <div className="flex items-start gap-3">
+        <Avatar className="w-10 h-10 cursor-pointer" onClick={() => onViewProfile(post.user_id)}>
+          <AvatarImage src={post.user_picture} />
+          <AvatarFallback>{post.user_name?.[0]}</AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-sm">{post.user_name}</p>
+            {showGroupBadge && post.group_id && (
+              <Badge variant="secondary" className="text-xs">
+                {groups.find(g => g.group_id === post.group_id)?.name || post.group_id}
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {new Date(post.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+          </p>
+          
+          <p className="mt-2 whitespace-pre-wrap">{post.content}</p>
+          
+          {/* Image */}
+          {(post.image_url || post.image_base64) && (
+            <img 
+              src={post.image_url || post.image_base64} 
+              alt="Post" 
+              className="mt-3 rounded-lg max-h-64 w-full object-cover"
+            />
+          )}
+          
+          {/* Shared Item */}
+          {post.shared_item && post.type === 'share_recipe' && (
+            <div className="mt-3 p-3 bg-muted/50 rounded-lg border">
+              <p className="font-medium text-sm">🍳 {post.shared_item.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {post.shared_item.calories} kcal • {post.shared_item.prep_time}
+              </p>
+            </div>
+          )}
+          
+          {post.shared_item && post.type === 'share_program' && (
+            <div className="mt-3 p-3 bg-muted/50 rounded-lg border">
+              <p className="font-medium text-sm">💪 {post.shared_item.name}</p>
+              <p className="text-xs text-muted-foreground">{post.shared_item.description}</p>
+            </div>
+          )}
+          
+          {/* Actions */}
+          <div className="flex items-center gap-4 mt-3">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => onLike(post.post_id)} 
+              className={post.user_liked ? 'text-red-500' : ''}
+            >
+              <Heart className={`w-4 h-4 mr-1 ${post.user_liked ? 'fill-current' : ''}`} />
+              {post.likes_count || 0}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => onComment(post)}
+            >
+              <MessageSquare className="w-4 h-4 mr-1" />
+              {post.comments_count || 0}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
 export default function SocialPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
