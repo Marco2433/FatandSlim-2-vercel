@@ -196,8 +196,13 @@ export default function DashboardPage() {
 
   const fetchUserStats = async () => {
     try {
-      const response = await axios.get(`${API}/user/stats`, { withCredentials: true });
-      setUserStats(response.data);
+      const [statsRes, profileRes] = await Promise.allSettled([
+        axios.get(`${API}/user/stats`, { withCredentials: true }),
+        axios.get(`${API}/profile`, { withCredentials: true })
+      ]);
+      
+      if (statsRes.status === 'fulfilled') setUserStats(statsRes.value.data);
+      if (profileRes.status === 'fulfilled') setUserProfile(profileRes.value.data);
     } catch (error) {
       console.error('Error fetching user stats:', error);
     }
