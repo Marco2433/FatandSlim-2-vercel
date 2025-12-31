@@ -589,7 +589,7 @@ export default function WorkoutsPage() {
     try {
       const response = await axios.post(`${API}/workouts/coach/generate`, coachConfig, { withCredentials: true });
       setGeneratedProgram(response.data);
-      setCoachStep(5);
+      setCoachStep(7);
       toast.success('Programme généré avec succès !');
     } catch (error) {
       console.error('Error generating program:', error);
