@@ -4504,51 +4504,83 @@ async def get_friend_requests(user: dict = Depends(get_current_user)):
 
 # --- Activity Feed ---
 @api_router.get("/social/feed")
-async def get_activity_feed(user: dict = Depends(get_current_user), limit: int = 30):
-    """Get activity feed from friends"""
-    # Get friend ids
-    friendships = await db.friendships.find({
-        "$or": [{"user_id": user["user_id"]}, {"friend_id": user["user_id"]}],
-        "status": "accepted"
-    }, {"_id": 0}).to_list(100)
+async def get_activity_feed(user: dict = Depends(get_current_user), limit: int = 30, feed_type: str = "friends"):
+    """Get activity feed - friends only or public"""
     
-    friend_ids = [user["user_id"]]  # Include own activities
-    for f in friendships:
-        friend_ids.append(f["friend_id"] if f["user_id"] == user["user_id"] else f["user_id"])
+    if feed_type == "public":
+        # Get ALL public activities
+        activities = await db.social_activities.find(
+            {"visibility": {"$ne": "private"}},
+            {"_id": 0}
+        ).sort("created_at", -1).limit(limit).to_list(limit)
+    else:
+        # Get friend activities only
+        friendships = await db.friendships.find({
+            "$or": [{"user_id": user["user_id"]}, {"friend_id": user["user_id"]}],
+            "status": "accepted"
+        }, {"_id": 0}).to_list(100)
+        
+        friend_ids = [user["user_id"]]
+        for f in friendships:
+            friend_ids.append(f["friend_id"] if f["user_id"] == user["user_id"] else f["user_id"])
+        
+        activities = await db.social_activities.find(
+            {"user_id": {"$in": friend_ids}},
+            {"_id": 0}
+        ).sort("created_at", -1).limit(limit).to_list(limit)
     
-    # Get activities
-    activities = await db.social_activities.find(
-        {"user_id": {"$in": friend_ids}},
-        {"_id": 0}
-    ).sort("created_at", -1).limit(limit).to_list(limit)
-    
-    # Enrich with user info
+    # Enrich with user info and comments
     result = []
     for activity in activities:
         activity_user = await db.users.find_one({"user_id": activity["user_id"]}, {"_id": 0, "password_hash": 0})
+        profile = await db.user_profiles.find_one({"user_id": activity["user_id"]}, {"_id": 0})
         likes_count = await db.activity_likes.count_documents({"activity_id": activity["activity_id"]})
         user_liked = await db.activity_likes.find_one({
             "activity_id": activity["activity_id"],
             "user_id": user["user_id"]
         })
         
+        # Get comments
+        comments = await db.activity_comments.find(
+            {"activity_id": activity["activity_id"]},
+            {"_id": 0}
+        ).sort("created_at", 1).limit(10).to_list(10)
+        
+        # Enrich comments with user info
+        enriched_comments = []
+        for comment in comments:
+            comment_user = await db.users.find_one({"user_id": comment["user_id"]}, {"_id": 0, "password_hash": 0})
+            enriched_comments.append({
+                **comment,
+                "user_name": comment_user.get("name") if comment_user else "Utilisateur",
+                "user_picture": comment_user.get("picture") if comment_user else None
+            })
+        
+        user_picture = profile.get("picture") if profile else None
+        if not user_picture:
+            user_picture = activity_user.get("picture") if activity_user else None
+        
         result.append({
             **activity,
             "user_name": activity_user.get("name", "Utilisateur") if activity_user else "Utilisateur",
-            "user_picture": activity_user.get("picture") if activity_user else None,
+            "user_picture": user_picture,
             "likes_count": likes_count,
-            "user_liked": bool(user_liked)
+            "user_liked": bool(user_liked),
+            "comments": enriched_comments,
+            "comments_count": len(enriched_comments)
         })
     
     return {"activities": result}
 
 @api_router.post("/social/post")
 async def create_post(data: dict, user: dict = Depends(get_current_user)):
-    """Create a new post"""
+    """Create a new post with optional image and group"""
     content = data.get("content", "").strip()
-    post_type = data.get("type", "text")  # text, achievement, recipe
+    post_type = data.get("type", "text")  # text, achievement, recipe, image, program
     image = data.get("image")
     recipe_id = data.get("recipe_id")
+    group_id = data.get("group_id")  # For group posts
+    visibility = data.get("visibility", "public")  # public, friends, group
     
     if not content and not image and not recipe_id:
         raise HTTPException(status_code=400, detail="Content, image or recipe required")
@@ -4560,12 +4592,49 @@ async def create_post(data: dict, user: dict = Depends(get_current_user)):
         "content": content,
         "image": image,
         "recipe_id": recipe_id,
+        "group_id": group_id,
+        "visibility": visibility,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
     await db.social_activities.insert_one(activity)
     
+    # Return the created activity with user info for immediate display
+    activity["user_name"] = user.get("name", "Utilisateur")
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    activity["user_picture"] = profile.get("picture") if profile else user.get("picture")
+    activity["likes_count"] = 0
+    activity["user_liked"] = False
+    activity["comments"] = []
+    activity["comments_count"] = 0
+    
     return {"message": "Post created", "activity": activity}
+
+@api_router.post("/social/comment")
+async def add_comment(data: dict, user: dict = Depends(get_current_user)):
+    """Add a comment to a post"""
+    activity_id = data.get("activity_id")
+    content = data.get("content", "").strip()
+    
+    if not activity_id or not content:
+        raise HTTPException(status_code=400, detail="activity_id and content required")
+    
+    comment = {
+        "comment_id": f"cmt_{uuid.uuid4().hex[:8]}",
+        "activity_id": activity_id,
+        "user_id": user["user_id"],
+        "content": content,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.activity_comments.insert_one(comment)
+    
+    # Notify post owner
+    activity = await db.social_activities.find_one({"activity_id": activity_id}, {"_id": 0})
+    if activity and activity["user_id"] != user["user_id"]:
+        await create_notification(activity["user_id"], "comment", f"{user.get('name') or 'Quelquun'} a commenté votre publication", user["user_id"])
+    
+    return {"message": "Comment added", "comment": comment}
 
 @api_router.post("/social/like/{activity_id}")
 async def like_activity(activity_id: str, user: dict = Depends(get_current_user)):
