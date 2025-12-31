@@ -319,6 +319,18 @@ export default function NutritionPage() {
     }
   };
 
+  const updateShoppingItem = async (itemId, data) => {
+    try {
+      await axios.put(`${API}/shopping-list/${itemId}`, data, { withCredentials: true });
+      setShoppingList(prev => prev.map(item => 
+        item.item_id === itemId ? { ...item, ...data } : item
+      ));
+      setEditingItem(null);
+    } catch (error) {
+      toast.error('Erreur lors de la mise à jour');
+    }
+  };
+
   const deleteShoppingItem = async (itemId) => {
     try {
       await axios.delete(`${API}/shopping-list/${itemId}`, { withCredentials: true });
