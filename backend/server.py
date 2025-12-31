@@ -2120,6 +2120,59 @@ Nutri-Score guidelines:
             
             # ===== INCREMENT AI USAGE AFTER SUCCESSFUL CALL =====
             await increment_ai_usage(user["user_id"], "/food/analyze")
+            
+            # ===== SAVE TO SCAN HISTORY =====
+            # Determine category based on food name
+            food_lower = result.get("food_name", "").lower()
+            category = "Autre"
+            if any(w in food_lower for w in ["salade", "légume", "carotte", "tomate", "courgette", "brocoli", "épinard"]):
+                category = "Légumes"
+            elif any(w in food_lower for w in ["fruit", "pomme", "banane", "orange", "fraise", "raisin", "kiwi"]):
+                category = "Fruits"
+            elif any(w in food_lower for w in ["viande", "poulet", "bœuf", "porc", "steak", "jambon"]):
+                category = "Viandes"
+            elif any(w in food_lower for w in ["poisson", "saumon", "thon", "crevette", "cabillaud"]):
+                category = "Poissons"
+            elif any(w in food_lower for w in ["pain", "pâtes", "riz", "céréale", "baguette", "sandwich"]):
+                category = "Féculents"
+            elif any(w in food_lower for w in ["yaourt", "fromage", "lait", "crème"]):
+                category = "Produits laitiers"
+            elif any(w in food_lower for w in ["gâteau", "chocolat", "bonbon", "biscuit", "glace", "dessert"]):
+                category = "Desserts"
+            elif any(w in food_lower for w in ["boisson", "jus", "eau", "café", "thé", "soda"]):
+                category = "Boissons"
+            elif any(w in food_lower for w in ["pizza", "burger", "frites", "kebab", "tacos"]):
+                category = "Fast-food"
+            elif any(w in food_lower for w in ["soupe", "potage", "bouillon"]):
+                category = "Soupes"
+            elif any(w in food_lower for w in ["œuf", "omelette"]):
+                category = "Œufs"
+            elif any(w in food_lower for w in ["plat", "repas"]):
+                category = "Plats préparés"
+            
+            scan_entry = {
+                "scan_id": f"scan_{uuid.uuid4().hex[:12]}",
+                "user_id": user["user_id"],
+                "food_name": result.get("food_name"),
+                "category": category,
+                "calories": result.get("calories"),
+                "protein": result.get("protein"),
+                "carbs": result.get("carbs"),
+                "fat": result.get("fat"),
+                "fiber": result.get("fiber"),
+                "sugar": result.get("sugar"),
+                "sodium": result.get("sodium"),
+                "nutri_score": result.get("nutri_score"),
+                "serving_size": result.get("serving_size"),
+                "health_tips": result.get("health_tips", []),
+                "warnings": result.get("warnings", []),
+                "is_healthy": result.get("is_healthy", True),
+                "image_data": image_base64[:1000] if image_base64 else None,  # Store thumbnail
+                "scanned_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.scan_history.insert_one(scan_entry)
+            result["scan_id"] = scan_entry["scan_id"]
+            result["category"] = category
         else:
             raise ValueError("No JSON found in response")
             
