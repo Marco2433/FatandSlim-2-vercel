@@ -191,6 +191,26 @@ export default function BariatricPage() {
     }));
   };
 
+  const shareBariatricArticle = async (article) => {
+    try {
+      await axios.post(`${API}/social/post`, {
+        content: `📰 **${article.title}**\n\n${article.content || article.summary}\n\n📖 Source : ${article.source || 'Fat & Slim Bariatrique'} • ⏱️ ${article.read_time || '3 min'}`,
+        type: 'share_article',
+        image_url: article.image || null,
+        shared_item: {
+          title: article.title,
+          summary: article.summary,
+          category: article.category,
+          source: article.source,
+          image: article.image
+        }
+      }, { withCredentials: true });
+      toast.success('Article partagé sur la communauté !');
+    } catch (error) {
+      toast.error('Erreur lors du partage');
+    }
+  };
+
   const getPhaseColor = (phase) => {
     switch(phase) {
       case 1: return 'bg-blue-500';
