@@ -5485,6 +5485,33 @@ async def get_groups(user: dict = Depends(get_current_user)):
     
     return {"groups": result}
 
+@api_router.get("/social/groups/{group_id}")
+async def get_group_details(group_id: str, user: dict = Depends(get_current_user)):
+    """Get detailed info for a specific group"""
+    group = await db.groups.find_one({"group_id": group_id}, {"_id": 0})
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    
+    is_member = await db.group_members.find_one({"group_id": group_id, "user_id": user["user_id"]}) is not None
+    member_count = await db.group_members.count_documents({"group_id": group_id})
+    posts_count = await db.social_posts.count_documents({"group_id": group_id})
+    
+    # Get recent members
+    recent_members_docs = await db.group_members.find({"group_id": group_id}, {"_id": 0}).sort("joined_at", -1).limit(5).to_list(5)
+    recent_members = []
+    for m in recent_members_docs:
+        u = await db.users.find_one({"user_id": m["user_id"]}, {"_id": 0, "password_hash": 0})
+        if u:
+            recent_members.append({"user_id": u["user_id"], "name": u.get("name"), "picture": u.get("picture")})
+    
+    return {
+        "group": group,
+        "is_member": is_member,
+        "member_count": member_count,
+        "posts_count": posts_count,
+        "recent_members": recent_members
+    }
+
 @api_router.post("/social/groups/join")
 async def join_group(data: dict, user: dict = Depends(get_current_user)):
     """Join a group"""
