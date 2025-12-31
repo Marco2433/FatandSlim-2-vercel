@@ -1002,7 +1002,7 @@ export default function WorkoutsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Coach IA Dialog */}
+      {/* Coach IA Dialog - Onboarding amélioré */}
       <Dialog open={showCoachDialog} onOpenChange={(open) => {
         setShowCoachDialog(open);
         if (!open) {
@@ -1017,25 +1017,39 @@ export default function WorkoutsPage() {
               Coach IA - Programme personnalisé
             </DialogTitle>
             <DialogDescription>
-              {coachStep < 5 ? `Étape ${coachStep}/4 - Personnalisation` : 'Votre programme est prêt !'}
+              {coachStep < 7 ? `Étape ${coachStep}/6 - Personnalisation avancée` : 'Votre programme est prêt !'}
             </DialogDescription>
           </DialogHeader>
 
-          {/* Step 1: Duration */}
+          {/* Progress bar */}
+          {coachStep < 7 && (
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary transition-all duration-300" 
+                style={{ width: `${(coachStep / 6) * 100}%` }}
+              />
+            </div>
+          )}
+
+          {/* Step 1: Fitness Level & Goals */}
           {coachStep === 1 && (
             <div className="space-y-4 py-4">
-              <h3 className="font-semibold">Quelle durée pour votre programme ?</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {PROGRAM_DURATIONS.map((d) => (
-                  <Button
-                    key={d.value}
-                    variant={coachConfig.duration === d.value ? 'default' : 'outline'}
-                    className="h-auto py-3"
-                    onClick={() => setCoachConfig({ ...coachConfig, duration: d.value })}
-                  >
-                    {d.label}
-                  </Button>
-                ))}
+              <div>
+                <h3 className="font-semibold mb-3">🎯 Quel est votre niveau actuel ?</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {FITNESS_LEVELS.map((level) => (
+                    <Button
+                      key={level.value}
+                      variant={coachConfig.fitnessLevel === level.value ? 'default' : 'outline'}
+                      className="h-auto py-3 flex-col"
+                      onClick={() => setCoachConfig({ ...coachConfig, fitnessLevel: level.value })}
+                    >
+                      <span className="text-xl mb-1">{level.emoji}</span>
+                      <span className="font-medium">{level.label}</span>
+                      <span className="text-xs text-muted-foreground">{level.desc}</span>
+                    </Button>
+                  ))}
+                </div>
               </div>
               <Button className="w-full mt-4" onClick={() => setCoachStep(2)}>
                 Suivant
@@ -1043,49 +1057,128 @@ export default function WorkoutsPage() {
             </div>
           )}
 
-          {/* Step 2: Time of day & Daily duration */}
+          {/* Step 2: Training Goals */}
           {coachStep === 2 && (
             <div className="space-y-4 py-4">
+              <h3 className="font-semibold mb-3">🎯 Quels sont vos objectifs ? (plusieurs choix)</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {TRAINING_GOALS.map((goal) => (
+                  <Button
+                    key={goal.id}
+                    variant={coachConfig.trainingGoals.includes(goal.id) ? 'default' : 'outline'}
+                    className="h-auto py-2 justify-start"
+                    onClick={() => {
+                      const newGoals = coachConfig.trainingGoals.includes(goal.id)
+                        ? coachConfig.trainingGoals.filter(g => g !== goal.id)
+                        : [...coachConfig.trainingGoals, goal.id];
+                      setCoachConfig({ ...coachConfig, trainingGoals: newGoals });
+                    }}
+                  >
+                    <span className="mr-2">{goal.emoji}</span>
+                    {goal.label}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button variant="outline" onClick={() => setCoachStep(1)}>Retour</Button>
+                <Button className="flex-1" onClick={() => setCoachStep(3)} disabled={coachConfig.trainingGoals.length === 0}>
+                  Suivant
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Duration & Frequency */}
+          {coachStep === 3 && (
+            <div className="space-y-4 py-4">
               <div>
-                <h3 className="font-semibold mb-2">Moment de la journée préféré ?</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {TIME_OF_DAY.map((t) => (
+                <h3 className="font-semibold mb-2">📅 Durée du programme</h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {PROGRAM_DURATIONS.map((d) => (
                     <Button
-                      key={t.value}
-                      variant={coachConfig.timeOfDay === t.value ? 'default' : 'outline'}
-                      onClick={() => setCoachConfig({ ...coachConfig, timeOfDay: t.value })}
+                      key={d.value}
+                      variant={coachConfig.duration === d.value ? 'default' : 'outline'}
+                      className="h-auto py-2 flex-col"
+                      size="sm"
+                      onClick={() => setCoachConfig({ ...coachConfig, duration: d.value })}
                     >
-                      {t.label}
+                      <span className="font-medium text-sm">{d.label}</span>
+                      <span className="text-xs text-muted-foreground">{d.desc}</span>
                     </Button>
                   ))}
                 </div>
               </div>
               <div>
-                <h3 className="font-semibold mb-2">Temps disponible par séance ?</h3>
-                <div className="grid grid-cols-3 gap-2">
-                  {DAILY_DURATION.map((d) => (
+                <h3 className="font-semibold mb-2">🔄 Fréquence d'entraînement</h3>
+                <div className="grid grid-cols-5 gap-2">
+                  {TRAINING_FREQUENCY.map((f) => (
                     <Button
-                      key={d.value}
-                      variant={coachConfig.dailyDuration === d.value ? 'default' : 'outline'}
+                      key={f.value}
+                      variant={coachConfig.frequency === f.value ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setCoachConfig({ ...coachConfig, dailyDuration: d.value })}
+                      className="h-auto py-2 flex-col"
+                      onClick={() => setCoachConfig({ ...coachConfig, frequency: f.value })}
                     >
-                      {d.label}
+                      <span className="font-medium">{f.value}x</span>
+                      <span className="text-xs text-muted-foreground">{f.desc}</span>
                     </Button>
                   ))}
                 </div>
               </div>
               <div className="flex gap-2 mt-4">
-                <Button variant="outline" onClick={() => setCoachStep(1)}>Retour</Button>
-                <Button className="flex-1" onClick={() => setCoachStep(3)}>Suivant</Button>
+                <Button variant="outline" onClick={() => setCoachStep(2)}>Retour</Button>
+                <Button className="flex-1" onClick={() => setCoachStep(4)}>Suivant</Button>
               </div>
             </div>
           )}
 
-          {/* Step 3: Body parts */}
-          {coachStep === 3 && (
+          {/* Step 4: Time & Duration per session */}
+          {coachStep === 4 && (
             <div className="space-y-4 py-4">
-              <h3 className="font-semibold">Quelles parties du corps souhaitez-vous travailler ?</h3>
+              <div>
+                <h3 className="font-semibold mb-2">⏰ Moment de la journée préféré</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {TIME_OF_DAY.map((t) => (
+                    <Button
+                      key={t.value}
+                      variant={coachConfig.timeOfDay === t.value ? 'default' : 'outline'}
+                      className="h-auto py-2"
+                      onClick={() => setCoachConfig({ ...coachConfig, timeOfDay: t.value })}
+                    >
+                      <span className="mr-2">{t.label}</span>
+                      <span className="text-xs text-muted-foreground">({t.desc})</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">⏱️ Temps par séance</h3>
+                <div className="grid grid-cols-5 gap-2">
+                  {DAILY_DURATION.map((d) => (
+                    <Button
+                      key={d.value}
+                      variant={coachConfig.dailyDuration === d.value ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-auto py-2 flex-col"
+                      onClick={() => setCoachConfig({ ...coachConfig, dailyDuration: d.value })}
+                    >
+                      <span className="font-medium">{d.label}</span>
+                      <span className="text-xs text-muted-foreground">{d.desc}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button variant="outline" onClick={() => setCoachStep(3)}>Retour</Button>
+                <Button className="flex-1" onClick={() => setCoachStep(5)}>Suivant</Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Body parts */}
+          {coachStep === 5 && (
+            <div className="space-y-4 py-4">
+              <h3 className="font-semibold">🏋️ Parties du corps à travailler</h3>
               <div className="grid grid-cols-2 gap-2">
                 {BODY_PARTS.map((part) => (
                   <Button
@@ -1105,19 +1198,19 @@ export default function WorkoutsPage() {
                 ))}
               </div>
               <div className="flex gap-2 mt-4">
-                <Button variant="outline" onClick={() => setCoachStep(2)}>Retour</Button>
-                <Button className="flex-1" onClick={() => setCoachStep(4)} disabled={coachConfig.bodyParts.length === 0}>
+                <Button variant="outline" onClick={() => setCoachStep(4)}>Retour</Button>
+                <Button className="flex-1" onClick={() => setCoachStep(6)} disabled={coachConfig.bodyParts.length === 0}>
                   Suivant
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Step 4: Additional info */}
-          {coachStep === 4 && (
+          {/* Step 6: Equipment & Additional info */}
+          {coachStep === 6 && (
             <div className="space-y-4 py-4">
               <div>
-                <h3 className="font-semibold mb-2">Équipement disponible ?</h3>
+                <h3 className="font-semibold mb-2">🏠 Équipement disponible</h3>
                 <Select 
                   value={coachConfig.equipment} 
                   onValueChange={(v) => setCoachConfig({ ...coachConfig, equipment: v })}
@@ -1133,24 +1226,44 @@ export default function WorkoutsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Objectifs spécifiques (optionnel)</Label>
-                <Textarea
-                  placeholder="Ex: Perdre du ventre, préparer un marathon..."
-                  value={coachConfig.goals}
-                  onChange={(e) => setCoachConfig({ ...coachConfig, goals: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-sm">Âge (optionnel)</Label>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 35"
+                    value={coachConfig.age}
+                    onChange={(e) => setCoachConfig({ ...coachConfig, age: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm">Poids kg (optionnel)</Label>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 70"
+                    value={coachConfig.weight}
+                    onChange={(e) => setCoachConfig({ ...coachConfig, weight: e.target.value })}
+                  />
+                </div>
               </div>
               <div>
-                <Label>Blessures ou limitations (optionnel)</Label>
+                <Label>⚠️ Blessures ou limitations (optionnel)</Label>
                 <Textarea
                   placeholder="Ex: Problème de genou, douleur au dos..."
                   value={coachConfig.injuries}
                   onChange={(e) => setCoachConfig({ ...coachConfig, injuries: e.target.value })}
                 />
               </div>
+              <div>
+                <Label>💬 Instructions spécifiques (optionnel)</Label>
+                <Textarea
+                  placeholder="Ex: Je veux inclure du yoga, des étirements le matin..."
+                  value={coachConfig.goals}
+                  onChange={(e) => setCoachConfig({ ...coachConfig, goals: e.target.value })}
+                />
+              </div>
               <div className="flex gap-2 mt-4">
-                <Button variant="outline" onClick={() => setCoachStep(3)}>Retour</Button>
+                <Button variant="outline" onClick={() => setCoachStep(5)}>Retour</Button>
                 <Button 
                   className="flex-1" 
                   onClick={requestCoachProgram}
@@ -1172,8 +1285,8 @@ export default function WorkoutsPage() {
             </div>
           )}
 
-          {/* Step 5: Generated Program */}
-          {coachStep === 5 && generatedProgram && (
+          {/* Step 7: Generated Program */}
+          {coachStep === 7 && generatedProgram && (
             <div className="space-y-4 py-4">
               <div className="p-4 bg-primary/10 rounded-lg">
                 <h3 className="font-semibold text-lg">{generatedProgram.name}</h3>
@@ -1197,7 +1310,7 @@ export default function WorkoutsPage() {
               </div>
 
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setCoachStep(4)}>
+                <Button variant="outline" onClick={() => setCoachStep(6)}>
                   Modifier
                 </Button>
                 <Button className="flex-1" onClick={addProgramToAgenda}>
