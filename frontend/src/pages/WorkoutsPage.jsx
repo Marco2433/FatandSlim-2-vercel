@@ -1122,7 +1122,7 @@ export default function WorkoutsPage() {
                 <Button variant="outline" onClick={() => setCoachStep(3)}>Retour</Button>
                 <Button 
                   className="flex-1" 
-                  onClick={generateCoachProgram}
+                  onClick={requestCoachProgram}
                   disabled={coachLoading}
                 >
                   {coachLoading ? (
