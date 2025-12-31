@@ -1620,22 +1620,105 @@ async def remove_favorite_recipe(favorite_id: str, user: dict = Depends(get_curr
 
 @api_router.get("/shopping-list")
 async def get_shopping_list(user: dict = Depends(get_current_user)):
-    """Get user's shopping list"""
+    """Get user's shopping list grouped by category"""
     items = await db.shopping_list.find(
         {"user_id": user["user_id"]},
         {"_id": 0}
     ).to_list(200)
+    
+    # Auto-categorize items that don't have a category
+    for item in items:
+        if not item.get("category") or item.get("category") == "Autres" or item.get("category") == "Ingrédients":
+            item["category"] = categorize_food_item(item.get("display_name", item.get("item", "")))
+    
     return items
+
+def categorize_food_item(item_name: str) -> str:
+    """Automatically categorize food items"""
+    item_lower = item_name.lower()
+    
+    # Fruits
+    fruits = ["pomme", "banane", "orange", "citron", "fraise", "framboise", "myrtille", "raisin", 
+              "poire", "pêche", "abricot", "cerise", "mangue", "ananas", "kiwi", "melon", "pastèque",
+              "fruit", "agrume", "baie", "clémentine", "mandarine", "prune", "figue"]
+    if any(f in item_lower for f in fruits):
+        return "🍎 Fruits"
+    
+    # Légumes
+    legumes = ["carotte", "tomate", "salade", "laitue", "épinard", "courgette", "aubergine", 
+               "poivron", "oignon", "ail", "échalote", "brocoli", "chou", "haricot vert",
+               "petit pois", "asperge", "artichaut", "betterave", "navet", "radis", "céleri",
+               "poireau", "fenouil", "légume", "concombre", "avocat", "champignon", "endive"]
+    if any(l in item_lower for l in legumes):
+        return "🥬 Légumes"
+    
+    # Viandes
+    viandes = ["poulet", "boeuf", "porc", "veau", "agneau", "dinde", "canard", "lapin",
+               "viande", "steak", "escalope", "filet", "côte", "rôti", "saucisse", "jambon",
+               "bacon", "lard", "chorizo", "merguez"]
+    if any(v in item_lower for v in viandes):
+        return "🥩 Viandes"
+    
+    # Poissons et fruits de mer
+    poissons = ["saumon", "thon", "cabillaud", "colin", "sole", "bar", "dorade", "truite",
+                "sardine", "maquereau", "crevette", "moule", "huître", "crabe", "homard",
+                "poisson", "fruit de mer", "anchois", "lieu"]
+    if any(p in item_lower for p in poissons):
+        return "🐟 Poissons"
+    
+    # Produits laitiers
+    laitiers = ["lait", "fromage", "yaourt", "yogourt", "crème", "beurre", "œuf", "oeuf",
+                "mozzarella", "parmesan", "gruyère", "comté", "camembert", "chèvre", "feta"]
+    if any(l in item_lower for l in laitiers):
+        return "🥛 Produits laitiers"
+    
+    # Féculents
+    feculents = ["riz", "pâte", "spaghetti", "tagliatelle", "penne", "pain", "baguette",
+                 "pomme de terre", "patate", "quinoa", "boulgour", "semoule", "couscous",
+                 "lentille", "pois chiche", "haricot sec", "fève", "céréale", "flocon",
+                 "avoine", "blé", "orge", "maïs", "farine", "féculent"]
+    if any(f in item_lower for f in feculents):
+        return "🍞 Féculents"
+    
+    # Épices et condiments
+    epices = ["sel", "poivre", "épice", "herbe", "thym", "romarin", "basilic", "persil",
+              "coriandre", "menthe", "cumin", "curry", "paprika", "cannelle", "muscade",
+              "huile", "vinaigre", "moutarde", "ketchup", "mayonnaise", "sauce", "bouillon"]
+    if any(e in item_lower for e in epices):
+        return "🧂 Épices & Condiments"
+    
+    # Boissons
+    boissons = ["eau", "jus", "café", "thé", "lait", "soda", "limonade", "sirop", "boisson"]
+    if any(b in item_lower for b in boissons):
+        return "🥤 Boissons"
+    
+    # Sucreries et desserts
+    sucres = ["sucre", "chocolat", "bonbon", "gâteau", "biscuit", "cookie", "miel", 
+              "confiture", "dessert", "glace", "crème glacée", "pâtisserie", "tarte"]
+    if any(s in item_lower for s in sucres):
+        return "🍫 Sucreries"
+    
+    # Surgelés
+    surgeles = ["surgelé", "congelé", "glacé"]
+    if any(s in item_lower for s in surgeles):
+        return "❄️ Surgelés"
+    
+    return "📦 Autres"
 
 @api_router.post("/shopping-list")
 async def add_shopping_item(data: dict, user: dict = Depends(get_current_user)):
-    """Add item to shopping list"""
+    """Add item to shopping list with auto-categorization"""
     item_name = data.get("item")
     quantity = data.get("quantity", "")
-    category = data.get("category", "Autres")
+    portions = data.get("portions", 1)
+    category = data.get("category")
     
     if not item_name:
         raise HTTPException(status_code=400, detail="Item name required")
+    
+    # Auto-categorize if no category provided
+    if not category:
+        category = categorize_food_item(item_name)
     
     # Check if item already exists
     existing = await db.shopping_list.find_one({
@@ -1644,10 +1727,15 @@ async def add_shopping_item(data: dict, user: dict = Depends(get_current_user)):
     })
     
     if existing:
-        # Update quantity
+        # Update quantity and portions
         await db.shopping_list.update_one(
             {"item_id": existing["item_id"]},
-            {"$set": {"quantity": quantity, "updated_at": datetime.now(timezone.utc).isoformat()}}
+            {"$set": {
+                "quantity": quantity, 
+                "portions": portions,
+                "category": category,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
         )
         return {"message": "Item updated", "item_id": existing["item_id"]}
     
@@ -1657,22 +1745,23 @@ async def add_shopping_item(data: dict, user: dict = Depends(get_current_user)):
         "item": item_name.lower(),
         "display_name": item_name,
         "quantity": quantity,
+        "portions": portions,
         "category": category,
         "checked": False,
         "added_at": datetime.now(timezone.utc).isoformat()
     }
     
     await db.shopping_list.insert_one(item_doc)
-    return {"message": "Item added", "item_id": item_doc["item_id"]}
+    return {"message": "Item added", "item_id": item_doc["item_id"], "category": category}
 
 @api_router.post("/shopping-list/bulk")
 async def add_shopping_items_bulk(data: dict, user: dict = Depends(get_current_user)):
-    """Add multiple items to shopping list"""
+    """Add multiple items to shopping list with auto-categorization"""
     items = data.get("items", [])
     added = 0
     
     for item in items:
-        item_name = item.get("item") or item
+        item_name = item.get("item") or item if isinstance(item, str) else item.get("item", "")
         if isinstance(item_name, str) and item_name.strip():
             existing = await db.shopping_list.find_one({
                 "user_id": user["user_id"],
@@ -1680,13 +1769,15 @@ async def add_shopping_items_bulk(data: dict, user: dict = Depends(get_current_u
             })
             
             if not existing:
+                quantity = item.get("quantity", "") if isinstance(item, dict) else ""
                 item_doc = {
                     "item_id": f"item_{uuid.uuid4().hex[:8]}",
                     "user_id": user["user_id"],
                     "item": item_name.lower(),
                     "display_name": item_name,
-                    "quantity": item.get("quantity", "") if isinstance(item, dict) else "",
-                    "category": "Ingrédients",
+                    "quantity": quantity,
+                    "portions": 1,
+                    "category": categorize_food_item(item_name),
                     "checked": False,
                     "added_at": datetime.now(timezone.utc).isoformat()
                 }
@@ -1697,12 +1788,16 @@ async def add_shopping_items_bulk(data: dict, user: dict = Depends(get_current_u
 
 @api_router.put("/shopping-list/{item_id}")
 async def update_shopping_item(item_id: str, data: dict, user: dict = Depends(get_current_user)):
-    """Update shopping list item (check/uncheck)"""
+    """Update shopping list item"""
     update_data = {}
     if "checked" in data:
         update_data["checked"] = data["checked"]
     if "quantity" in data:
         update_data["quantity"] = data["quantity"]
+    if "portions" in data:
+        update_data["portions"] = data["portions"]
+    if "category" in data:
+        update_data["category"] = data["category"]
     
     if update_data:
         update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -1725,6 +1820,133 @@ async def clear_shopping_list(user: dict = Depends(get_current_user)):
     """Clear all checked items or all items"""
     await db.shopping_list.delete_many({"user_id": user["user_id"], "checked": True})
     return {"message": "Checked items cleared"}
+
+# ==================== HEALTH ARTICLES ====================
+
+@api_router.get("/articles")
+async def get_health_articles(user: dict = Depends(get_current_user)):
+    """Get health and nutrition articles - cached daily"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Check cache first
+    cached = await db.articles_cache.find_one({"date": today}, {"_id": 0})
+    if cached and cached.get("articles"):
+        return {"articles": cached["articles"]}
+    
+    # Generate articles (simulated - in production, would fetch from news APIs)
+    articles = [
+        {
+            "id": f"art_{today}_1",
+            "title": "10 aliments brûle-graisses à intégrer dans votre alimentation",
+            "summary": "Découvrez les aliments qui accélèrent naturellement votre métabolisme et favorisent la perte de poids.",
+            "category": "nutrition",
+            "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400",
+            "source": "Santé Magazine",
+            "date": today,
+            "read_time": "4 min",
+            "content": """Les aliments brûle-graisses sont vos alliés minceur ! Voici les 10 meilleurs :
+
+1. **Le pamplemousse** - Riche en fibres et en vitamine C, il aide à réguler la glycémie.
+
+2. **Le thé vert** - Ses catéchines stimulent le métabolisme et l'oxydation des graisses.
+
+3. **Les épinards** - Très peu caloriques mais riches en nutriments essentiels.
+
+4. **Le saumon** - Ses oméga-3 favorisent la combustion des graisses.
+
+5. **Les œufs** - Riches en protéines, ils augmentent la satiété.
+
+6. **Le poivron** - La capsaïcine qu'il contient booste le métabolisme.
+
+7. **L'avocat** - Ses bonnes graisses aident à contrôler l'appétit.
+
+8. **Les baies** - Faibles en calories et riches en antioxydants.
+
+9. **Le brocoli** - Excellent ratio nutriments/calories.
+
+10. **La cannelle** - Aide à réguler la glycémie et réduit les envies de sucre.
+
+**Conseil** : Intégrez ces aliments progressivement dans vos repas quotidiens pour des résultats durables."""
+        },
+        {
+            "id": f"art_{today}_2",
+            "title": "Chirurgie bariatrique : ce qu'il faut savoir avant de se lancer",
+            "summary": "Bypass, sleeve : comprendre les différentes options et leurs implications sur votre santé.",
+            "category": "santé",
+            "image": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=400",
+            "source": "Le Figaro Santé",
+            "date": today,
+            "read_time": "6 min",
+            "content": """La chirurgie bariatrique est une solution pour l'obésité sévère quand les autres méthodes ont échoué.
+
+**Les principales interventions :**
+
+🔹 **La Sleeve gastrectomie**
+- Réduction de l'estomac de 75%
+- Perte de poids moyenne : 60% de l'excès de poids
+- Intervention irréversible
+
+🔹 **Le Bypass gastrique**
+- Court-circuit de l'estomac et d'une partie de l'intestin
+- Perte de poids moyenne : 70% de l'excès de poids
+- Nécessite un suivi nutritionnel strict
+
+**Critères d'éligibilité :**
+- IMC supérieur à 40
+- Ou IMC supérieur à 35 avec comorbidités (diabète, apnée du sommeil...)
+- Échec des régimes sur plusieurs années
+
+**Suivi post-opératoire essentiel :**
+- Consultations régulières
+- Supplémentation en vitamines
+- Adaptation progressive de l'alimentation
+- Activité physique régulière
+
+Consultez toujours un spécialiste avant de prendre une décision."""
+        },
+        {
+            "id": f"art_{today}_3",
+            "title": "5 exercices pour perdre du ventre à faire chez soi",
+            "summary": "Un programme simple et efficace pour tonifier votre ceinture abdominale sans équipement.",
+            "category": "fitness",
+            "image": "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400",
+            "source": "Doctissimo",
+            "date": today,
+            "read_time": "5 min",
+            "content": """Perdre du ventre demande de la régularité. Voici 5 exercices efficaces :
+
+**1. La planche (30 sec à 1 min)**
+Position de pompe, corps aligné, gainé. Maintenez la position.
+
+**2. Les crunchs (3x15 répétitions)**
+Allongé sur le dos, jambes pliées, montez le buste en contractant les abdos.
+
+**3. Le mountain climber (3x30 sec)**
+En position de planche, ramenez alternativement les genoux vers la poitrine.
+
+**4. Le gainage latéral (30 sec chaque côté)**
+Sur le côté, corps aligné, soulevez les hanches.
+
+**5. Le bicycle crunch (3x20 répétitions)**
+Allongé, simulez le pédalage en touchant coude/genou opposé.
+
+**Programme suggéré :**
+- 3 à 4 séances par semaine
+- Repos de 30 secondes entre chaque exercice
+- Augmentez progressivement la durée
+
+**Important** : Ces exercices tonifient mais ne font pas "fondre" la graisse localement. Associez-les à une alimentation équilibrée et du cardio pour des résultats optimaux."""
+        }
+    ]
+    
+    # Cache for today
+    await db.articles_cache.update_one(
+        {"date": today},
+        {"$set": {"articles": articles, "created_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    
+    return {"articles": articles}
 
 # ==================== DAILY RECIPES (RECETTES DU JOUR) ====================
 
