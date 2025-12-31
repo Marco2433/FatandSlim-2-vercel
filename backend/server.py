@@ -5153,7 +5153,7 @@ async def add_comment(post_id: str, data: dict, user: dict = Depends(get_current
     
     # Notify post owner
     if post["user_id"] != user["user_id"]:
-        await create_notification(post["user_id"], "comment", f"{user.get('name', 'Quelqu\'un')} a commenté votre publication", user["user_id"])
+        await create_notification(post["user_id"], "comment", f"{user.get('name', 'Quelquun')} a commenté votre publication", user["user_id"])
     
     return {"message": "Comment added", "comment": {k: v for k, v in comment.items() if k != "_id"}}
 
@@ -5178,7 +5178,7 @@ async def like_post(post_id: str, user: dict = Depends(get_current_user)):
         # Notify post owner
         post = await db.social_posts.find_one({"post_id": post_id})
         if post and post["user_id"] != user["user_id"]:
-            await create_notification(post["user_id"], "like", f"{user.get('name', 'Quelqu\'un')} aime votre publication", user["user_id"])
+            await create_notification(post["user_id"], "like", f"{user.get('name', 'Quelquun')} aime votre publication", user["user_id"])
         
         return {"message": "Post liked", "liked": True}
 
