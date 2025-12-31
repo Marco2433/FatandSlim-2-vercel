@@ -573,6 +573,15 @@ export default function WorkoutsPage() {
     }
   };
 
+  // Request coach program with AI warning
+  const requestCoachProgram = () => {
+    setShowAIWarning(true);
+  };
+
+  const handleAIWarningConfirm = () => {
+    generateCoachProgram();
+  };
+
   const addProgramToAgenda = async () => {
     if (!generatedProgram) return;
     
