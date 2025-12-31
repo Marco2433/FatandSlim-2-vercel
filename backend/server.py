@@ -955,7 +955,7 @@ async def get_nutrition_rules(user: dict = Depends(get_current_user)):
 
 @api_router.get("/bariatric/dashboard")
 async def get_bariatric_dashboard(user: dict = Depends(get_current_user)):
-    """Get bariatric patient dashboard data"""
+    """Get bariatric patient dashboard data with nutrition rules"""
     profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
     
     if not profile or not profile.get("bariatric_surgery"):
@@ -963,6 +963,12 @@ async def get_bariatric_dashboard(user: dict = Depends(get_current_user)):
     
     # Calculate current phase
     phase_info = calculate_bariatric_phase(profile.get("bariatric_surgery_date"))
+    phase = phase_info.get("phase") or 4
+    
+    # Get nutrition rules
+    parcours = profile.get("bariatric_parcours", "post_op")
+    surgery_type = profile.get("bariatric_surgery", "sleeve")
+    nutrition_rules = get_bariatric_nutrition_rules(phase, parcours, surgery_type, profile)
     
     # Get recent logs
     logs = await db.bariatric_logs.find(
@@ -988,16 +994,33 @@ async def get_bariatric_dashboard(user: dict = Depends(get_current_user)):
         {"_id": 0}
     )
     
+    # Check for reminders
+    reminders = []
+    if not today_log:
+        reminders.append({"type": "log", "message": "📝 N'oubliez pas de renseigner votre suivi quotidien !", "priority": "high"})
+    elif not today_log.get("weight"):
+        reminders.append({"type": "weight", "message": "⚖️ Pensez à noter votre poids du jour", "priority": "medium"})
+    elif not today_log.get("hydration"):
+        reminders.append({"type": "hydration", "message": "💧 Avez-vous noté votre hydratation ?", "priority": "medium"})
+    
+    # Check supplements reminder
+    supplements = profile.get("bariatric_supplements", [])
+    if supplements and today_log:
+        taken = today_log.get("supplements_taken", [])
+        missing = [s for s in supplements if s not in taken]
+        if missing:
+            reminders.append({"type": "supplements", "message": f"💊 Suppléments à prendre : {', '.join(missing)}", "priority": "high"})
+    
     return {
         "profile": {
-            "surgery_type": profile.get("bariatric_surgery"),
+            "surgery_type": surgery_type,
             "surgery_date": profile.get("bariatric_surgery_date"),
             "pre_op_weight": pre_op_weight,
             "pre_op_bmi": round(pre_op_weight / ((profile.get("bariatric_pre_op_height", profile.get("height", 170)) / 100) ** 2), 1) if profile.get("bariatric_pre_op_height") or profile.get("height") else None,
             "current_weight": current_weight,
             "weight_lost": round(weight_lost, 1),
-            "parcours": profile.get("bariatric_parcours"),
-            "supplements": profile.get("bariatric_supplements", []),
+            "parcours": parcours,
+            "supplements": supplements,
             "intolerances": profile.get("bariatric_intolerances", []),
             "clinic": profile.get("bariatric_clinic"),
             "surgeon": profile.get("bariatric_surgeon"),
@@ -1006,9 +1029,11 @@ async def get_bariatric_dashboard(user: dict = Depends(get_current_user)):
             "allergies": profile.get("allergies", [])
         },
         "phase": phase_info,
+        "nutrition_rules": nutrition_rules,
         "today_log": today_log,
         "recent_logs": logs,
-        "weight_history": weights
+        "weight_history": weights,
+        "reminders": reminders
     }
 
 @api_router.post("/bariatric/log")
