@@ -2583,6 +2583,15 @@ export default function NutritionPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* AI Warning Dialog */}
+      <AIWarningDialog
+        open={showAIWarning}
+        onOpenChange={setShowAIWarning}
+        onConfirm={handleAIWarningConfirm}
+        title="Utilisation de l'IA"
+        description="Cette fonctionnalité utilise l'intelligence artificielle et consomme un crédit quotidien."
+      />
     </div>
   );
 }
