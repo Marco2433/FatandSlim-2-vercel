@@ -156,6 +156,9 @@ export default function WorkoutsPage() {
     injuries: '',
   });
   
+  // AI Warning state
+  const [showAIWarning, setShowAIWarning] = useState(false);
+  
   // Programs & Logs state
   const [programs, setPrograms] = useState([]);
   const [workoutLogs, setWorkoutLogs] = useState([]);
