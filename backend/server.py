@@ -1178,23 +1178,709 @@ async def get_bariatric_articles(user: dict = Depends(get_current_user)):
     surgery_type = profile.get("bariatric_surgery", "bypass")
     phase_info = calculate_bariatric_phase(profile.get("bariatric_surgery_date"))
     
-    # Pool of bariatric articles
+    # Pool of bariatric articles with full content
     all_articles = [
-        {"title": "Les protéines après chirurgie bariatrique", "category": "nutrition", "surgery": "both", "summary": "Pourquoi viser 60-80g de protéines par jour est essentiel pour préserver votre masse musculaire.", "source": "HAS", "read_time": "3 min"},
-        {"title": "Gérer les carences en vitamines", "category": "santé", "surgery": "both", "summary": "B12, fer, calcium, vitamine D : les suppléments indispensables et leur importance.", "source": "SOFFCO", "read_time": "4 min"},
-        {"title": "Le dumping syndrome : comprendre et prévenir", "category": "bypass", "surgery": "bypass", "summary": "Symptômes, causes et conseils pour éviter ce phénomène fréquent après un bypass.", "source": "CHU", "read_time": "5 min"},
-        {"title": "Reprise alimentaire post-sleeve", "category": "sleeve", "surgery": "sleeve", "summary": "Les étapes de la réalimentation après une sleeve gastrectomie.", "source": "AFDN", "read_time": "4 min"},
-        {"title": "L'hydratation après chirurgie bariatrique", "category": "hydratation", "surgery": "both", "summary": "Comment atteindre 1.5L par jour quand l'estomac est réduit.", "source": "HAS", "read_time": "3 min"},
-        {"title": "Activité physique et perte de poids", "category": "sport", "surgery": "both", "summary": "Reprendre le sport progressivement pour optimiser vos résultats.", "source": "SOFFCO", "read_time": "4 min"},
-        {"title": "Les signaux de faim et satiété", "category": "comportement", "surgery": "both", "summary": "Réapprendre à écouter son corps après une chirurgie bariatrique.", "source": "CHU", "read_time": "3 min"},
-        {"title": "Eviter le grignotage émotionnel", "category": "psychologie", "surgery": "both", "summary": "Stratégies pour gérer les envies de manger liées aux émotions.", "source": "AFDN", "read_time": "5 min"},
-        {"title": "La peau après une perte de poids importante", "category": "corps", "surgery": "both", "summary": "Comment prendre soin de sa peau et options de chirurgie réparatrice.", "source": "SOFFCO", "read_time": "4 min"},
-        {"title": "Alcool et chirurgie bariatrique", "category": "santé", "surgery": "both", "summary": "Pourquoi l'alcool est plus dangereux après une chirurgie et les précautions à prendre.", "source": "HAS", "read_time": "3 min"},
-        {"title": "Plateau de perte de poids : que faire ?", "category": "motivation", "surgery": "both", "summary": "Comprendre et surmonter les phases de stagnation.", "source": "CHU", "read_time": "4 min"},
-        {"title": "RGO et bypass gastrique", "category": "bypass", "surgery": "bypass", "summary": "Le reflux gastro-œsophagien : amélioration fréquente après bypass.", "source": "SOFFCO", "read_time": "3 min"},
-        {"title": "Chute de cheveux post-opératoire", "category": "santé", "surgery": "both", "summary": "Causes, durée et solutions pour limiter la perte de cheveux.", "source": "AFDN", "read_time": "4 min"},
-        {"title": "Grossesse après chirurgie bariatrique", "category": "santé", "surgery": "both", "summary": "Délais recommandés et suivi particulier pour une grossesse en sécurité.", "source": "HAS", "read_time": "5 min"},
-        {"title": "Sleeve et reflux gastrique", "category": "sleeve", "surgery": "sleeve", "summary": "Comprendre pourquoi le reflux peut apparaître après une sleeve.", "source": "CHU", "read_time": "4 min"},
+        {
+            "title": "Les protéines après chirurgie bariatrique",
+            "category": "nutrition",
+            "surgery": "both",
+            "summary": "Pourquoi viser 60-80g de protéines par jour est essentiel pour préserver votre masse musculaire.",
+            "content": """Les protéines sont essentielles après une chirurgie bariatrique pour plusieurs raisons fondamentales :
+
+🎯 Objectif quotidien : 60 à 80g de protéines par jour
+
+📌 Pourquoi c'est crucial :
+• Préserve la masse musculaire pendant la perte de poids rapide
+• Favorise la cicatrisation post-opératoire
+• Maintient la force et l'énergie
+• Prévient la fonte musculaire (sarcopénie)
+
+🍽️ Sources de protéines recommandées :
+• Viandes maigres (poulet, dinde)
+• Poissons et fruits de mer
+• Œufs (excellente source)
+• Produits laitiers (fromage blanc, yaourt grec)
+• Légumineuses (lentilles, pois chiches)
+• Compléments protéinés si nécessaire
+
+⏰ Conseils pratiques :
+1. Commencez chaque repas par les protéines
+2. Répartissez l'apport sur 4-5 repas
+3. Utilisez des poudres protéinées si besoin
+4. Évitez les protéines grasses
+
+⚠️ N'hésitez pas à consulter votre nutritionniste si vous n'atteignez pas vos objectifs protéiques.""",
+            "source": "HAS",
+            "read_time": "4 min",
+            "image": "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400"
+        },
+        {
+            "title": "Gérer les carences en vitamines",
+            "category": "santé",
+            "surgery": "both",
+            "summary": "B12, fer, calcium, vitamine D : les suppléments indispensables et leur importance.",
+            "content": """Après une chirurgie bariatrique, votre corps absorbe moins bien certains nutriments. La supplémentation est donc INDISPENSABLE À VIE.
+
+💊 Suppléments essentiels :
+
+🔴 Vitamine B12
+• Injection mensuelle ou comprimés sublinguaux quotidiens
+• Carence = fatigue, troubles neurologiques, anémie
+
+🟠 Fer
+• Particulièrement important pour les femmes
+• À prendre à jeun avec vitamine C
+• Ne pas associer au calcium
+
+🟡 Calcium
+• 1200-1500 mg/jour en citrate
+• Répartir en 2-3 prises
+• Essentiel pour les os
+
+🔵 Vitamine D
+• 2000-4000 UI/jour
+• Aide à l'absorption du calcium
+• Bilans réguliers recommandés
+
+⚠️ Après un bypass :
+• Ajoutez : vitamines A, E, K, zinc
+• Risque de carences plus élevé
+
+📅 Contrôles sanguins :
+• Tous les 3 mois la 1ère année
+• Puis tous les 6 mois
+• Ajustements selon résultats
+
+Ne jamais arrêter les suppléments sans avis médical !""",
+            "source": "SOFFCO",
+            "read_time": "5 min",
+            "image": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400"
+        },
+        {
+            "title": "Le dumping syndrome : comprendre et prévenir",
+            "category": "bypass",
+            "surgery": "bypass",
+            "summary": "Symptômes, causes et conseils pour éviter ce phénomène fréquent après un bypass.",
+            "content": """Le dumping syndrome est une réaction fréquente après un bypass gastrique. Apprenez à le reconnaître et à l'éviter.
+
+🔍 Qu'est-ce que c'est ?
+Le dumping se produit quand les aliments passent trop vite dans l'intestin grêle, provoquant une série de symptômes désagréables.
+
+⚡ Dumping précoce (15-30 min après le repas) :
+• Nausées, crampes abdominales
+• Diarrhée, ballonnements
+• Sueurs, palpitations
+• Sensation de malaise
+
+🕐 Dumping tardif (1-3h après le repas) :
+• Hypoglycémie réactionnelle
+• Fatigue intense
+• Tremblements
+• Confusion
+
+🍬 Aliments déclencheurs :
+❌ Sucres rapides (bonbons, gâteaux, sodas)
+❌ Aliments très gras
+❌ Alcool
+❌ Repas trop copieux
+
+✅ Prévention :
+• Manger lentement (20-30 min par repas)
+• Petites portions
+• Éviter de boire pendant les repas
+• Privilégier les sucres complexes
+• S'allonger après manger si symptômes
+
+Le dumping diminue avec le temps mais reste un "garde-fou" contre les écarts alimentaires.""",
+            "source": "CHU",
+            "read_time": "5 min",
+            "image": "https://images.unsplash.com/photo-1559757175-5700dde675bc?w=400"
+        },
+        {
+            "title": "Reprise alimentaire post-sleeve",
+            "category": "sleeve",
+            "surgery": "sleeve",
+            "summary": "Les étapes de la réalimentation après une sleeve gastrectomie.",
+            "content": """La réalimentation après une sleeve suit un protocole précis en 4 phases pour permettre une bonne cicatrisation.
+
+📅 PHASE 1 - Liquide (J1 à J7)
+• Eau, bouillons clairs, thé
+• Par petites gorgées (30ml)
+• Objectif : hydratation
+
+📅 PHASE 2 - Mixé/Lisse (S2 à S3)
+• Soupes veloutées, compotes
+• Yaourts, fromage blanc
+• Texture lisse obligatoire
+• Portions : 60-100g
+
+📅 PHASE 3 - Mou (S4 à S6)
+• Textures tendres
+• Poisson émietté, œufs brouillés
+• Légumes bien cuits
+• Portions : 80-120g
+
+📅 PHASE 4 - Solide adapté (>S6)
+• Retour progressif au solide
+• Bien mâcher (20 fois min)
+• Portions : 100-150g max
+
+⚠️ Règles d'or :
+• Ne jamais sauter d'étape
+• Écouter son corps
+• Arrêter dès la première sensation de satiété
+• Ne pas boire en mangeant
+
+🚨 Signaux d'alerte :
+• Douleurs persistantes
+• Vomissements répétés
+• Impossibilité de s'hydrater
+→ Contactez votre chirurgien""",
+            "source": "AFDN",
+            "read_time": "4 min",
+            "image": "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400"
+        },
+        {
+            "title": "L'hydratation après chirurgie bariatrique",
+            "category": "hydratation",
+            "surgery": "both",
+            "summary": "Comment atteindre 1.5L par jour quand l'estomac est réduit.",
+            "content": """L'hydratation est un défi majeur après la chirurgie bariatrique. Voici comment y arriver.
+
+🎯 Objectif : 1.5 à 2 litres par jour
+
+⏰ Stratégies efficaces :
+• Boire par petites gorgées régulières
+• Toutes les 10-15 minutes
+• Garder une bouteille toujours à portée
+• Utiliser des rappels sur téléphone
+
+⚠️ Règle cruciale :
+Ne PAS boire pendant les repas !
+• 30 min avant le repas
+• 30-45 min après le repas
+
+💧 Boissons recommandées :
+✅ Eau plate
+✅ Eau aromatisée (citron, menthe)
+✅ Thé, infusions (sans sucre)
+✅ Bouillons
+
+❌ À éviter :
+• Boissons gazeuses
+• Sodas
+• Jus de fruits sucrés
+• Alcool (surtout après bypass)
+
+🌡️ Signes de déshydratation :
+• Urines foncées
+• Fatigue
+• Maux de tête
+• Vertiges
+• Constipation
+
+📱 Astuce : Des apps peuvent vous aider à suivre votre hydratation quotidienne !""",
+            "source": "HAS",
+            "read_time": "3 min",
+            "image": "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400"
+        },
+        {
+            "title": "Activité physique et perte de poids",
+            "category": "sport",
+            "surgery": "both",
+            "summary": "Reprendre le sport progressivement pour optimiser vos résultats.",
+            "content": """L'activité physique est un pilier essentiel pour optimiser et maintenir votre perte de poids après chirurgie.
+
+📅 Reprise progressive :
+
+Semaines 1-4 :
+• Marche légère (10-15 min/jour)
+• Mouvements doux
+• Pas d'efforts abdominaux
+
+Mois 2-3 :
+• Marche 30 min/jour
+• Natation (si cicatrisation OK)
+• Vélo doux
+
+À partir du mois 4 :
+• Renforcement musculaire léger
+• Cardio modéré
+• Sports variés
+
+🎯 Objectif long terme :
+• 150 min d'activité modérée/semaine
+• 2 séances de renforcement
+
+💪 Bénéfices prouvés :
+• Préserve la masse musculaire
+• Accélère le métabolisme
+• Améliore la qualité de peau
+• Booste le moral
+• Évite la reprise de poids
+
+⚠️ Précautions :
+• Toujours s'hydrater
+• Collation protéinée après l'effort
+• Écouter son corps
+• Éviter les sports à impact les premiers mois
+
+Commencez doucement mais commencez !""",
+            "source": "SOFFCO",
+            "read_time": "4 min",
+            "image": "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400"
+        },
+        {
+            "title": "Les signaux de faim et satiété",
+            "category": "comportement",
+            "surgery": "both",
+            "summary": "Réapprendre à écouter son corps après une chirurgie bariatrique.",
+            "content": """Après l'opération, vos signaux de faim et satiété sont modifiés. Réapprenez à les reconnaître.
+
+🔍 Nouveaux signaux de satiété :
+• Pression dans la poitrine/estomac
+• Hoquet
+• Nez qui coule
+• Éternuement
+• Respiration difficile
+
+⚠️ STOP immédiat si :
+• Douleur
+• Nausée
+• Sensation de "trop plein"
+→ Vous avez trop mangé !
+
+📝 Conseils pratiques :
+1. Manger dans le calme
+2. Sans écran, concentré sur le repas
+3. Poser les couverts entre chaque bouchée
+4. Mâcher 20-30 fois
+5. Repas de 20-30 min minimum
+
+🧠 Distinguer faim physique vs émotionnelle :
+
+Faim physique :
+• Progressive
+• Plusieurs aliments conviennent
+• Disparaît quand on mange
+
+Faim émotionnelle :
+• Soudaine
+• Envie d'un aliment précis
+• Ne disparaît pas vraiment
+
+✅ Astuce : Avant de manger, demandez-vous "Ai-je vraiment faim ou est-ce autre chose ?"
+
+La pleine conscience alimentaire est votre meilleure alliée.""",
+            "source": "CHU",
+            "read_time": "4 min",
+            "image": "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=400"
+        },
+        {
+            "title": "Éviter le grignotage émotionnel",
+            "category": "psychologie",
+            "surgery": "both",
+            "summary": "Stratégies pour gérer les envies de manger liées aux émotions.",
+            "content": """Le grignotage émotionnel peut saboter vos résultats. Apprenez à le reconnaître et le gérer.
+
+🎭 Déclencheurs fréquents :
+• Stress, anxiété
+• Ennui
+• Tristesse, déprime
+• Fatigue
+• Solitude
+• Célébration
+
+🛑 Le cycle du grignotage :
+Émotion → Envie → Grignotage → Culpabilité → Émotion négative...
+
+✅ Stratégies efficaces :
+
+1. Identifier le déclencheur
+"Pourquoi ai-je envie de manger ?"
+
+2. Attendre 10 minutes
+L'envie passe souvent
+
+3. Alternatives saines :
+• Boire de l'eau/thé
+• Marcher 10 min
+• Appeler un ami
+• Faire une activité plaisir
+• Technique de respiration
+
+4. Si vous mangez quand même :
+• Pas de culpabilité
+• Petite portion
+• Savourez consciemment
+
+🧠 Travail de fond :
+• Suivi psychologique recommandé
+• Journal alimentaire émotionnel
+• Techniques de gestion du stress
+• Groupe de parole
+
+La chirurgie opère l'estomac, pas la tête. Le travail psychologique est essentiel.""",
+            "source": "AFDN",
+            "read_time": "5 min",
+            "image": "https://images.unsplash.com/photo-1493836512294-502baa1986e2?w=400"
+        },
+        {
+            "title": "La peau après une perte de poids importante",
+            "category": "corps",
+            "surgery": "both",
+            "summary": "Comment prendre soin de sa peau et options de chirurgie réparatrice.",
+            "content": """L'excès de peau est fréquent après une perte de poids massive. Voici ce qu'il faut savoir.
+
+📉 Pourquoi la peau ne se rétracte pas toujours ?
+• Perte de poids rapide
+• Âge
+• Exposition solaire passée
+• Qualité de la peau
+• Quantité de poids perdu
+
+🧴 Soins préventifs :
+• Hydratation (eau + crèmes)
+• Exercice physique (muscle = meilleur aspect)
+• Apports en protéines suffisants
+• Pas de tabac
+• Protection solaire
+
+💪 Zones les plus touchées :
+• Ventre (tablier abdominal)
+• Bras
+• Cuisses
+• Poitrine
+• Visage
+
+🏥 Chirurgie réparatrice :
+
+Quand l'envisager ?
+• Poids stable depuis 12-18 mois
+• Retentissement fonctionnel ou psychologique
+
+Interventions possibles :
+• Abdominoplastie
+• Lifting des bras/cuisses
+• Bodylift circulaire
+
+💶 Prise en charge :
+• Certaines interventions remboursées (tablier gênant)
+• Dossier à constituer avec photos
+• Délais variables selon régions
+
+Le plus important : accepter ce nouveau corps qui vous a permis de reprendre votre santé en main.""",
+            "source": "SOFFCO",
+            "read_time": "5 min",
+            "image": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+        },
+        {
+            "title": "Alcool et chirurgie bariatrique",
+            "category": "santé",
+            "surgery": "both",
+            "summary": "Pourquoi l'alcool est plus dangereux après une chirurgie et les précautions à prendre.",
+            "content": """L'alcool après chirurgie bariatrique présente des risques particuliers qu'il est crucial de comprendre.
+
+⚠️ Pourquoi c'est différent ?
+
+Après la chirurgie :
+• L'alcool passe plus vite dans le sang
+• Effet plus rapide et plus fort
+• Élimination plus lente
+• Même quantité = effet x2 ou x3
+
+🚨 Risques spécifiques :
+
+Pour tous :
+• Ivresse rapide et imprévue
+• Hypoglycémie
+• Déshydratation
+• Calories vides = reprise de poids
+• Risque d'addiction transférée
+
+Après bypass :
+• Dumping syndrome
+• Absorption encore plus rapide
+• Carences aggravées
+
+📋 Recommandations :
+
+Période post-op immédiate :
+❌ Aucun alcool les 6 premiers mois minimum
+
+Après stabilisation :
+• Jamais l'estomac vide
+• Portions très réduites
+• Tester chez soi d'abord
+• Ne pas conduire
+• Éviter les cocktails sucrés
+
+🍷 Si vous buvez :
+• 1 verre peut = 3 verres d'effet
+• Préférer le vin rouge
+• Beaucoup d'eau avant/après
+• Manger quelque chose avec
+
+Le plus sûr reste l'abstinence. Parlez-en à votre équipe si vous avez du mal à vous limiter.""",
+            "source": "HAS",
+            "read_time": "4 min",
+            "image": "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400"
+        },
+        {
+            "title": "Plateau de perte de poids : que faire ?",
+            "category": "motivation",
+            "surgery": "both",
+            "summary": "Comprendre et surmonter les phases de stagnation.",
+            "content": """Les plateaux sont normaux et font partie du processus. Voici comment les gérer.
+
+📊 Qu'est-ce qu'un plateau ?
+• Stagnation du poids pendant 2-4 semaines
+• Malgré le respect des règles
+• Partie normale du processus
+
+🧬 Pourquoi ça arrive ?
+• Le corps s'adapte au nouveau poids
+• Le métabolisme ralentit
+• Parfois : perte de gras + gain de muscle
+
+✅ Ce qu'il faut faire :
+
+1. Ne pas paniquer !
+Le plateau finit toujours par passer
+
+2. Vérifier les bases :
+• Apport protéique suffisant ?
+• Hydratation OK ?
+• Activité physique régulière ?
+• Pas de grignotage caché ?
+
+3. Ajustements possibles :
+• Varier l'activité physique
+• Revoir les portions
+• Tenir un journal alimentaire
+• Peser/mesurer précisément
+
+4. Ce qui ne fonctionne PAS :
+❌ Sauter des repas
+❌ Régimes restrictifs
+❌ Compléments "miracle"
+
+📏 Autres mesures que le poids :
+• Tour de taille
+• Vêtements qui changent
+• Énergie
+• Santé globale
+
+⏳ Patience !
+La perte de poids post-chirurgie dure 12-18 mois. Les plateaux sont des pauses, pas des échecs.""",
+            "source": "CHU",
+            "read_time": "4 min",
+            "image": "https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=400"
+        },
+        {
+            "title": "RGO et bypass gastrique",
+            "category": "bypass",
+            "surgery": "bypass",
+            "summary": "Le reflux gastro-œsophagien : amélioration fréquente après bypass.",
+            "content": """Le bypass gastrique peut significativement améliorer le reflux gastro-œsophagien (RGO). Voici pourquoi.
+
+🔬 Comment le bypass aide ?
+• Réduction de la production d'acide
+• Le petit estomac ne reflue plus
+• Amélioration chez 70-90% des patients
+
+📈 Bénéfices observés :
+• Diminution/arrêt des IPP
+• Moins de brûlures
+• Meilleur sommeil
+• Qualité de vie améliorée
+
+⚠️ Cas particuliers :
+Parfois le RGO persiste ou apparaît :
+• Vérifier avec votre chirurgien
+• Examens si nécessaire
+• Ajustements possibles
+
+vs SLEEVE :
+• La sleeve peut AGGRAVER le RGO
+• C'est une contre-indication relative
+• Le bypass est préféré si RGO préexistant
+
+🏥 Avant l'opération :
+• Mentionnez tout RGO au chirurgien
+• Fibroscopie souvent recommandée
+• Choix de technique adapté
+
+💊 Après l'opération :
+• Les IPP sont souvent arrêtés progressivement
+• Toujours sous supervision médicale
+• Signaler tout retour des symptômes
+
+Le bypass reste la technique de choix pour les patients souffrant de RGO sévère.""",
+            "source": "SOFFCO",
+            "read_time": "4 min",
+            "image": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=400"
+        },
+        {
+            "title": "Chute de cheveux post-opératoire",
+            "category": "santé",
+            "surgery": "both",
+            "summary": "Causes, durée et solutions pour limiter la perte de cheveux.",
+            "content": """La chute de cheveux après chirurgie bariatrique est fréquente mais temporaire. Voici ce qu'il faut savoir.
+
+📅 Quand ça arrive ?
+• 2 à 4 mois après l'opération
+• Pic vers le 4ème mois
+• Repousse à partir du 6ème mois
+
+🔍 Pourquoi ?
+• Stress de la chirurgie
+• Perte de poids rapide
+• Carences nutritionnelles
+• Déficit protéique
+
+⏳ Combien de temps ?
+• Phase aiguë : 3-6 mois
+• Repousse : progressive
+• Retour à la normale : 12-18 mois
+
+✅ Prévention et traitement :
+
+Nutrition :
+• Protéines : 60-80g/jour minimum
+• Zinc : supplément si carence
+• Biotine (B8) : peut aider
+• Fer : contrôler et supplémenter
+
+Soins externes :
+• Shampooing doux
+• Éviter chaleur excessive
+• Pas de coiffures tirées
+• Massage du cuir chevelu
+
+🚨 Consulter si :
+• Chute massive
+• Pas de repousse après 12 mois
+• Autres symptômes associés
+
+💡 Rappel :
+Les cheveux repoussent presque toujours. Cette phase difficile est temporaire. Concentrez-vous sur votre nutrition !""",
+            "source": "AFDN",
+            "read_time": "4 min",
+            "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400"
+        },
+        {
+            "title": "Grossesse après chirurgie bariatrique",
+            "category": "santé",
+            "surgery": "both",
+            "summary": "Délais recommandés et suivi particulier pour une grossesse en sécurité.",
+            "content": """Une grossesse est tout à fait possible après chirurgie bariatrique, avec quelques précautions importantes.
+
+⏰ Délai recommandé :
+• Attendre 12 à 18 mois après l'opération
+• Poids stable depuis plusieurs mois
+• Pas de carences majeures
+
+Pourquoi attendre ?
+• Phase de perte de poids = stress métabolique
+• Carences à corriger avant
+• Meilleur pronostic pour bébé
+
+📋 Avant la conception :
+• Bilan nutritionnel complet
+• Ajustement des suppléments
+• Acide folique : commencer 3 mois avant
+• Consultation pré-conceptionnelle
+
+🤰 Pendant la grossesse :
+
+Suivi renforcé :
+• Gynécologue + équipe bariatrique
+• Bilans sanguins fréquents
+• Échographies classiques
+
+Nutrition :
+• Augmentation des besoins
+• Protéines : 70-90g/jour
+• Supplémentation adaptée
+• Pas de restriction calorique
+
+Surveillance :
+• Prise de poids modérée
+• Glycémie (diabète gestationnel)
+• Croissance fœtale
+
+⚠️ Particularités bypass :
+• Risque de carences accru
+• Attention au dumping
+• Ajuster vitamines/fer
+
+👶 Allaitement :
+• Possible et recommandé
+• Maintenir supplémentation
+• Surveillance bébé
+
+La chirurgie bariatrique améliore souvent la fertilité. Consultez avant de planifier !""",
+            "source": "HAS",
+            "read_time": "5 min",
+            "image": "https://images.unsplash.com/photo-1493894473891-10fc1e5dbd22?w=400"
+        },
+        {
+            "title": "Sleeve et reflux gastrique",
+            "category": "sleeve",
+            "surgery": "sleeve",
+            "summary": "Comprendre pourquoi le reflux peut apparaître après une sleeve.",
+            "content": """Le reflux gastro-œsophagien (RGO) peut apparaître ou s'aggraver après une sleeve. Voici les explications.
+
+🔬 Pourquoi la sleeve peut causer du RGO ?
+• Pression augmentée dans l'estomac réduit
+• Sphincter œsophagien parfois affaibli
+• Modification de l'anatomie
+
+📊 Fréquence :
+• RGO nouveau ou aggravé : 20-30% des cas
+• Amélioration pour certains patients
+• Variable selon les individus
+
+🚨 Symptômes à surveiller :
+• Brûlures d'estomac
+• Remontées acides
+• Toux nocturne
+• Goût acide dans la bouche
+• Difficulté à dormir
+
+✅ Gestion du RGO post-sleeve :
+
+Mode de vie :
+• Ne pas se coucher juste après manger
+• Surélever la tête du lit
+• Éviter aliments déclencheurs
+• Petites portions
+• Pas de vêtements serrés
+
+Aliments à éviter :
+❌ Café, thé fort
+❌ Alcool
+❌ Épices
+❌ Agrumes
+❌ Tomates
+❌ Chocolat
+
+💊 Traitement médicamenteux :
+• IPP (Oméprazole, etc.)
+• Souvent nécessaires à long terme
+• Surveillance régulière
+
+🏥 Si RGO sévère et résistant :
+• Fibroscopie de contrôle
+• Discussion d'une conversion en bypass
+• Décision au cas par cas
+
+Prévenez votre chirurgien si les symptômes persistent ou s'aggravent.""",
+            "source": "CHU",
+            "read_time": "4 min",
+            "image": "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400"
+        },
     ]
     
     # Filter by surgery type
