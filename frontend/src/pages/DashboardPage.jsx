@@ -41,7 +41,8 @@ import {
   MapPin,
   Edit,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Stethoscope
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
