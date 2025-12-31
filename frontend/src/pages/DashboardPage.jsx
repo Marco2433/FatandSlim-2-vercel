@@ -87,6 +87,10 @@ export default function DashboardPage() {
   const [recipeSearchQuery, setRecipeSearchQuery] = useState('');
   const [searchedRecipe, setSearchedRecipe] = useState(null);
   const [loadingSearch, setLoadingSearch] = useState(false);
+  
+  // Recipe Modal state
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
 
   // Check for midnight reset
   useEffect(() => {
