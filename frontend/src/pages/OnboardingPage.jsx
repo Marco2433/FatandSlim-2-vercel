@@ -490,24 +490,64 @@ export default function OnboardingPage() {
                 Important pour adapter vos repas et exercices (optionnel)
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-2">
-                {healthConditions.map((condition) => (
-                  <div
-                    key={condition.value}
-                    onClick={() => toggleArrayItem('health_conditions', condition.value)}
-                    className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
-                      formData.health_conditions.includes(condition.value)
-                        ? 'border-destructive bg-destructive/10'
-                        : 'border-border hover:border-destructive/50'
-                    }`}
-                  >
-                    <span>{condition.icon}</span>
-                    <span className="text-sm">{condition.label}</span>
-                  </div>
-                ))}
+            <CardContent className="space-y-6">
+              {/* Bariatric Surgery Option */}
+              <div className="p-4 border-2 border-primary/30 rounded-lg bg-primary/5">
+                <p className="font-medium mb-3 flex items-center gap-2">
+                  <Stethoscope className="w-5 h-5 text-primary" />
+                  Chirurgie bariatrique
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { value: 'bypass', label: 'By-pass gastrique', emoji: '🏥' },
+                    { value: 'sleeve', label: 'Sleeve gastrectomie', emoji: '🏥' },
+                  ].map((surgery) => (
+                    <div
+                      key={surgery.value}
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        bariatric_surgery: prev.bariatric_surgery === surgery.value ? null : surgery.value
+                      }))}
+                      className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
+                        formData.bariatric_surgery === surgery.value
+                          ? 'border-primary bg-primary/20'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <span>{surgery.emoji}</span>
+                      <span className="text-sm">{surgery.label}</span>
+                    </div>
+                  ))}
+                </div>
+                {formData.bariatric_surgery && (
+                  <p className="text-xs text-primary mt-2 flex items-center gap-1">
+                    <Info className="w-3 h-3" />
+                    Des questions supplémentaires vous seront posées à la fin du questionnaire
+                  </p>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground mt-4 flex items-center gap-1">
+
+              {/* Other Health Conditions */}
+              <div>
+                <p className="font-medium mb-3">Autres conditions</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {healthConditions.map((condition) => (
+                    <div
+                      key={condition.value}
+                      onClick={() => toggleArrayItem('health_conditions', condition.value)}
+                      className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
+                        formData.health_conditions.includes(condition.value)
+                          ? 'border-destructive bg-destructive/10'
+                          : 'border-border hover:border-destructive/50'
+                      }`}
+                    >
+                      <span>{condition.icon}</span>
+                      <span className="text-sm">{condition.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
                 Ces informations restent confidentielles et servent uniquement à personnaliser vos recommandations
               </p>
