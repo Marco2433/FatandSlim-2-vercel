@@ -4572,43 +4572,8 @@ async def get_activity_feed(user: dict = Depends(get_current_user), limit: int =
     
     return {"activities": result}
 
-@api_router.post("/social/post")
-async def create_post(data: dict, user: dict = Depends(get_current_user)):
-    """Create a new post with optional image and group"""
-    content = data.get("content", "").strip()
-    post_type = data.get("type", "text")  # text, achievement, recipe, image, program
-    image = data.get("image")
-    recipe_id = data.get("recipe_id")
-    group_id = data.get("group_id")  # For group posts
-    visibility = data.get("visibility", "public")  # public, friends, group
-    
-    if not content and not image and not recipe_id:
-        raise HTTPException(status_code=400, detail="Content, image or recipe required")
-    
-    activity = {
-        "activity_id": f"post_{uuid.uuid4().hex[:8]}",
-        "user_id": user["user_id"],
-        "type": post_type,
-        "content": content,
-        "image": image,
-        "recipe_id": recipe_id,
-        "group_id": group_id,
-        "visibility": visibility,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    await db.social_activities.insert_one(activity)
-    
-    # Return the created activity with user info for immediate display
-    activity["user_name"] = user.get("name", "Utilisateur")
-    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
-    activity["user_picture"] = profile.get("picture") if profile else user.get("picture")
-    activity["likes_count"] = 0
-    activity["user_liked"] = False
-    activity["comments"] = []
-    activity["comments_count"] = 0
-    
-    return {"message": "Post created", "activity": activity}
+# Old post endpoint - redirecting to new system
+# (Keeping comment endpoint for backward compatibility)
 
 @api_router.post("/social/comment")
 async def add_comment(data: dict, user: dict = Depends(get_current_user)):
