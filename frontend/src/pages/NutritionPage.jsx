@@ -503,6 +503,12 @@ export default function NutritionPage() {
     }
   };
 
+  // Request meal plan with warning
+  const requestMealPlan = (type) => {
+    setPendingAIAction(() => () => generateMealPlan(type));
+    setShowAIWarning(true);
+  };
+
   // Regenerate meal plan
   const regenerateMealPlan = () => {
     generateMealPlan(mealPlanType);
