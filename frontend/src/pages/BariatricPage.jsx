@@ -71,6 +71,10 @@ export default function BariatricPage() {
   // Disclaimer
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  
+  // Article modal
+  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [showArticleModal, setShowArticleModal] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
