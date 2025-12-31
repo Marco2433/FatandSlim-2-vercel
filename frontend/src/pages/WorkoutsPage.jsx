@@ -1257,6 +1257,15 @@ export default function WorkoutsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* AI Warning Dialog */}
+      <AIWarningDialog
+        open={showAIWarning}
+        onOpenChange={setShowAIWarning}
+        onConfirm={handleAIWarningConfirm}
+        title="Génération de programme IA"
+        description="Cette fonctionnalité utilise l'intelligence artificielle et consomme un crédit quotidien."
+      />
     </div>
   );
 }
