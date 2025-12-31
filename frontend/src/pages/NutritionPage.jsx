@@ -58,7 +58,9 @@ const mealTypes = [
 
 export default function NutritionPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('today');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam || 'today');
   const [dailySummary, setDailySummary] = useState(null);
   const [foodLogs, setFoodLogs] = useState([]);
   const [diary, setDiary] = useState([]);
