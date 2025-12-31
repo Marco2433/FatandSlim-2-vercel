@@ -75,27 +75,27 @@ const DIFFICULTY_LABELS = {
 
 // Coach IA program durations
 const PROGRAM_DURATIONS = [
-  { value: 'week', label: '1 semaine' },
-  { value: '15days', label: '15 jours' },
-  { value: 'month', label: '1 mois' },
-  { value: '3months', label: '3 mois' },
-  { value: '6months', label: '6 mois' },
-  { value: 'year', label: '1 an' },
+  { value: 'week', label: '1 semaine', desc: 'Découverte' },
+  { value: '15days', label: '15 jours', desc: 'Court terme' },
+  { value: 'month', label: '1 mois', desc: 'Standard' },
+  { value: '3months', label: '3 mois', desc: 'Résultats visibles' },
+  { value: '6months', label: '6 mois', desc: 'Transformation' },
+  { value: 'year', label: '1 an', desc: 'Long terme' },
 ];
 
 const TIME_OF_DAY = [
-  { value: 'morning', label: 'Matin' },
-  { value: 'noon', label: 'Midi' },
-  { value: 'afternoon', label: 'Après-midi' },
-  { value: 'evening', label: 'Soirée' },
+  { value: 'morning', label: '🌅 Matin', desc: '6h-10h' },
+  { value: 'noon', label: '☀️ Midi', desc: '11h-14h' },
+  { value: 'afternoon', label: '🌤️ Après-midi', desc: '15h-18h' },
+  { value: 'evening', label: '🌙 Soirée', desc: '19h-22h' },
 ];
 
 const DAILY_DURATION = [
-  { value: '15', label: '15 minutes' },
-  { value: '30', label: '30 minutes' },
-  { value: '45', label: '45 minutes' },
-  { value: '60', label: '1 heure' },
-  { value: '90', label: '1h30' },
+  { value: '15', label: '15 min', desc: 'Express' },
+  { value: '30', label: '30 min', desc: 'Standard' },
+  { value: '45', label: '45 min', desc: 'Complet' },
+  { value: '60', label: '1h', desc: 'Intensif' },
+  { value: '90', label: '1h30', desc: 'Pro' },
 ];
 
 const BODY_PARTS = [
@@ -109,6 +109,32 @@ const BODY_PARTS = [
   { id: 'legs', label: 'Jambes', emoji: '🦿' },
   { id: 'glutes', label: 'Fessiers', emoji: '🍑' },
   { id: 'cardio', label: 'Cardio', emoji: '❤️' },
+];
+
+const FITNESS_LEVELS = [
+  { value: 'beginner', label: 'Débutant', emoji: '🌱', desc: 'Je commence le sport' },
+  { value: 'intermediate', label: 'Intermédiaire', emoji: '💪', desc: 'Je pratique régulièrement' },
+  { value: 'advanced', label: 'Avancé', emoji: '🔥', desc: 'Je suis très actif' },
+  { value: 'expert', label: 'Expert', emoji: '🏆', desc: 'Sportif confirmé' },
+];
+
+const TRAINING_FREQUENCY = [
+  { value: '2', label: '2x/semaine', desc: 'Léger' },
+  { value: '3', label: '3x/semaine', desc: 'Modéré' },
+  { value: '4', label: '4x/semaine', desc: 'Régulier' },
+  { value: '5', label: '5x/semaine', desc: 'Intense' },
+  { value: '6', label: '6x/semaine', desc: 'Pro' },
+];
+
+const TRAINING_GOALS = [
+  { id: 'weight_loss', label: 'Perdre du poids', emoji: '⬇️' },
+  { id: 'muscle_gain', label: 'Gagner en muscle', emoji: '💪' },
+  { id: 'endurance', label: 'Améliorer l\'endurance', emoji: '🏃' },
+  { id: 'flexibility', label: 'Gagner en souplesse', emoji: '🧘' },
+  { id: 'strength', label: 'Devenir plus fort', emoji: '🏋️' },
+  { id: 'toning', label: 'Me tonifier', emoji: '✨' },
+  { id: 'health', label: 'Être en meilleure santé', emoji: '❤️' },
+  { id: 'stress', label: 'Réduire le stress', emoji: '🧠' },
 ];
 
 // Congratulation messages for video completion
