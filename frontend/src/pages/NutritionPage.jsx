@@ -628,6 +628,24 @@ export default function NutritionPage() {
     }
   };
 
+  // Request search with warning
+  const requestSearchRecipe = () => {
+    if (!recipeSearchQuery.trim()) {
+      toast.error('Veuillez entrer une description de recette');
+      return;
+    }
+    setPendingAIAction(() => searchRecipeByAI);
+    setShowAIWarning(true);
+  };
+
+  // Handle AI warning confirmation
+  const handleAIWarningConfirm = () => {
+    if (pendingAIAction) {
+      pendingAIAction();
+      setPendingAIAction(null);
+    }
+  };
+
   const toggleFavoriteRecipe = async (recipe, e) => {
     if (e) e.stopPropagation();
     const isFavorite = favoriteRecipes.some(f => f.recipe.name === recipe.name);
