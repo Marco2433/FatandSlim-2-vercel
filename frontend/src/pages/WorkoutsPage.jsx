@@ -43,21 +43,26 @@ import {
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-// Video categories
+// Video categories - plus de catégories
 const VIDEO_CATEGORIES = [
   { id: 'all', label: 'Toutes', icon: Video },
   { id: 'home', label: 'Maison', icon: Home },
   { id: 'gym', label: 'Salle', icon: Building2 },
-  { id: 'gainage', label: 'Gainage', icon: Dumbbell },
   { id: 'cardio', label: 'Cardio', icon: Heart },
   { id: 'musculation', label: 'Musculation', icon: Dumbbell },
-  { id: 'fitness', label: 'Fitness', icon: Zap },
-  { id: 'yoga', label: 'Yoga', icon: Heart },
   { id: 'hiit', label: 'HIIT', icon: Flame },
+  { id: 'gainage', label: 'Gainage', icon: Target },
+  { id: 'yoga', label: 'Yoga', icon: Heart },
+  { id: 'fitness', label: 'Fitness', icon: Zap },
   { id: 'stretching', label: 'Étirements', icon: Timer },
   { id: 'abdos', label: 'Abdos', icon: Target },
   { id: 'jambes', label: 'Jambes', icon: Dumbbell },
   { id: 'bras', label: 'Bras', icon: Dumbbell },
+  { id: 'dos', label: 'Dos', icon: Dumbbell },
+  { id: 'pectoraux', label: 'Pectoraux', icon: Dumbbell },
+  { id: 'fessiers', label: 'Fessiers', icon: Zap },
+  { id: 'debutant', label: 'Débutant', icon: Target },
+  { id: 'expert', label: 'Expert', icon: Trophy },
 ];
 
 // Difficulty levels
