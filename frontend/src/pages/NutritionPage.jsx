@@ -1394,7 +1394,7 @@ export default function NutritionPage() {
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <Button 
-                    onClick={() => generateMealPlan('daily')}
+                    onClick={() => requestMealPlan('daily')}
                     className="rounded-full"
                     variant="outline"
                   >
@@ -1402,7 +1402,7 @@ export default function NutritionPage() {
                     Plan journalier
                   </Button>
                   <Button 
-                    onClick={() => generateMealPlan('weekly')}
+                    onClick={() => requestMealPlan('weekly')}
                     className="rounded-full"
                   >
                     <Calendar className="w-4 h-4 mr-2" />
@@ -1425,7 +1425,7 @@ export default function NutritionPage() {
                   Découvrez des recettes simples, économiques et adaptées à vos préférences.
                 </p>
                 <Button 
-                  onClick={generateRecipes}
+                  onClick={requestRecipes}
                   className="w-full rounded-full shadow-glow-purple bg-secondary hover:bg-secondary/90"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
