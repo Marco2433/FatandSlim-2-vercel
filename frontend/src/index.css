@@ -236,6 +236,11 @@
     padding-bottom: calc(4rem + env(safe-area-inset-bottom));
 }
 
+/* Safe area top for PWA headers */
+.safe-area-top {
+    padding-top: env(safe-area-inset-top, 0);
+}
+
 /* Nutri-score colors */
 .nutri-a { @apply bg-green-500 text-white; }
 .nutri-b { @apply bg-lime-500 text-white; }
