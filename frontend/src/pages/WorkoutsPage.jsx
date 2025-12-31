@@ -174,12 +174,17 @@ export default function WorkoutsPage() {
   const [generatedProgram, setGeneratedProgram] = useState(null);
   const [coachConfig, setCoachConfig] = useState({
     duration: 'month',
+    frequency: '3',
+    fitnessLevel: 'beginner',
     timeOfDay: 'morning',
     dailyDuration: '30',
     bodyParts: [],
+    trainingGoals: [],
     equipment: 'none',
     goals: '',
     injuries: '',
+    age: '',
+    weight: '',
   });
   
   // AI Warning state
