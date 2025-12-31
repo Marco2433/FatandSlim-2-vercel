@@ -700,18 +700,28 @@ async def complete_onboarding(data: OnboardingData, user: dict = Depends(get_cur
         
         # Add surgery to agenda if date is in the future
         if data.bariatric_surgery_date:
-            surgery_date = datetime.fromisoformat(data.bariatric_surgery_date.replace('Z', '+00:00'))
-            if surgery_date > datetime.now(timezone.utc):
-                surgery_name = "By-pass gastrique" if data.bariatric_surgery == "bypass" else "Sleeve gastrectomie"
-                await db.agenda_events.insert_one({
-                    "event_id": f"event_{uuid.uuid4().hex[:8]}",
-                    "user_id": user["user_id"],
-                    "title": f"🏥 {surgery_name}",
-                    "description": f"Opération bariatrique - {data.bariatric_clinic or 'Hôpital'}",
-                    "date": data.bariatric_surgery_date,
-                    "type": "surgery",
-                    "created_at": datetime.now(timezone.utc).isoformat()
-                })
+            try:
+                surgery_date_str = data.bariatric_surgery_date
+                # Handle both date-only and datetime formats
+                if 'T' not in surgery_date_str:
+                    surgery_date_str = surgery_date_str + 'T00:00:00+00:00'
+                elif '+' not in surgery_date_str and 'Z' not in surgery_date_str:
+                    surgery_date_str = surgery_date_str + '+00:00'
+                surgery_date = datetime.fromisoformat(surgery_date_str.replace('Z', '+00:00'))
+                
+                if surgery_date > datetime.now(timezone.utc):
+                    surgery_name = "By-pass gastrique" if data.bariatric_surgery == "bypass" else "Sleeve gastrectomie"
+                    await db.agenda_events.insert_one({
+                        "event_id": f"event_{uuid.uuid4().hex[:8]}",
+                        "user_id": user["user_id"],
+                        "title": f"🏥 {surgery_name}",
+                        "description": f"Opération bariatrique - {data.bariatric_clinic or 'Hôpital'}",
+                        "date": data.bariatric_surgery_date,
+                        "type": "surgery",
+                        "created_at": datetime.now(timezone.utc).isoformat()
+                    })
+            except Exception as e:
+                logger.warning(f"Could not parse surgery date: {e}")
     
     await db.user_profiles.update_one(
         {"user_id": user["user_id"]},
