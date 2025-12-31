@@ -404,9 +404,9 @@ export default function DashboardPage() {
             onClick={() => navigate('/profile')}
             className="relative"
           >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-              {user?.picture ? (
-                <img src={user.picture} alt="Profile" className="w-full h-full rounded-full object-cover" />
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center overflow-hidden">
+              {(userStats?.picture || user?.picture) ? (
+                <img src={userStats?.picture || user?.picture} alt="Profile" className="w-full h-full rounded-full object-cover" />
               ) : (
                 <span className="text-white font-bold">{user?.name?.[0]}</span>
               )}
@@ -440,10 +440,10 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Badges Display */}
-        {userStats?.badges && (
+        {/* Recent Badges Display - Show last 3 earned badges */}
+        {userStats?.recent_badges && userStats.recent_badges.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-            {userStats.badges.filter(b => b.earned).map((badge) => (
+            {userStats.recent_badges.slice(0, 3).map((badge) => (
               <div 
                 key={badge.id}
                 className="flex-shrink-0 px-3 py-2 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30"
