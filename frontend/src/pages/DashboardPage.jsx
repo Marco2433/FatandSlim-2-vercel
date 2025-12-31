@@ -398,8 +398,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background pb-safe" data-testid="dashboard-page">
-      {/* Header */}
-      <header className="sticky top-0 z-10 px-4 py-4 bg-background/80 backdrop-blur-lg border-b border-border">
+      {/* Header - Sans marge supérieure */}
+      <header className="sticky top-0 z-10 px-4 pt-2 pb-3 bg-background/80 backdrop-blur-lg border-b border-border safe-area-top">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-heading text-xl font-bold">
