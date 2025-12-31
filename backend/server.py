@@ -4925,7 +4925,545 @@ async def get_leaderboard(user: dict = Depends(get_current_user)):
     
     return {"leaderboard": leaderboard}
 
-# --- Groups (Communities) ---
+# --- Enhanced Leaderboards (Friends, Global, Group) ---
+@api_router.get("/social/leaderboard/{leaderboard_type}")
+async def get_enhanced_leaderboard(leaderboard_type: str, group_id: str = None, user: dict = Depends(get_current_user)):
+    """
+    Get leaderboard: 'friends', 'global', or 'group'
+    For 'group' type, pass group_id as query param
+    """
+    leaderboard = []
+    
+    if leaderboard_type == "friends":
+        # Friends leaderboard (existing logic)
+        friendships = await db.friendships.find({
+            "$or": [{"user_id": user["user_id"]}, {"friend_id": user["user_id"]}],
+            "status": "accepted"
+        }, {"_id": 0}).to_list(100)
+        
+        user_ids = [user["user_id"]]
+        for f in friendships:
+            user_ids.append(f["friend_id"] if f["user_id"] == user["user_id"] else f["user_id"])
+            
+    elif leaderboard_type == "global":
+        # Get all users with points
+        all_points = await db.user_points.find({}, {"_id": 0}).sort("total_points", -1).limit(100).to_list(100)
+        user_ids = [p["user_id"] for p in all_points]
+        # Add current user if not in list
+        if user["user_id"] not in user_ids:
+            user_ids.append(user["user_id"])
+            
+    elif leaderboard_type == "group" and group_id:
+        # Get group members
+        members = await db.group_members.find({"group_id": group_id}, {"_id": 0}).to_list(500)
+        user_ids = [m["user_id"] for m in members]
+    else:
+        raise HTTPException(status_code=400, detail="Invalid leaderboard type")
+    
+    # Get points for all users
+    for uid in user_ids:
+        u = await db.users.find_one({"user_id": uid}, {"_id": 0, "password_hash": 0})
+        points_doc = await db.user_points.find_one({"user_id": uid}, {"_id": 0})
+        badges_count = await db.user_badges.count_documents({"user_id": uid})
+        
+        if u:
+            leaderboard.append({
+                "user_id": uid,
+                "name": u.get("name", "Utilisateur"),
+                "picture": u.get("picture"),
+                "total_points": points_doc.get("total_points", 0) if points_doc else 0,
+                "badges_count": badges_count,
+                "is_self": uid == user["user_id"]
+            })
+    
+    # Sort by points
+    leaderboard.sort(key=lambda x: x["total_points"], reverse=True)
+    
+    # Add rank
+    for i, entry in enumerate(leaderboard):
+        entry["rank"] = i + 1
+    
+    return {"leaderboard": leaderboard, "type": leaderboard_type}
+
+# --- Public Feed (All Users) ---
+@api_router.get("/social/feed/public")
+async def get_public_feed(limit: int = 50, user: dict = Depends(get_current_user)):
+    """Get public feed with all users' posts"""
+    posts = await db.social_posts.find(
+        {"is_public": {"$ne": False}},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    result = []
+    for post in posts:
+        poster = await db.users.find_one({"user_id": post["user_id"]}, {"_id": 0, "password_hash": 0})
+        likes_count = await db.post_likes.count_documents({"post_id": post["post_id"]})
+        user_liked = await db.post_likes.find_one({"post_id": post["post_id"], "user_id": user["user_id"]}) is not None
+        comments_count = await db.post_comments.count_documents({"post_id": post["post_id"]})
+        
+        result.append({
+            **post,
+            "user_name": poster.get("name") if poster else "Utilisateur",
+            "user_picture": poster.get("picture") if poster else None,
+            "likes_count": likes_count,
+            "user_liked": user_liked,
+            "comments_count": comments_count
+        })
+    
+    return {"posts": result}
+
+# --- Group Feed ---
+@api_router.get("/social/groups/{group_id}/feed")
+async def get_group_feed(group_id: str, limit: int = 50, user: dict = Depends(get_current_user)):
+    """Get feed for a specific group"""
+    # Check if user is member
+    is_member = await db.group_members.find_one({"group_id": group_id, "user_id": user["user_id"]})
+    if not is_member:
+        raise HTTPException(status_code=403, detail="You must be a member to see this feed")
+    
+    posts = await db.social_posts.find(
+        {"group_id": group_id},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    result = []
+    for post in posts:
+        poster = await db.users.find_one({"user_id": post["user_id"]}, {"_id": 0, "password_hash": 0})
+        likes_count = await db.post_likes.count_documents({"post_id": post["post_id"]})
+        user_liked = await db.post_likes.find_one({"post_id": post["post_id"], "user_id": user["user_id"]}) is not None
+        comments_count = await db.post_comments.count_documents({"post_id": post["post_id"]})
+        
+        result.append({
+            **post,
+            "user_name": poster.get("name") if poster else "Utilisateur",
+            "user_picture": poster.get("picture") if poster else None,
+            "likes_count": likes_count,
+            "user_liked": user_liked,
+            "comments_count": comments_count
+        })
+    
+    return {"posts": result, "group_id": group_id}
+
+# --- Enhanced Post Creation with Image Support ---
+@api_router.post("/social/post")
+async def create_post(data: dict, user: dict = Depends(get_current_user)):
+    """Create a new post with optional image and group_id"""
+    content = data.get("content", "").strip()
+    image_url = data.get("image_url")  # Base64 or URL
+    image_base64 = data.get("image_base64")  # Direct base64 data
+    post_type = data.get("type", "text")  # text, image, share_program, share_recipe
+    group_id = data.get("group_id")  # If posting to a group
+    shared_item = data.get("shared_item")  # For sharing programs/recipes
+    is_public = data.get("is_public", True)
+    
+    if not content and not image_url and not image_base64 and not shared_item:
+        raise HTTPException(status_code=400, detail="Content, image or shared item required")
+    
+    # If posting to a group, verify membership
+    if group_id:
+        is_member = await db.group_members.find_one({"group_id": group_id, "user_id": user["user_id"]})
+        if not is_member:
+            raise HTTPException(status_code=403, detail="You must be a member to post in this group")
+    
+    post = {
+        "post_id": f"post_{uuid.uuid4().hex[:12]}",
+        "user_id": user["user_id"],
+        "content": content,
+        "type": post_type,
+        "image_url": image_url,
+        "image_base64": image_base64,
+        "group_id": group_id,
+        "shared_item": shared_item,
+        "is_public": is_public if not group_id else False,  # Group posts are private
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.social_posts.insert_one(post)
+    
+    # Award points for posting
+    await db.user_points.update_one(
+        {"user_id": user["user_id"]},
+        {"$inc": {"total_points": 5}, "$setOnInsert": {"created_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    
+    return {"message": "Post created", "post": {k: v for k, v in post.items() if k != "_id"}}
+
+# --- Upload Image for Post ---
+@api_router.post("/social/upload-image")
+async def upload_post_image(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    """Upload an image for a post, returns base64 data"""
+    contents = await file.read()
+    
+    # Check file size (max 5MB)
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image too large (max 5MB)")
+    
+    # Convert to base64
+    image_base64 = base64.b64encode(contents).decode()
+    content_type = file.content_type or "image/jpeg"
+    
+    # Return data URL
+    data_url = f"data:{content_type};base64,{image_base64}"
+    
+    return {"image_url": data_url}
+
+# --- Post Comments ---
+@api_router.get("/social/post/{post_id}/comments")
+async def get_post_comments(post_id: str, user: dict = Depends(get_current_user)):
+    """Get comments for a post"""
+    comments = await db.post_comments.find(
+        {"post_id": post_id},
+        {"_id": 0}
+    ).sort("created_at", 1).to_list(100)
+    
+    result = []
+    for comment in comments:
+        commenter = await db.users.find_one({"user_id": comment["user_id"]}, {"_id": 0, "password_hash": 0})
+        result.append({
+            **comment,
+            "user_name": commenter.get("name") if commenter else "Utilisateur",
+            "user_picture": commenter.get("picture") if commenter else None
+        })
+    
+    return {"comments": result}
+
+@api_router.post("/social/post/{post_id}/comment")
+async def add_comment(post_id: str, data: dict, user: dict = Depends(get_current_user)):
+    """Add a comment to a post"""
+    content = data.get("content", "").strip()
+    
+    if not content:
+        raise HTTPException(status_code=400, detail="Content required")
+    
+    # Verify post exists
+    post = await db.social_posts.find_one({"post_id": post_id})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    comment = {
+        "comment_id": f"cmt_{uuid.uuid4().hex[:8]}",
+        "post_id": post_id,
+        "user_id": user["user_id"],
+        "content": content,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.post_comments.insert_one(comment)
+    
+    # Notify post owner
+    if post["user_id"] != user["user_id"]:
+        await create_notification(post["user_id"], "comment", f"{user.get('name', 'Quelqu\'un')} a commenté votre publication", user["user_id"])
+    
+    return {"message": "Comment added", "comment": {k: v for k, v in comment.items() if k != "_id"}}
+
+# --- Like Posts ---
+@api_router.post("/social/post/{post_id}/like")
+async def like_post(post_id: str, user: dict = Depends(get_current_user)):
+    """Like or unlike a post"""
+    existing = await db.post_likes.find_one({"post_id": post_id, "user_id": user["user_id"]})
+    
+    if existing:
+        # Unlike
+        await db.post_likes.delete_one({"post_id": post_id, "user_id": user["user_id"]})
+        return {"message": "Post unliked", "liked": False}
+    else:
+        # Like
+        await db.post_likes.insert_one({
+            "post_id": post_id,
+            "user_id": user["user_id"],
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        # Notify post owner
+        post = await db.social_posts.find_one({"post_id": post_id})
+        if post and post["user_id"] != user["user_id"]:
+            await create_notification(post["user_id"], "like", f"{user.get('name', 'Quelqu\'un')} aime votre publication", user["user_id"])
+        
+        return {"message": "Post liked", "liked": True}
+
+# --- Share Program to Community ---
+@api_router.post("/social/share/program")
+async def share_program(data: dict, user: dict = Depends(get_current_user)):
+    """Share a workout program to community feed"""
+    program = data.get("program")
+    group_id = data.get("group_id")  # Optional - share to group
+    message = data.get("message", "")
+    
+    if not program:
+        raise HTTPException(status_code=400, detail="Program required")
+    
+    content = f"💪 Je partage mon programme d'entraînement: {program.get('name', 'Programme personnalisé')}"
+    if message:
+        content = f"{message}\n\n{content}"
+    
+    post = {
+        "post_id": f"post_{uuid.uuid4().hex[:12]}",
+        "user_id": user["user_id"],
+        "content": content,
+        "type": "share_program",
+        "shared_item": program,
+        "group_id": group_id,
+        "is_public": not group_id,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.social_posts.insert_one(post)
+    
+    return {"message": "Program shared", "post_id": post["post_id"]}
+
+# --- Share Recipe to Community ---
+@api_router.post("/social/share/recipe")
+async def share_recipe(data: dict, user: dict = Depends(get_current_user)):
+    """Share a recipe to community feed"""
+    recipe = data.get("recipe")
+    group_id = data.get("group_id")  # Optional - share to group
+    message = data.get("message", "")
+    
+    if not recipe:
+        raise HTTPException(status_code=400, detail="Recipe required")
+    
+    content = f"🍳 Je partage ma recette: {recipe.get('name', 'Recette')}"
+    if message:
+        content = f"{message}\n\n{content}"
+    
+    post = {
+        "post_id": f"post_{uuid.uuid4().hex[:12]}",
+        "user_id": user["user_id"],
+        "content": content,
+        "type": "share_recipe",
+        "shared_item": recipe,
+        "group_id": group_id,
+        "is_public": not group_id,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.social_posts.insert_one(post)
+    
+    return {"message": "Recipe shared", "post_id": post["post_id"]}
+
+# --- Group Daily Challenges ---
+@api_router.get("/social/groups/{group_id}/challenge")
+async def get_group_daily_challenge(group_id: str, user: dict = Depends(get_current_user)):
+    """Get today's challenge for a group"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Check if user is member
+    is_member = await db.group_members.find_one({"group_id": group_id, "user_id": user["user_id"]})
+    if not is_member:
+        raise HTTPException(status_code=403, detail="You must be a member")
+    
+    # Get or create today's challenge
+    challenge = await db.group_challenges.find_one({"group_id": group_id, "date": today}, {"_id": 0})
+    
+    if not challenge:
+        # Generate a random challenge
+        challenges_pool = [
+            {"type": "steps", "target": 10000, "description": "🚶 Marcher 10 000 pas", "points": 50},
+            {"type": "workout", "target": 1, "description": "💪 Faire 1 séance d'entraînement", "points": 30},
+            {"type": "water", "target": 8, "description": "💧 Boire 8 verres d'eau", "points": 20},
+            {"type": "healthy_meal", "target": 3, "description": "🥗 Manger 3 repas sains", "points": 40},
+            {"type": "stretching", "target": 1, "description": "🧘 Faire 10 min d'étirements", "points": 15},
+            {"type": "meditation", "target": 1, "description": "🧠 Méditer 5 minutes", "points": 15},
+            {"type": "sleep", "target": 8, "description": "😴 Dormir au moins 8h", "points": 25},
+            {"type": "no_sugar", "target": 1, "description": "🍬 Journée sans sucre ajouté", "points": 35},
+            {"type": "protein", "target": 100, "description": "🥩 Consommer 100g de protéines", "points": 30},
+            {"type": "cardio", "target": 30, "description": "❤️ 30 min de cardio", "points": 40},
+        ]
+        
+        random_challenge = random.choice(challenges_pool)
+        challenge = {
+            "challenge_id": f"gc_{uuid.uuid4().hex[:8]}",
+            "group_id": group_id,
+            "date": today,
+            **random_challenge,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.group_challenges.insert_one(challenge)
+    
+    # Check if user has accepted/completed
+    participation = await db.challenge_participations.find_one({
+        "challenge_id": challenge["challenge_id"],
+        "user_id": user["user_id"]
+    }, {"_id": 0})
+    
+    # Count participants
+    participants_count = await db.challenge_participations.count_documents({"challenge_id": challenge["challenge_id"]})
+    completions_count = await db.challenge_participations.count_documents({"challenge_id": challenge["challenge_id"], "completed": True})
+    
+    return {
+        "challenge": {k: v for k, v in challenge.items() if k != "_id"},
+        "participation": participation,
+        "participants_count": participants_count,
+        "completions_count": completions_count
+    }
+
+@api_router.post("/social/groups/{group_id}/challenge/accept")
+async def accept_group_challenge(group_id: str, user: dict = Depends(get_current_user)):
+    """Accept today's group challenge"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    challenge = await db.group_challenges.find_one({"group_id": group_id, "date": today})
+    if not challenge:
+        raise HTTPException(status_code=404, detail="No challenge today")
+    
+    existing = await db.challenge_participations.find_one({
+        "challenge_id": challenge["challenge_id"],
+        "user_id": user["user_id"]
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Already participating")
+    
+    await db.challenge_participations.insert_one({
+        "participation_id": f"cp_{uuid.uuid4().hex[:8]}",
+        "challenge_id": challenge["challenge_id"],
+        "group_id": group_id,
+        "user_id": user["user_id"],
+        "accepted": True,
+        "completed": False,
+        "accepted_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"message": "Challenge accepted"}
+
+@api_router.post("/social/groups/{group_id}/challenge/complete")
+async def complete_group_challenge(group_id: str, user: dict = Depends(get_current_user)):
+    """Mark group challenge as completed"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    challenge = await db.group_challenges.find_one({"group_id": group_id, "date": today})
+    if not challenge:
+        raise HTTPException(status_code=404, detail="No challenge today")
+    
+    participation = await db.challenge_participations.find_one({
+        "challenge_id": challenge["challenge_id"],
+        "user_id": user["user_id"]
+    })
+    
+    if not participation:
+        raise HTTPException(status_code=400, detail="You haven't accepted this challenge")
+    
+    if participation.get("completed"):
+        raise HTTPException(status_code=400, detail="Already completed")
+    
+    # Mark as completed
+    await db.challenge_participations.update_one(
+        {"challenge_id": challenge["challenge_id"], "user_id": user["user_id"]},
+        {"$set": {"completed": True, "completed_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Award points
+    points = challenge.get("points", 20)
+    await db.user_points.update_one(
+        {"user_id": user["user_id"]},
+        {"$inc": {"total_points": points}, "$setOnInsert": {"created_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    
+    return {"message": f"Challenge completed! +{points} points", "points_earned": points}
+
+# --- Seed Fake Users ---
+@api_router.post("/social/seed-fake-users")
+async def seed_fake_users(data: dict = None, user: dict = Depends(get_current_user)):
+    """Create fake users for community simulation (admin only in production)"""
+    count = data.get("count", 100) if data else 100
+    
+    # Check if already seeded
+    existing_fake = await db.users.count_documents({"is_fake": True})
+    if existing_fake >= 50:
+        return {"message": f"Already have {existing_fake} fake users", "created": 0}
+    
+    # French first names
+    female_names = ["Marie", "Camille", "Léa", "Manon", "Emma", "Chloé", "Louise", "Jade", "Alice", "Sarah", 
+                   "Julie", "Laura", "Marion", "Pauline", "Clara", "Charlotte", "Anaïs", "Océane", "Margot", "Valentine",
+                   "Sophie", "Lucie", "Audrey", "Justine", "Mathilde", "Caroline", "Amélie", "Élodie", "Mélanie", "Aurélie"]
+    male_names = ["Thomas", "Lucas", "Hugo", "Maxime", "Alexandre", "Antoine", "Julien", "Nicolas", "Pierre", "Louis",
+                 "Clément", "Vincent", "François", "Guillaume", "Romain", "Mathieu", "Adrien", "Quentin", "Xavier", "Florian"]
+    
+    last_names = ["Martin", "Bernard", "Dubois", "Thomas", "Robert", "Richard", "Petit", "Durand", "Leroy", "Moreau",
+                 "Simon", "Laurent", "Lefebvre", "Michel", "Garcia", "David", "Bertrand", "Roux", "Vincent", "Fournier"]
+    
+    # Avatar URLs (using UI avatars service)
+    avatar_base = "https://ui-avatars.com/api/?background=random&name="
+    
+    groups = ["fitness", "cardio", "nutrition", "weight_loss", "muscle_gain", "yoga"]
+    
+    created = 0
+    female_count = int(count * 0.6)  # 60% female
+    
+    for i in range(min(count - existing_fake, 100)):
+        is_female = i < female_count
+        first_name = random.choice(female_names if is_female else male_names)
+        last_name = random.choice(last_names)
+        name = f"{first_name} {last_name}"
+        
+        user_id = f"fake_{uuid.uuid4().hex[:10]}"
+        email = f"{first_name.lower()}.{last_name.lower()}{random.randint(1,99)}@example.com"
+        
+        # Random stats
+        points = random.randint(100, 5000)
+        badges_count = random.randint(1, 15)
+        
+        fake_user = {
+            "user_id": user_id,
+            "email": email,
+            "name": name,
+            "picture": f"{avatar_base}{first_name}+{last_name}",
+            "onboarding_completed": True,
+            "is_premium": random.random() < 0.2,
+            "is_fake": True,
+            "gender": "female" if is_female else "male",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.users.insert_one(fake_user)
+        
+        # Add points
+        await db.user_points.insert_one({
+            "user_id": user_id,
+            "total_points": points,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        # Add to 1-3 random groups
+        user_groups = random.sample(groups, random.randint(1, 3))
+        for group_id in user_groups:
+            await db.group_members.insert_one({
+                "group_id": group_id,
+                "user_id": user_id,
+                "joined_at": datetime.now(timezone.utc).isoformat()
+            })
+        
+        # Create some random posts
+        post_contents = [
+            "Super séance aujourd'hui ! 💪",
+            "Je me sens en forme ! 🏋️",
+            "Objectif du jour atteint ✅",
+            "Petit déjeuner healthy 🥗",
+            "Merci pour vos encouragements ! ❤️",
+            "Nouvelle semaine, nouveaux objectifs 🎯",
+            "Le sport, c'est la vie ! 🏃",
+            "Progrès du mois, fier(e) de moi 📈",
+            "Recette du jour : smoothie protéiné 🍓",
+            "Motivation au top ! 🔥"
+        ]
+        
+        for _ in range(random.randint(0, 3)):
+            post = {
+                "post_id": f"post_{uuid.uuid4().hex[:12]}",
+                "user_id": user_id,
+                "content": random.choice(post_contents),
+                "type": "text",
+                "is_public": True,
+                "group_id": random.choice(user_groups) if random.random() < 0.5 else None,
+                "created_at": (datetime.now(timezone.utc) - timedelta(days=random.randint(0, 30))).isoformat()
+            }
+            await db.social_posts.insert_one(post)
+        
+        created += 1
+    
+    return {"message": f"Created {created} fake users", "created": created}
 @api_router.get("/social/groups")
 async def get_groups(user: dict = Depends(get_current_user)):
     """Get available groups/communities"""
