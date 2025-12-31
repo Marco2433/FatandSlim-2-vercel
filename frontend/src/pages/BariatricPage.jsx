@@ -37,7 +37,9 @@ import {
   User,
   Stethoscope,
   Apple,
-  Zap
+  Zap,
+  Share2,
+  Bell
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
