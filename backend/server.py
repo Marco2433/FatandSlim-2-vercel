@@ -4879,7 +4879,7 @@ async def sync_calendar_to_agenda(user: dict = Depends(get_current_user)):
 # --- Public Profiles ---
 @api_router.get("/social/profile/{user_id}")
 async def get_public_profile(user_id: str, current_user: dict = Depends(get_current_user)):
-    """Get a user's public profile"""
+    """Get a user's public profile with badges, points and objective"""
     user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
     if not user_doc:
         raise HTTPException(status_code=404, detail="User not found")
@@ -4889,12 +4889,22 @@ async def get_public_profile(user_id: str, current_user: dict = Depends(get_curr
     # Get badges
     user_badges = await db.user_badges.find({"user_id": user_id}, {"_id": 0}).to_list(100)
     
-    # Get challenge points
+    # Get points (total + challenge)
     user_points = await db.user_points.find_one({"user_id": user_id}, {"_id": 0})
     total_points = user_points.get("total_points", 0) if user_points else 0
+    challenge_points = user_points.get("challenge_points", 0) if user_points else 0
     
     # Get favorite recipes count
     favorite_count = await db.favorite_recipes.count_documents({"user_id": user_id})
+    
+    # Get posts count
+    posts_count = await db.social_posts.count_documents({"user_id": user_id})
+    
+    # Get friends count
+    friends_count = await db.friendships.count_documents({
+        "$or": [{"user_id": user_id}, {"friend_id": user_id}],
+        "status": "accepted"
+    })
     
     # Check friendship status
     friendship = await db.friendships.find_one({
@@ -4908,19 +4918,27 @@ async def get_public_profile(user_id: str, current_user: dict = Depends(get_curr
     is_pending = friendship and friendship.get("status") == "pending"
     is_self = current_user["user_id"] == user_id
     
+    # Get objective from onboarding
+    objective = user_doc.get("objective") or (profile.get("goal") if profile else None)
+    
     return {
         "user_id": user_id,
         "name": user_doc.get("name", "Utilisateur"),
-        "picture": user_doc.get("picture") or profile.get("picture") if profile else None,
+        "picture": user_doc.get("picture") or (profile.get("picture") if profile else None),
+        "objective": objective,
         "goal": profile.get("goal") if profile else None,
         "fitness_level": profile.get("fitness_level") if profile else None,
         "badges": user_badges,
-        "badges_count": len(user_badges),
+        "badges_count": len(user_badges) or user_doc.get("badges_count", 0),
         "total_points": total_points,
+        "challenge_points": challenge_points,
         "favorite_recipes_count": favorite_count,
+        "posts_count": posts_count,
+        "friends_count": friends_count,
         "is_friend": is_friend,
         "is_pending": is_pending,
         "is_self": is_self,
+        "is_premium": user_doc.get("is_premium", False),
         "created_at": user_doc.get("created_at")
     }
 
