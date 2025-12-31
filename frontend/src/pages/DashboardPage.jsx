@@ -721,7 +721,8 @@ export default function DashboardPage() {
               {dailyRecipes.slice(0, 6).map((recipe, index) => (
                 <div 
                   key={index}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/30 transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/30 transition-colors cursor-pointer"
+                  onClick={() => { setSelectedRecipe(recipe); setShowRecipeModal(true); }}
                 >
                   {recipe.image && (
                     <img 
@@ -744,26 +745,6 @@ export default function DashboardPage() {
                       <span>{recipe.calories} kcal</span>
                       <span>•</span>
                       <span>{recipe.prep_time}</span>
-                    </div>
-                    <div className="flex gap-2 mt-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-6 text-xs px-2"
-                        onClick={() => addRecipeToFavorites(recipe)}
-                      >
-                        <Heart className="w-3 h-3 mr-1" />
-                        Favoris
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 text-xs px-2"
-                        onClick={() => addIngredientsToShoppingList(recipe.ingredients)}
-                      >
-                        <ShoppingCart className="w-3 h-3 mr-1" />
-                        Courses
-                      </Button>
                     </div>
                   </div>
                 </div>
