@@ -131,7 +131,14 @@ export default function OnboardingPage() {
   const { updateUser } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const totalSteps = 8;
+  
+  // Dynamic total steps based on bariatric selection
+  const getActualTotalSteps = () => {
+    if (formData.bariatric_surgery) {
+      return 10; // 8 normal + 2 bariatric steps
+    }
+    return 8;
+  };
 
   const [formData, setFormData] = useState({
     gender: '',
@@ -151,7 +158,22 @@ export default function OnboardingPage() {
     budget: 'medium',
     cooking_skill: 'intermediate',
     meals_per_day: 3,
+    // Bariatric fields
+    bariatric_surgery: null,
+    bariatric_surgery_date: '',
+    bariatric_pre_op_weight: '',
+    bariatric_pre_op_height: '',
+    bariatric_parcours: '',
+    bariatric_phase: null,
+    bariatric_supplements: [],
+    bariatric_intolerances: [],
+    bariatric_clinic: '',
+    bariatric_surgeon: '',
+    bariatric_nutritionist: '',
+    bariatric_psychologist: '',
   });
+
+  const totalSteps = getActualTotalSteps();
 
   const handleNext = () => {
     if (step < totalSteps) {
@@ -168,13 +190,21 @@ export default function OnboardingPage() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      await axios.post(`${API}/profile/onboarding`, {
+      const submitData = {
         ...formData,
         age: parseInt(formData.age),
         height: parseFloat(formData.height),
         weight: parseFloat(formData.weight),
         target_weight: parseFloat(formData.target_weight),
-      }, { withCredentials: true });
+      };
+      
+      // Add bariatric numeric fields if applicable
+      if (formData.bariatric_surgery) {
+        submitData.bariatric_pre_op_weight = formData.bariatric_pre_op_weight ? parseFloat(formData.bariatric_pre_op_weight) : null;
+        submitData.bariatric_pre_op_height = formData.bariatric_pre_op_height ? parseFloat(formData.bariatric_pre_op_height) : null;
+      }
+      
+      await axios.post(`${API}/profile/onboarding`, submitData, { withCredentials: true });
       
       updateUser({ onboarding_completed: true });
       toast.success('Profil complété ! Bienvenue 🎉');
