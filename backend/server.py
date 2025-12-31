@@ -663,6 +663,19 @@ async def complete_onboarding(data: OnboardingData, user: dict = Depends(get_cur
         "budget": data.budget,
         "cooking_skill": data.cooking_skill,
         "meals_per_day": data.meals_per_day,
+        # Bariatric data
+        "bariatric_surgery": data.bariatric_surgery,
+        "bariatric_surgery_date": data.bariatric_surgery_date,
+        "bariatric_pre_op_weight": data.bariatric_pre_op_weight,
+        "bariatric_pre_op_height": data.bariatric_pre_op_height,
+        "bariatric_parcours": data.bariatric_parcours,
+        "bariatric_phase": data.bariatric_phase,
+        "bariatric_supplements": data.bariatric_supplements or [],
+        "bariatric_intolerances": data.bariatric_intolerances or [],
+        "bariatric_clinic": data.bariatric_clinic,
+        "bariatric_surgeon": data.bariatric_surgeon,
+        "bariatric_nutritionist": data.bariatric_nutritionist,
+        "bariatric_psychologist": data.bariatric_psychologist,
         # Calculated targets with debug info
         "daily_calorie_target": round(calorie_target),
         "daily_protein_target": round(data.weight * protein_per_kg),
@@ -680,6 +693,25 @@ async def complete_onboarding(data: OnboardingData, user: dict = Depends(get_cur
         },
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
+    
+    # Initialize bariatric tracking if surgery selected
+    if data.bariatric_surgery:
+        await db.bariatric_logs.delete_many({"user_id": user["user_id"]})  # Reset
+        
+        # Add surgery to agenda if date is in the future
+        if data.bariatric_surgery_date:
+            surgery_date = datetime.fromisoformat(data.bariatric_surgery_date.replace('Z', '+00:00'))
+            if surgery_date > datetime.now(timezone.utc):
+                surgery_name = "By-pass gastrique" if data.bariatric_surgery == "bypass" else "Sleeve gastrectomie"
+                await db.agenda_events.insert_one({
+                    "event_id": f"event_{uuid.uuid4().hex[:8]}",
+                    "user_id": user["user_id"],
+                    "title": f"🏥 {surgery_name}",
+                    "description": f"Opération bariatrique - {data.bariatric_clinic or 'Hôpital'}",
+                    "date": data.bariatric_surgery_date,
+                    "type": "surgery",
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                })
     
     await db.user_profiles.update_one(
         {"user_id": user["user_id"]},
