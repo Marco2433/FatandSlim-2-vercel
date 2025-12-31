@@ -4691,7 +4691,7 @@ async def calendar_oauth_callback(code: str, state: str):
     await db.oauth_states.delete_one({"state": state})
     
     # Redirect to app
-    frontend_url = os.environ.get('FRONTEND_URL', 'https://fatslim-social.preview.emergentagent.com')
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://bariatric-algo.preview.emergentagent.com')
     return RedirectResponse(f"{frontend_url}/dashboard?calendar_connected=true")
 
 @api_router.get("/calendar/status")

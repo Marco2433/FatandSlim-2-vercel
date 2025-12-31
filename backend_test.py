@@ -8,7 +8,7 @@ from datetime import datetime
 import time
 
 class FatSlimAPITester:
-    def __init__(self, base_url="https://fatslim-social.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://bariatric-algo.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.session = requests.Session()
         self.user_id = None

@@ -1,101 +1,73 @@
 <analysis>**original_problem_statement:**
-L'utilisateur a demandé une série de nouvelles fonctionnalités et de corrections de bugs importantes, faisant suite au développement précédent :
+L'utilisateur a demandé une série de nouvelles fonctionnalités majeures, itérant sur les versions précédentes :
 
-**Fonctionnalités sociales (Priorité la plus élevée):**
-1.  **Amélioration du fil d'actualité** :
-    *   Permettre aux utilisateurs de télécharger des photos dans leurs publications.
-    *   Le fil principal doit être public, affichant les publications de TOUS les membres de l'application.
-    *   Ajouter une fonctionnalité de commentaires sous chaque publication.
-    *   Corriger le bug où les nouvelles publications n'apparaissent pas instantanément.
-2.  **Communautés thématiques** :
-    *   Créer des groupes thématiques (Fitness, Cardio, etc.) où les utilisateurs peuvent s'inscrire.
-    *   Chaque groupe doit avoir son propre fil d'actualité privé, visible uniquement par ses membres.
-    *   Intégrer des défis quotidiens aléatoires au sein des groupes, avec des points à gagner.
-3.  **Classements** : Mettre en place 3 types de classements : amis, tous les membres de l'application, et par membres de chaque communauté thématique.
-4.  **Partage de contenu** :
-    *   Permettre le partage des programmes d'entraînement générés par l'IA sur le fil de la communauté.
-    *   Permettre le partage des recettes (catalogue et IA) sur le fil de la communauté.
-5.  **Simulation d'activité** : Créer une centaine de faux profils (60% femmes, 40% hommes) complets (photos, badges) pour générer des interactions quotidiennes (posts, likes) et rendre la communauté vivante.
+1.  **Fonctionnalités Sociales (v2.1 - Implémenté)** : Refonte complète de la page Communauté avec fil public, groupes thématiques avec fils privés, upload d'images, commentaires, 3 types de classements, et seeding de 100 faux profils. Correction du défilement des catégories d'entraînements et de la mise à jour instantanée des publications. Ajout d'une alerte avant chaque utilisation de l'IA.
 
-**Améliorations UI/UX :**
-1.  **Liste de courses** : Catégoriser les articles par famille d'aliments et permettre la modification des portions/quantités.
-2.  **Dashboard** :
-    *   Corriger le bug où la photo de profil n'apparaît pas.
-    *   Afficher les 2 derniers badges obtenus à côté du badge Premier pas.
-3.  **Page Progrès** :
-    *   Améliorer le design du rapport PDF pour inclure des graphiques.
-    *   Assurer la mise à jour immédiate du poids après une nouvelle saisie.
-4.  **Page Nutrition** :
-    *   Ajouter un bouton pour planifier les recettes/plans repas générés par l'IA dans l'agenda.
-    *   Afficher 1 à 3 articles d'actualité (santé, sport, nutrition) chaque jour, récupérés de sites français, avec possibilité de les partager.
-5.  **Page Entraînements** :
-    *   Corriger le défilement horizontal des catégories de vidéos.
-    *   Ajouter plus de catégories et de vidéos de test.
-6.  **Général** :
-    *   Supprimer la marge vide en haut de l'écran sur mobile.
-    *   Afficher un message d'avertissement avant chaque utilisation de l'IA, rappelant la limite de 2 appels gratuits par jour.
+2.  **Module Bariatrique (v2.2 - Implémenté)** : Création d'un système complet pour les patients en chirurgie bariatrique (sleeve/bypass). Cela inclut un questionnaire d'onboarding conditionnel, un Dossier Bariatrique dédié et sécurisé sur le dashboard, un suivi quotidien, des recettes filtrées par phase post-opératoire, des articles spécifiques, un coach IA bariatrique avec des garde-fous stricts, et un disclaimer légal.
 
-**Intégrations :**
-1.  **Google Calendar** : Synchroniser l'agenda Google de l'utilisateur avec celui de l'application (lecture seule). (Cette tâche a été reportée).
+3.  **Améliorations Algorithmiques et UI (v2.3 - En cours)** :
+    *   **Algorithme Bariatrique** : Remplacer la logique simple par un algorithme déterministe complet pour les recommandations alimentaires et d'hydratation en pré-opératoire et pour les 4 phases post-opératoires, basé sur le BMR/TDEE et des règles médicales strictes fournies.
+    *   **Faux Profils Intelligents** : Ajouter 3798 faux profils supplémentaires et créer une logique pour qu'ils interagissent de manière autonome et réaliste (commentaires, likes, demandes d'amis).
+    *   **Améliorations UI/UX** :
+        *   Corriger le partage d'articles depuis la page Nutrition pour inclure l'image et le texte complet.
+        *   Sur le Dashboard, afficher les recettes dans une modale et faire pointer le lien voir les recettes vers le catalogue.
+        *   Sur la page de profil d'un utilisateur, afficher le nombre de badges, les points de défi et l'objectif personnel.
+        *   Dans le dossier bariatrique, ajouter des rappels de suivi quotidien et afficher les articles dans une modale avec un bouton de partage.
 
 **User's preferred language**: Français
 
 **what currently exists?**
-L'application Fat and Slim est une PWA full-stack (React/FastAPI/MongoDB) de coaching sportif. Elle inclut l'authentification (JWT + Google), une base de données de recettes, le suivi de la nutrition et des progrès, la gamification (badges, points), un coach IA, et la génération de rapports PDF. Un système de limitation (2/jour) et de cache pour les appels IA a été récemment implémenté avec succès. Des fonctionnalités sociales de base (amis, profils, messagerie) ont été ajoutées et sont en cours d'extension majeure.
+L'application Fat and Slim est une PWA full-stack (React/FastAPI/MongoDB) de coaching sportif et nutritionnel. Elle intègre l'authentification (JWT/Google), un fil social complet avec des groupes thématiques et des classements, une gestion avancée des recettes, un suivi des progrès, un coach IA, et un système de gamification. Une fonctionnalité majeure pour le suivi des patients en chirurgie bariatrique a été ajoutée, avec un questionnaire d'onboarding adaptatif et un dossier patient dédié. Le backend est actuellement un monolithe dans  qui a dépassé les 6000 lignes.
 
 **Last working item**:
-- **Last item agent was working**: L'agent a commencé l'implémentation de la refonte majeure des fonctionnalités sociales demandée par l'utilisateur. Il a modifié le fichier  pour ajouter la logique de seed de faux utilisateurs, les commentaires, le support des images dans les posts, les groupes thématiques et les classements. Le travail était concentré sur le backend.
+- **Last item agent was working**: L'agent a commencé l'implémentation de la demande massive de l'utilisateur (v2.3). Il a modifié en profondeur le fichier  pour intégrer l'algorithme déterministe complexe de recommandations nutritionnelles (pré-op et post-op) pour les patients bariatriques. Il a également commencé à modifier  pour afficher ces nouvelles règles et a initié la logique pour la création massive et l'interaction des faux profils.
 - **Status**: IN PROGRESS
 - **Agent Testing Done**: N
-- **Which testing method agent to use?**: both. Le backend nécessite des tests via  ou des scripts pour valider la création des faux utilisateurs, les nouveaux endpoints de feed, les commentaires et les classements. Le frontend nécessite des tests via  pour valider toutes les nouvelles interfaces (upload d'images, fils d'actualité multiples, commentaires, etc.).
+- **Which testing method agent to use?**: both. Le backend nécessite des tests via  ou des scripts Python pour valider l'algorithme nutritionnel, la création des 3798 nouveaux profils et leurs interactions. Le frontend nécessite des tests via  pour valider les nouvelles UI du dossier bariatrique, les corrections du dashboard et de la page de profil.
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-- **Issue 1**: Finaliser l'implémentation de toutes les fonctionnalités sociales et UI/UX (P0 - HIGHEST PRIORITY)
-- **Issue 2**: Le mode plein écran de la PWA n'est pas encore validé par l'utilisateur (P1)
-- **Issue 3**: Le comptage automatique des pas n'est pas possible en PWA (P2)
-- **Issue 4**: L'intégration d'un scanner de codes-barres n'est pas commencée (P2)
-- **Issue 5**: L'intégration de vraies vidéos YouTube via l'API n'est pas commencée (P3)
-- **Issue 6**: L'intégration Google Calendar est bloquée (P3)
+- **Issue 1**: Finaliser l'implémentation de l'algorithme nutritionnel bariatrique (P0)
+- **Issue 2**: Implémenter la création massive (3798) et l'interaction autonome des faux profils (P0)
+- **Issue 3**: Corriger le partage d'articles (texte complet + image) depuis la page Nutrition (P1)
+- **Issue 4**: Corriger les interactions sur le Dashboard (modale pour les recettes, lien vers le catalogue) (P1)
+- **Issue 5**: Mettre à jour la vue du profil utilisateur (badges, points, objectif) (P1)
+- **Issue 6**: Ajouter les rappels et la modale pour les articles dans le dossier bariatrique (P1)
+- **Issue 7**: Le mode plein écran de la PWA n'est pas encore validé par l'utilisateur (P2)
+- **Issue 8**: Le scanner de codes-barres n'est pas commencé (P2)
+- **Issue 9**: L'intégration Google Calendar est toujours bloquée (P3)
 
 **Issues Detail**:
-- **Issue 1: Finaliser l'implémentation des nouvelles fonctionnalités**
-    - **Attempted fixes**: L'agent a massivement modifié  en ajoutant de nouveaux endpoints et une logique pour les faux utilisateurs, les groupes, les classements, et les commentaires. Il a également mis à jour  pour corriger le défilement et ajouter du contenu.
+- **Issue 1: Finaliser l'implémentation de l'algorithme nutritionnel bariatrique (P0)**
+    - **Attempted fixes**: L'agent a ajouté une grande quantité de code dans  pour calculer le BMR, le TDEE, et appliquer des règles spécifiques pour les phases pré et post-opératoires. Le fichier  a été modifié pour afficher ces données.
     - **Next debug checklist**:
-        1.  **Backend**:
-            - Finaliser l'endpoint  pour qu'il génère des profils complets et réalistes.
-            - Implémenter la logique pour que les faux profils interagissent (posts, likes).
-            - Mettre à jour  pour qu'il renvoie un fil public (tous les utilisateurs).
-            - Implémenter les endpoints de commentaires ().
-            - Implémenter les feeds par groupe ().
-            - Implémenter les défis quotidiens dans les groupes.
-            - Implémenter les 3 classements (amis, global, par groupe).
-            - Ajouter les endpoints pour partager les programmes d'entraînement et les recettes sur le fil social.
-            - Implémenter l'upload d'images pour les posts (nécessite un stockage, ex: S3 ou stockage local persistant).
-        2.  **Frontend**:
-            - Dans , ajouter le composant d'upload d'image, le support des commentaires, la vue des différents classements et la navigation entre les groupes thématiques.
-            - Ajouter les boutons Partager sur la communauté dans  et .
-            - Corriger la mise à jour instantanée du fil d'actualité après un nouveau post.
-            - Implémenter une modale ou un toast d'avertissement avant chaque appel IA.
-            - Améliorer le rapport PDF () pour y inclure des graphiques.
-            - Finaliser la fonctionnalité d'ajout de repas à l'agenda depuis la page .
-    - **Why fix this issue and what will be achieved with the fix?**: C'est la demande principale et la plus importante de l'utilisateur pour la version 2.0 de son application.
+        1.  Revoir entièrement le code ajouté dans  pour s'assurer que tous les calculs (BMR, TDEE, calories, macros) et les règles de phase sont conformes à la demande de l'utilisateur.
+        2.  Vérifier que les spécificités Sleeve vs. Bypass sont bien prises en compte.
+        3.  Tester l'endpoint  avec différents profils (pré-op, post-op à différentes phases) pour valider la logique.
+        4.  S'assurer que l'UI dans  affiche correctement toutes les nouvelles informations (calories cibles, macros, hydratation).
+    - **Why fix this issue and what will be achieved with the fix?**: C'est le cœur de la nouvelle fonctionnalité bariatrique demandée, apportant une personnalisation non-basée sur l'IA, ce qui est crucial pour la sécurité et la pertinence médicale.
     - **Status**: IN PROGRESS
     - **Is recurring issue?** N
     - **Should Test frontend/backend/both after fix?**: both
-    - **Blocked on other issue**: None
 
-- **Issue 2: Le mode plein écran de la PWA n'est pas encore validé**
-    - **Status**: USER VERIFICATION PENDING
-    - **Why fix this issue and what will be achieved with the fix?**: C'est une demande esthétique et d'immersion très importante pour l'utilisateur.
-
-- **Issue 6: L'intégration Google Calendar est bloquée**
-    - **Status**: BLOCKED. L'utilisateur n'a pas réussi à configurer les identifiants sur Google Cloud Console. La décision a été prise de reporter cette fonctionnalité.
+- **Issue 2: Implémenter la création massive (3798) et l'interaction autonome des faux profils (P0)**
+    - **Attempted fixes**: L'agent a modifié l'endpoint de seeding, mais la logique d'interaction autonome (likes, commentaires, amitiés entre faux profils) n'est pas encore implémentée.
+    - **Next debug checklist**:
+        1.  Créer une fonction ou une tâche de fond (ex: via un scheduler si possible, sinon simuler via un endpoint déclenchable) dans  qui s'exécute périodiquement.
+        2.  Cette fonction devrait :
+            - Sélectionner aléatoirement des faux utilisateurs.
+            - Les faire liker ou commenter des posts existants.
+            - Les faire créer de nouvelles publications.
+            - Créer des relations d'amitié entre eux.
+    - **Why fix this issue and what will be achieved with the fix?**: Pour rendre la communauté de l'application extrêmement vivante et réaliste, ce qui est une demande clé de l'utilisateur.
+    - **Status**: NOT STARTED
+    - **Is recurring issue?** N
+    - **Should Test frontend/backend/both after fix?**: backend
 
 **In progress Task List**:
-- **Task 1: Finir la refonte sociale et les améliorations UI/UX (P0)**
-    - **Where to resume**: Dans , finaliser la logique des faux utilisateurs et des interactions automatiques. Puis, passer au frontend (, , etc.) pour implémenter toutes les nouvelles interfaces correspondantes.
-    - **What will be achieved with this?**: Une application beaucoup plus interactive et engageante, avec une économie de crédits IA optimisée.
+- **Task 1: Finir la refonte bariatrique et les améliorations UI (P0)**
+    - **Where to resume**: Le travail a été interrompu après des modifications majeures sur  et . Il faut vérifier la compilation, corriger les erreurs éventuelles, puis continuer avec les points restants de la demande de l'utilisateur (UI fixes, profils améliorés, etc.).
+    - **What will be achieved with this?**: Une application avec un module bariatrique de niveau professionnel, une communauté très active (simulée), et une expérience utilisateur améliorée sur plusieurs pages clés.
     - **Status**: IN PROGRESS
     - **Should Test frontend/backend/both after fix?**: both
     - **Blocked on something**: None
@@ -104,120 +76,100 @@ L'application Fat and Slim est une PWA full-stack (React/FastAPI/MongoDB) de coa
 **Upcoming Tasks:**
 -   **Scanner de codes-barres (P1)**: Intégrer une bibliothèque de scan sur  et connecter à l'API OpenFoodFacts.
 -   **Intégration YouTube (P2)**: Remplacer les données de vidéos simulées par de vraies vidéos via l'API YouTube Data v3.
--   **Synchronisation Google Calendar (P3 - BLOCKED)**: Intégrer la lecture des événements du calendrier Google de l'utilisateur.
 
 **Future Tasks:**
--   Développer davantage les fonctionnalités de réseau social.
+-   **Synchronisation Google Calendar (P3 - BLOCKED)**: Intégrer la lecture des événements du calendrier Google de l'utilisateur.
 -   Mettre en place la monétisation via un abonnement Premium.
 
 **Completed work in this session**
-- **Système de limitation et de cache IA**: Implémenté et testé. Limite les appels IA à 2/jour/utilisateur et met en cache les requêtes similaires.
-- **Améliorations des badges et points**: Ajout d'un compteur de points permanent pour les défis et d'une section prochains badges à gagner sur la page Progrès.
-- **Correctifs UI Dashboard**: La photo de profil s'affiche correctement, et les 2 derniers badges obtenus sont visibles.
-- **Liste de courses améliorée**: Les articles sont maintenant catégorisés, et les quantités/portions sont modifiables.
-- **Articles d'actualité**: Un endpoint backend () et une section sur la page Nutrition affichent des articles quotidiens sur la santé.
-- **Correctif de mise en page**: La marge vide en haut de l'application sur mobile a été supprimée.
-- **Préparation pour l'AAB v2.0**: Le manifest a été mis à jour avec une nouvelle version, des raccourcis et l'URL de démarrage.
+- **Refonte Sociale Complète (v2.1)**:
+    - Implémentation du fil public, des groupes avec fils privés, de l'upload d'images, des commentaires et des classements (amis, global).
+    - Correction du bug de défilement sur la page des entraînements.
+    - Correction du bug de rafraîchissement instantané des publications.
+    - Création de 100 faux profils pour peupler le contenu initial.
+- **Alerte d'Utilisation de l'IA**:
+    - Un dialogue d'avertissement modal a été ajouté avant chaque appel aux fonctionnalités de l'IA, affichant les crédits restants.
+- **Module Bariatrique (v1.0)**:
+    - Création d'un flux d'onboarding conditionnel pour les patients bariatriques.
+    - Création d'une page Dossier Bariatrique () accessible depuis le dashboard, avec un disclaimer légal à la première visite.
+    - La page inclut un dashboard patient, un suivi quotidien, des recettes filtrées par phase, des articles et un coach IA dédié avec des garde-fous de sécurité.
+- **Corrections de bugs critiques**:
+    - Correction d'une erreur CORS qui empêchait la connexion depuis le frontend.
+    - Correction de plusieurs erreurs de syntaxe et de type dans le backend (, , ).
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1: Scanner de codes-barres**
-    - **Debug checklist**: Choisir et installer une bibliothèque React (), l'implémenter dans , et créer un endpoint backend pour interroger l'API OpenFoodFacts.
-    - **Why to solve this issue and what will be achieved with this?**: C'est une fonctionnalité essentielle pour une app de nutrition, demandée à plusieurs reprises.
-    - **Should Test frontend/backend/both after fix?**: both
-    - **Is recurring issue?** Y
-
--   **Issue 2: Amélioration du rapport PDF**
-    - **Debug checklist**: Utiliser une bibliothèque comme  pour générer des images de graphiques, puis les insérer dans le PDF généré avec .
-    - **Why to solve this issue and what will be achieved with this?**: Pour fournir un rapport plus visuel et utile à l'utilisateur.
-    - **Should Test frontend/backend/both after fix?**: backend (génération du PDF)
-    - **Is recurring issue?** N
-
-**Known issue recurrence from previous fork**
--   **Issue récurrence**: Problème de PWA en plein écran.
--   **Recurrence count**: 3
--   **Status**: USER VERIFICATION PENDING (la solution  est en place et attend la validation de l'utilisateur après la génération d'une nouvelle AAB).
+-   **Amélioration du rapport PDF**: N'a pas été traité. Utiliser une bibliothèque comme  pour générer des images de graphiques et les insérer dans le PDF.
+-   **Mise à jour du poids sur la page Progrès**: Le rafraîchissement non immédiat n'a pas été explicitement corrigé.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Backend**: FastAPI, MongoDB (motor),  (pour le cache IA),  (pour l'intégration Calendar reportée).
-- **Frontend**: React, Tailwind CSS, shadcn/ui, Recharts, Axios, jspdf.
-- **IA**:  avec , avec un système de cache et de limitation personnalisé.
+- **Backend**: FastAPI, MongoDB (motor), Pydantic. La logique métier est devenue très complexe, notamment pour le module bariatrique avec des calculs nutritionnels déterministes (BMR, TDEE).
+- **Frontend**: React, Tailwind CSS, shadcn/ui, Recharts, Axios, . Utilisation intensive de state conditionnel pour gérer les différents profils utilisateurs (standard vs. bariatrique).
+- **IA**:  avec . L'utilisation est maintenant encadrée par des dialogues d'avertissement et des garde-fous stricts pour le coach bariatrique.
 
 **key DB schema**
-- **(Créé)** : 
-- **(Créé)** : 
-- **(Créé)** : 
-- **(Créé)** :  (schéma étendu)
-- **(Créé/Étendu)** , , , 
+- **(Étendu)** : Ajout de nombreux champs pour le suivi bariatrique (, , , , etc.).
+- **(Créé)** : .
 
 **All files of reference**
-*   : Le fichier principal du backend, massivement étendu.
-*   : Nouvelle page pour toutes les fonctionnalités sociales.
-*   : Mis à jour pour la photo de profil et les badges.
-*   : Mis à jour pour la liste de courses, les articles et l'agenda.
-*   : Mis à jour pour corriger le défilement des catégories.
-*   : Mis à jour pour les badges à débloquer.
-*   : Mis à jour pour la nouvelle version de l'AAB.
+-   : Fichier central pour toute la logique, a subi des modifications massives pour les fonctionnalités sociales et bariatriques.
+-   : Fortement remanié pour inclure les questions conditionnelles pour les patients bariatriques.
+-   : Modifié pour afficher conditionnellement le lien vers le dossier bariatrique.
+-   : Nouvelle page centrale pour tout le module bariatrique.
+-   : Entièrement réécrit pour la v2.1 des fonctionnalités sociales.
+-   : Modifié pour intégrer l'alerte IA.
+-   : Modifié pour corriger le scroll et intégrer l'alerte IA.
+-   : Modifié pour ajouter la route vers la page bariatrique.
+-   : Mis à jour pour refléter les nouvelles versions.
 
 **Areas that need refactoring**:
--   **** est maintenant dangereusement volumineux (+4500 lignes). Il est **impératif** de le découper en plusieurs fichiers  par fonctionnalité (ex: , ) dès que la vague de fonctionnalités actuelle sera terminée. Proposer ce plan à l'utilisateur sera crucial pour la pérennité du projet.
+-   **** est devenu un risque majeur pour la stabilité et la maintenabilité du projet. Avec plus de 6000 lignes, il est **impératif et urgent** de le découper en  par fonctionnalité (ex: , , ). Ce doit être la prochaine tâche après la stabilisation de la version actuelle.
 
 **key api endpoints**
--  (POST): Pour créer les faux profils.
--  (GET): Pour obtenir le fil d'actualité (doit devenir public).
--  (GET),  (POST): Gestion des groupes.
--  (GET): Pour obtenir les classements.
--  (POST): Pour créer une publication (doit supporter les images).
--  (GET): Pour récupérer les articles d'actualité.
--  (GET): Endpoint étendu pour inclure la photo de profil et les badges récents.
--  (PUT, DELETE): Endpoints étendus pour gérer les quantités/portions.
-- , : Endpoints préparés pour l'intégration Google Calendar (reportée).
+-  (GET): Récupère toutes les données calculées pour le tableau de bord bariatrique.
+-  (POST): Enregistre le suivi quotidien d'un patient bariatrique.
+-  (GET): Récupère les recettes filtrées par la phase post-op du patient.
+-  (GET): Récupère des articles spécifiques à la chirurgie bariatrique.
+-  (POST): Interroge le coach IA bariatrique.
+-  (POST): Endpoint unifié pour créer un post (avec ou sans image).
+-  (POST): Crée les faux profils.
+-  (GET): Récupère le fil d'un groupe spécifique.
+-  (GET): Endpoint étendu pour les classements global et par groupe.
 
 **Critical Info for New Agent**
-- **Priorité Absolue**: Finaliser la très longue liste de fonctionnalités demandée par l'utilisateur (réseau social avancé, UI/UX). L'agent a commencé le backend, mais une grande partie du travail reste à faire, notamment sur le frontend.
-- **Refactorisation Backend Critique**: Le fichier  est devenu ingérable. Dès la livraison des fonctionnalités en cours, il faudra proposer et exécuter un plan de découpage en modules. C'est un risque majeur pour la stabilité et la maintenance.
-- **Google Calendar en Pause**: N'essayez pas de travailler sur l'intégration Google Calendar. Elle est bloquée côté utilisateur. Attendez que l'utilisateur fournisse les identifiants requis.
-- **Attention aux Crédits IA**: L'utilisateur est très sensible aux coûts. Le système de limitation est en place, mais l'agent a oublié d'implémenter l'alerte UI avant chaque appel. C'est une petite tâche importante à ne pas oublier.
-
-**documents and test reports created in this job**
-- 
-- 
+- **Priorité Absolue**: Finaliser la demande de l'utilisateur (message #379). La tâche la plus complexe est de valider l'algorithme nutritionnel dans  et d'implémenter la simulation d'interaction pour les milliers de faux profils.
+- **Monolithe Backend Critique**: Le fichier  est extrêmement volumineux et fragile. Toute modification doit être faite avec une extrême prudence. Proposez activement à l'utilisateur un plan de refactorisation en modules dès que la fonctionnalité actuelle sera livrée et validée.
+- **Optimisation des Coûts**: L'utilisateur est très sensible aux coûts des crédits. L'implémentation doit être efficace et éviter les appels IA inutiles. La nouvelle logique bariatrique est déterministe pour cette raison.
+- **Pas de Testing Agent**: L'utilisateur a explicitement demandé de ne pas utiliser le testing agent. Les tests devront être effectués manuellement avec  pour le backend et des captures d'écran () pour le frontend.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **#369**: Demande massive de nouvelles fonctionnalités : refonte sociale (photos, commentaires, fils publics/privés, classements, faux utilisateurs), partage de programmes/recettes, correction du défilement des catégories d'entraînement, alerte avant utilisation de l'IA. (IN PROGRESS)
-2.  **#300**: Demande d'améliorations : liste de courses modifiable et catégorisée, ajout des repas à l'agenda, correction du bug de la photo de profil sur le dashboard, affichage des badges récents, amélioration du PDF, mise à jour instantanée du poids, articles d'actualité, suppression de la marge supérieure. (Partiellement implémenté)
-3.  **#296**: L'utilisateur accepte de reporter l'intégration Google Calendar et demande les informations pour générer l'AAB. (DONE)
-4.  **#294, #292, #290...**: Série de messages où l'utilisateur et l'agent tentent sans succès de configurer les identifiants Google Cloud. (BLOCKED)
-5.  **#281**: L'utilisateur demande une version simplifiée des étapes pour Google Cloud. (DONE)
-6.  **#258**: L'utilisateur demande les étapes pas à pas pour ajouter le scope Google Calendar. (DONE)
-7.  **#232**: L'utilisateur confirme son choix pour l'intégration Google Calendar et demande les informations pour l'AAB. (IN PROGRESS)
-8.  **#144**: Demande d'améliorer le mur des badges, d'ajouter un compteur de points permanent pour les défis, d'implémenter la synchronisation Google Calendar et de construire un réseau social complet. (Partiellement implémenté)
+1.  **#379**: Demande massive d'améliorations : algorithme nutritionnel bariatrique déterministe, 3798 faux profils supplémentaires avec interactions autonomes, et multiples corrections/améliorations UI sur le dashboard, la page de profil et les articles. (IN PROGRESS)
+2.  **#256**: Demande initiale pour le module bariatrique complet : onboarding conditionnel, dossier patient dédié, coach IA bariatrique, recettes filtrées par phase, et articles spécifiques. (DONE)
+3.  **#215**: L'utilisateur demande de continuer les tests et de finaliser les mises à jour (manifest, AAB) pour la version sociale. (DONE)
+4.  **#5**: Demande initiale pour la refonte sociale (v2.1) et diverses améliorations UI/UX. (DONE)
 
 **Project Health Check:**
-- **Working, but complex**: L'application est fonctionnelle et riche en fonctionnalités, mais le code backend est devenu un monolithe difficile à maintenir. Les nouvelles fonctionnalités sociales sont à mi-chemin, avec un backend partiellement écrit et un frontend qui nécessite une refonte importante.
+- **Working, but fragile**: L'application est fonctionnelle et très riche en fonctionnalités. Cependant, l'architecture backend (un seul fichier  de plus de 6000 lignes) représente une dette technique critique et un risque élevé pour les développements futurs. Les fonctionnalités en cours d'implémentation sont complexes et touchent au cœur de la logique métier.
 
 **3rd Party Integrations**
-- **OpenAI GPT-4o**: Utilise la Emergent LLM Key, avec un système de cache/limitation personnalisé.
+- **OpenAI GPT-4o**: Utilise la Emergent LLM Key, avec un système de cache/limitation personnalisé et des garde-fous pour l'usage bariatrique.
 - **Google OAuth**: Pour l'authentification.
-- **jspdf, jspdf-autotable**: Pour la génération de PDF.
-- **Google Calendar API**: Intégration planifiée mais **BLOQUÉE**.
-- **YouTube Data API v3**: Intégration planifiée.
+- **jspdf, jspdf-autotable**: Pour la génération de PDF (fonctionnalité existante, non améliorée).
 
 **Testing status**
 - **Testing agent used after significant changes**: NO
 - **Troubleshoot agent used after agent stuck in loop**: NO
 - **Test files created**: []
-- **Known regressions**: Aucune.
+- **Known regressions**: Aucune identifiée, mais les modifications massives sur  présentent un risque élevé.
 
 **Credentials to test flow:**
-L'inscription est fonctionnelle. Créez un nouvel utilisateur via le formulaire d'inscription sur la page de l'application.
+L'inscription est fonctionnelle. Créez un nouvel utilisateur via le formulaire d'inscription. Pour tester les fonctionnalités bariatriques, sélectionnez Chirurgie bariatrique à l'étape 5 de l'onboarding et complétez les étapes supplémentaires.
 
 **What agent forgot to execute**
-- **Alerte IA**: Le message d'avertissement avant l'utilisation de l'IA n'a pas été implémenté sur le frontend.
-- **PDF avec graphiques**: Le rapport PDF n'a pas été amélioré pour inclure des graphiques.
-- **Ajout à l'agenda**: La fonctionnalité pour ajouter un repas généré à l'agenda depuis la page Nutrition n'est pas finalisée sur le frontend.
-- **Partage social**: Les boutons pour partager les programmes d'entraînement et les recettes sur la communauté n'ont pas été ajoutés au frontend.
-- **Mise à jour du poids**: Le problème de rafraîchissement non immédiat de l'affichage du poids sur la page Progrès n'a pas été activement résolu (l'agent a juste vérifié le code existant).
-- **Finalisation des fonctionnalités sociales**: La plupart des nouvelles fonctionnalités sociales (commentaires, groupes, classements, etc.) ne sont implémentées qu'en partie sur le backend et pas du tout sur le frontend.</analysis>
+L'agent est en plein milieu de l'exécution de la dernière demande. Les points suivants de cette demande n'ont pas encore été traités :
+- La logique d'interaction autonome pour les faux profils.
+- Les corrections UI (partage d'article, modale de recette sur le dashboard, lien du catalogue).
+- L'amélioration de la vue du profil utilisateur.
+- Les améliorations du dossier bariatrique (rappels, modale d'article).</analysis>
