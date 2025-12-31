@@ -268,6 +268,19 @@ class OnboardingData(BaseModel):
     budget: Optional[str] = "medium"
     cooking_skill: Optional[str] = "intermediate"
     meals_per_day: Optional[int] = 3
+    # Bariatric fields
+    bariatric_surgery: Optional[str] = None  # "bypass", "sleeve", or None
+    bariatric_surgery_date: Optional[str] = None  # ISO date
+    bariatric_pre_op_weight: Optional[float] = None
+    bariatric_pre_op_height: Optional[float] = None
+    bariatric_parcours: Optional[str] = None  # "pre_op" or "post_op"
+    bariatric_phase: Optional[int] = None  # 1, 2, 3, 4 for post-op
+    bariatric_supplements: Optional[List[str]] = []
+    bariatric_intolerances: Optional[List[str]] = []
+    bariatric_clinic: Optional[str] = None
+    bariatric_surgeon: Optional[str] = None
+    bariatric_nutritionist: Optional[str] = None
+    bariatric_psychologist: Optional[str] = None
 
 class FoodLogEntry(BaseModel):
     food_name: str
