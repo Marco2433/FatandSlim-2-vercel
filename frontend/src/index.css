@@ -181,6 +181,37 @@
     scrollbar-width: none;
 }
 
+/* Horizontal scroll container for category buttons */
+.horizontal-scroll {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    scroll-behavior: smooth;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+}
+
+.horizontal-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.horizontal-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Hide scrollbar class */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
