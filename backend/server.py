@@ -5947,104 +5947,248 @@ async def complete_group_challenge(group_id: str, user: dict = Depends(get_curre
 # --- Seed Fake Users ---
 @api_router.post("/social/seed-fake-users")
 async def seed_fake_users(data: dict = None, user: dict = Depends(get_current_user)):
-    """Create fake users for community simulation (admin only in production)"""
-    count = data.get("count", 100) if data else 100
+    """Create 3798 fake users for community simulation with smart interactions"""
+    target_count = data.get("count", 3798) if data else 3798
     
-    # Check if already seeded
+    # Check existing
     existing_fake = await db.users.count_documents({"is_fake": True})
-    if existing_fake >= 50:
+    if existing_fake >= target_count:
         return {"message": f"Already have {existing_fake} fake users", "created": 0}
     
-    # French first names
+    # Extended French names for variety
     female_names = ["Marie", "Camille", "Léa", "Manon", "Emma", "Chloé", "Louise", "Jade", "Alice", "Sarah", 
                    "Julie", "Laura", "Marion", "Pauline", "Clara", "Charlotte", "Anaïs", "Océane", "Margot", "Valentine",
-                   "Sophie", "Lucie", "Audrey", "Justine", "Mathilde", "Caroline", "Amélie", "Élodie", "Mélanie", "Aurélie"]
+                   "Sophie", "Lucie", "Audrey", "Justine", "Mathilde", "Caroline", "Amélie", "Élodie", "Mélanie", "Aurélie",
+                   "Céline", "Marine", "Nathalie", "Sandrine", "Virginie", "Stéphanie", "Delphine", "Isabelle", "Valérie", "Laetitia",
+                   "Alexandra", "Christelle", "Séverine", "Morgane", "Floriane", "Élise", "Gaëlle", "Noémie", "Agathe", "Inès",
+                   "Zoé", "Lola", "Romane", "Nina", "Eva", "Maëva", "Alicia", "Mélissa", "Coralie", "Cindy"]
     male_names = ["Thomas", "Lucas", "Hugo", "Maxime", "Alexandre", "Antoine", "Julien", "Nicolas", "Pierre", "Louis",
-                 "Clément", "Vincent", "François", "Guillaume", "Romain", "Mathieu", "Adrien", "Quentin", "Xavier", "Florian"]
+                 "Clément", "Vincent", "François", "Guillaume", "Romain", "Mathieu", "Adrien", "Quentin", "Xavier", "Florian",
+                 "Sébastien", "Laurent", "Christophe", "Olivier", "Frédéric", "David", "Philippe", "Jérôme", "Benoît", "Damien",
+                 "Kevin", "Jonathan", "Benjamin", "Raphaël", "Théo", "Nathan", "Léo", "Noah", "Enzo", "Mathis",
+                 "Dylan", "Jordan", "Alexis", "Valentin", "Victor", "Baptiste", "Gabriel", "Arthur", "Ethan", "Paul"]
     
     last_names = ["Martin", "Bernard", "Dubois", "Thomas", "Robert", "Richard", "Petit", "Durand", "Leroy", "Moreau",
-                 "Simon", "Laurent", "Lefebvre", "Michel", "Garcia", "David", "Bertrand", "Roux", "Vincent", "Fournier"]
+                 "Simon", "Laurent", "Lefebvre", "Michel", "Garcia", "David", "Bertrand", "Roux", "Vincent", "Fournier",
+                 "Morel", "Girard", "André", "Mercier", "Dupont", "Lambert", "Bonnet", "François", "Martinez", "Legrand",
+                 "Garnier", "Faure", "Rousseau", "Blanc", "Guerin", "Muller", "Henry", "Roussel", "Nicolas", "Perrin",
+                 "Morin", "Mathieu", "Clement", "Gauthier", "Dumont", "Lopez", "Fontaine", "Chevalier", "Robin", "Masson"]
     
-    # Avatar URLs (using UI avatars service)
     avatar_base = "https://ui-avatars.com/api/?background=random&name="
-    
     groups = ["fitness", "cardio", "nutrition", "weight_loss", "muscle_gain", "yoga"]
+    objectives = ["Perdre du poids", "Gagner en muscle", "Améliorer mon endurance", "Manger plus sainement", "Être en meilleure forme"]
+    
+    post_contents = [
+        "Super séance aujourd'hui ! 💪", "Je me sens en forme ! 🏋️", "Objectif du jour atteint ✅",
+        "Petit déjeuner healthy 🥗", "Merci pour vos encouragements ! ❤️", "Nouvelle semaine, nouveaux objectifs 🎯",
+        "Le sport, c'est la vie ! 🏃", "Progrès du mois, fier(e) de moi 📈", "Recette du jour : smoothie protéiné 🍓",
+        "Motivation au top ! 🔥", "Jour de repos bien mérité 😴", "30 min de cardio ce matin 🚴",
+        "Mes muscles me disent merci 💪", "Premier jour sans grignotage ! 🎉", "Meal prep du dimanche 🍱",
+        "1kg de perdu cette semaine ! ⬇️", "Nouvelle PR au squat 🏆", "Hydratation on point 💧",
+        "Je ne lâche rien ! 💯", "Semaine 4 de mon programme 📅", "Mon coach serait fier de moi 🌟",
+        "Les résultats commencent à se voir 👀", "Alimentation équilibrée = énergie décuplée ⚡",
+        "Marche quotidienne ✅ 10 000 pas atteints", "Stretching du soir 🧘", "Sleep is the best recovery 😴",
+        "Protéines ✓ Légumes ✓ Hydratation ✓", "Batch cooking pour la semaine 🍳", "Objectif 5km en moins de 30min 🏃‍♂️",
+        "Mental fort, corps fort 🧠💪", "Yoga flow du matin terminé 🙏", "Félicitations à tous pour vos efforts ! 🎊"
+    ]
+    
+    comment_templates = [
+        "Bravo ! Continue comme ça 💪", "Super motivation ! 🔥", "Tu gères ! 👏", "Félicitations ! 🎉",
+        "Ça donne envie ! 😍", "Respect ! 💯", "Top ! On lâche rien 🙌", "Inspirant ! ⭐",
+        "Belle performance ! 🏆", "Continue comme ça ! 👍", "Waouh impressionnant ! 😮", "Tu m'inspires ! 🌟",
+        "Quel courage ! 💪", "Bravo pour ta régularité ! 📈", "On est tous avec toi ! ❤️", "Force à toi ! 💥"
+    ]
     
     created = 0
-    female_count = int(count * 0.6)  # 60% female
+    to_create = target_count - existing_fake
+    female_count = int(to_create * 0.6)
     
-    for i in range(min(count - existing_fake, 100)):
-        is_female = i < female_count
-        first_name = random.choice(female_names if is_female else male_names)
-        last_name = random.choice(last_names)
-        name = f"{first_name} {last_name}"
+    # Create users in batch
+    batch_size = 100
+    fake_user_ids = []
+    
+    for batch_start in range(0, to_create, batch_size):
+        batch_end = min(batch_start + batch_size, to_create)
+        users_batch = []
+        points_batch = []
+        memberships_batch = []
         
-        user_id = f"fake_{uuid.uuid4().hex[:10]}"
-        email = f"{first_name.lower()}.{last_name.lower()}{random.randint(1,99)}@example.com"
+        for i in range(batch_start, batch_end):
+            is_female = i < female_count
+            first_name = random.choice(female_names if is_female else male_names)
+            last_name = random.choice(last_names)
+            name = f"{first_name} {last_name}"
+            
+            user_id = f"fake_{uuid.uuid4().hex[:10]}"
+            fake_user_ids.append(user_id)
+            
+            points = random.randint(50, 8000)
+            badges_count = random.randint(0, 20)
+            
+            fake_user = {
+                "user_id": user_id,
+                "email": f"{first_name.lower()}.{last_name.lower()}{random.randint(1,999)}@example.com",
+                "name": name,
+                "picture": f"{avatar_base}{first_name}+{last_name}",
+                "onboarding_completed": True,
+                "is_premium": random.random() < 0.15,
+                "is_fake": True,
+                "gender": "female" if is_female else "male",
+                "objective": random.choice(objectives),
+                "badges_count": badges_count,
+                "created_at": (datetime.now(timezone.utc) - timedelta(days=random.randint(1, 365))).isoformat()
+            }
+            users_batch.append(fake_user)
+            
+            points_batch.append({
+                "user_id": user_id,
+                "total_points": points,
+                "challenge_points": random.randint(0, points // 3),
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            
+            user_groups = random.sample(groups, random.randint(1, 4))
+            for group_id in user_groups:
+                memberships_batch.append({
+                    "group_id": group_id,
+                    "user_id": user_id,
+                    "joined_at": (datetime.now(timezone.utc) - timedelta(days=random.randint(1, 180))).isoformat()
+                })
         
-        # Random stats
-        points = random.randint(100, 5000)
-        badges_count = random.randint(1, 15)
+        if users_batch:
+            await db.users.insert_many(users_batch)
+        if points_batch:
+            await db.user_points.insert_many(points_batch)
+        if memberships_batch:
+            await db.group_members.insert_many(memberships_batch)
         
-        fake_user = {
+        created += len(users_batch)
+        
+        # Create posts for this batch
+        posts_batch = []
+        for user in users_batch:
+            num_posts = random.randint(0, 5)
+            for _ in range(num_posts):
+                posts_batch.append({
+                    "post_id": f"post_{uuid.uuid4().hex[:12]}",
+                    "user_id": user["user_id"],
+                    "content": random.choice(post_contents),
+                    "type": "text",
+                    "is_public": True,
+                    "group_id": random.choice(groups) if random.random() < 0.6 else None,
+                    "likes": [],
+                    "comments": [],
+                    "created_at": (datetime.now(timezone.utc) - timedelta(days=random.randint(0, 60), hours=random.randint(0, 23))).isoformat()
+                })
+        if posts_batch:
+            await db.social_posts.insert_many(posts_batch)
+    
+    # Create friendships between fake users
+    friendships_batch = []
+    for i in range(min(len(fake_user_ids), 500)):
+        user_id = random.choice(fake_user_ids)
+        friend_id = random.choice([uid for uid in fake_user_ids if uid != user_id])
+        friendships_batch.append({
+            "friendship_id": f"friend_{uuid.uuid4().hex[:8]}",
             "user_id": user_id,
-            "email": email,
-            "name": name,
-            "picture": f"{avatar_base}{first_name}+{last_name}",
-            "onboarding_completed": True,
-            "is_premium": random.random() < 0.2,
-            "is_fake": True,
-            "gender": "female" if is_female else "male",
+            "friend_id": friend_id,
+            "status": "accepted",
+            "created_at": (datetime.now(timezone.utc) - timedelta(days=random.randint(1, 90))).isoformat()
+        })
+    if friendships_batch:
+        await db.friendships.insert_many(friendships_batch)
+    
+    return {"message": f"Created {created} fake users with interactions", "created": created, "target": target_count}
+
+@api_router.post("/social/simulate-interactions")
+async def simulate_fake_interactions(user: dict = Depends(get_current_user)):
+    """Simulate autonomous interactions between fake users - likes, comments, friendships"""
+    # Get fake users
+    fake_users = await db.users.find({"is_fake": True}, {"user_id": 1, "name": 1}).limit(500).to_list(500)
+    if len(fake_users) < 10:
+        return {"message": "Not enough fake users to simulate", "interactions": 0}
+    
+    fake_user_ids = [u["user_id"] for u in fake_users]
+    
+    # Get recent posts
+    recent_posts = await db.social_posts.find({}, {"post_id": 1, "user_id": 1, "likes": 1}).sort("created_at", -1).limit(200).to_list(200)
+    
+    comment_templates = [
+        "Bravo ! Continue comme ça 💪", "Super motivation ! 🔥", "Tu gères ! 👏", "Félicitations ! 🎉",
+        "Ça donne envie ! 😍", "Respect ! 💯", "Top ! 🙌", "Inspirant ! ⭐", "Belle perf ! 🏆", "Continue ! 👍"
+    ]
+    
+    interactions = 0
+    
+    # Add likes to posts
+    for post in random.sample(recent_posts, min(50, len(recent_posts))):
+        likers = random.sample(fake_user_ids, random.randint(1, min(15, len(fake_user_ids))))
+        existing_likes = post.get("likes", []) or []
+        new_likes = [uid for uid in likers if uid not in existing_likes]
+        if new_likes:
+            await db.social_posts.update_one(
+                {"post_id": post["post_id"]},
+                {"$addToSet": {"likes": {"$each": new_likes}}}
+            )
+            interactions += len(new_likes)
+    
+    # Add comments
+    for post in random.sample(recent_posts, min(30, len(recent_posts))):
+        commenter = random.choice(fake_users)
+        comment = {
+            "comment_id": f"cmt_{uuid.uuid4().hex[:8]}",
+            "user_id": commenter["user_id"],
+            "user_name": commenter["name"],
+            "content": random.choice(comment_templates),
             "created_at": datetime.now(timezone.utc).isoformat()
         }
-        
-        await db.users.insert_one(fake_user)
-        
-        # Add points
-        await db.user_points.insert_one({
-            "user_id": user_id,
-            "total_points": points,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
-        
-        # Add to 1-3 random groups
-        user_groups = random.sample(groups, random.randint(1, 3))
-        for group_id in user_groups:
-            await db.group_members.insert_one({
-                "group_id": group_id,
-                "user_id": user_id,
-                "joined_at": datetime.now(timezone.utc).isoformat()
-            })
-        
-        # Create some random posts
-        post_contents = [
-            "Super séance aujourd'hui ! 💪",
-            "Je me sens en forme ! 🏋️",
-            "Objectif du jour atteint ✅",
-            "Petit déjeuner healthy 🥗",
-            "Merci pour vos encouragements ! ❤️",
-            "Nouvelle semaine, nouveaux objectifs 🎯",
-            "Le sport, c'est la vie ! 🏃",
-            "Progrès du mois, fier(e) de moi 📈",
-            "Recette du jour : smoothie protéiné 🍓",
-            "Motivation au top ! 🔥"
-        ]
-        
-        for _ in range(random.randint(0, 3)):
-            post = {
-                "post_id": f"post_{uuid.uuid4().hex[:12]}",
-                "user_id": user_id,
-                "content": random.choice(post_contents),
-                "type": "text",
-                "is_public": True,
-                "group_id": random.choice(user_groups) if random.random() < 0.5 else None,
-                "created_at": (datetime.now(timezone.utc) - timedelta(days=random.randint(0, 30))).isoformat()
-            }
-            await db.social_posts.insert_one(post)
-        
-        created += 1
+        await db.social_posts.update_one(
+            {"post_id": post["post_id"]},
+            {"$push": {"comments": comment}}
+        )
+        interactions += 1
     
-    return {"message": f"Created {created} fake users", "created": created}
+    # Create new posts from fake users
+    post_contents = [
+        "Super séance ! 💪", "Objectif atteint ✅", "Motivation au top ! 🔥", "On lâche rien ! 💯",
+        "Nouvelle semaine, nouveaux défis 🎯", "Fier(e) de mes progrès 📈", "Le sport c'est la vie 🏃"
+    ]
+    
+    for _ in range(random.randint(5, 15)):
+        poster = random.choice(fake_users)
+        post = {
+            "post_id": f"post_{uuid.uuid4().hex[:12]}",
+            "user_id": poster["user_id"],
+            "content": random.choice(post_contents),
+            "type": "text",
+            "is_public": True,
+            "group_id": random.choice(["fitness", "cardio", "nutrition", "weight_loss", "muscle_gain", "yoga"]) if random.random() < 0.5 else None,
+            "likes": random.sample(fake_user_ids, random.randint(0, 10)),
+            "comments": [],
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.social_posts.insert_one(post)
+        interactions += 1
+    
+    # Create new friendships
+    for _ in range(random.randint(10, 30)):
+        user1, user2 = random.sample(fake_user_ids, 2)
+        existing = await db.friendships.find_one({"$or": [
+            {"user_id": user1, "friend_id": user2},
+            {"user_id": user2, "friend_id": user1}
+        ]})
+        if not existing:
+            await db.friendships.insert_one({
+                "friendship_id": f"friend_{uuid.uuid4().hex[:8]}",
+                "user_id": user1,
+                "friend_id": user2,
+                "status": "accepted",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            interactions += 1
+    
+    return {"message": f"Simulated {interactions} interactions", "interactions": interactions}
+
 @api_router.get("/social/groups")
 async def get_groups(user: dict = Depends(get_current_user)):
     """Get available groups/communities"""
