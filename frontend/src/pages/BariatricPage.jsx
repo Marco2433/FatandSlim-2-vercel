@@ -622,6 +622,22 @@ export default function BariatricPage() {
         <TabsContent value="articles" className="p-4 space-y-4">
           <p className="text-sm text-muted-foreground">Articles du jour sur le {surgeryName.toLowerCase()}</p>
           
+          {/* Daily Log Reminder */}
+          {dashboard.reminders && dashboard.reminders.length > 0 && (
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardContent className="p-3">
+                <div className="flex items-start gap-2">
+                  <Bell className="w-4 h-4 text-amber-500 mt-0.5" />
+                  <div>
+                    {dashboard.reminders.map((reminder, idx) => (
+                      <p key={idx} className="text-sm">{reminder.message}</p>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
           {articles.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
@@ -631,7 +647,11 @@ export default function BariatricPage() {
             </Card>
           ) : (
             articles.map((article, idx) => (
-              <Card key={idx}>
+              <Card 
+                key={idx} 
+                className="cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => { setSelectedArticle(article); setShowArticleModal(true); }}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -639,7 +659,7 @@ export default function BariatricPage() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium">{article.title}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">{article.summary}</p>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{article.summary}</p>
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                         <span>📖 {article.source}</span>
                         <span>⏱️ {article.read_time}</span>
