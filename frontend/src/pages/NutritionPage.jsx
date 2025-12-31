@@ -1854,36 +1854,76 @@ export default function NutritionPage() {
               </CardHeader>
               <CardContent>
                 {shoppingList.length > 0 ? (
-                  <div className="space-y-2">
-                    {shoppingList.map((item) => (
-                      <div 
-                        key={item.item_id}
-                        className={`flex items-center justify-between p-3 rounded-xl ${
-                          item.checked ? 'bg-muted/30 opacity-60' : 'bg-muted/50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Checkbox
-                            checked={item.checked}
-                            onCheckedChange={(checked) => toggleShoppingItem(item.item_id, checked)}
-                          />
-                          <div>
-                            <p className={`font-medium text-sm ${item.checked ? 'line-through' : ''}`}>
-                              {item.display_name}
-                            </p>
-                            {item.quantity && (
-                              <p className="text-xs text-muted-foreground">{item.quantity}</p>
-                            )}
+                  <div className="space-y-4">
+                    {/* Group by category */}
+                    {Object.entries(
+                      shoppingList.reduce((acc, item) => {
+                        const cat = item.category || '📦 Autres';
+                        if (!acc[cat]) acc[cat] = [];
+                        acc[cat].push(item);
+                        return acc;
+                      }, {})
+                    ).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (
+                      <div key={category} className="space-y-2">
+                        <h4 className="text-sm font-semibold text-primary">{category}</h4>
+                        {items.map((item) => (
+                          <div 
+                            key={item.item_id}
+                            className={`flex items-center justify-between p-3 rounded-xl ${
+                              item.checked ? 'bg-muted/30 opacity-60' : 'bg-muted/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <Checkbox
+                                checked={item.checked}
+                                onCheckedChange={(checked) => toggleShoppingItem(item.item_id, checked)}
+                              />
+                              <div className="flex-1">
+                                <p className={`font-medium text-sm ${item.checked ? 'line-through' : ''}`}>
+                                  {item.display_name}
+                                </p>
+                                {editingItem === item.item_id ? (
+                                  <div className="flex gap-2 mt-1">
+                                    <Input
+                                      defaultValue={item.quantity}
+                                      placeholder="Quantité"
+                                      className="h-7 text-xs w-20"
+                                      onBlur={(e) => {
+                                        updateShoppingItem(item.item_id, { quantity: e.target.value });
+                                      }}
+                                    />
+                                    <Input
+                                      type="number"
+                                      defaultValue={item.portions || 1}
+                                      placeholder="Portions"
+                                      className="h-7 text-xs w-16"
+                                      min="1"
+                                      onBlur={(e) => {
+                                        updateShoppingItem(item.item_id, { portions: parseInt(e.target.value) || 1 });
+                                      }}
+                                    />
+                                    <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditingItem(null)}>
+                                      <Check className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground cursor-pointer hover:text-primary" onClick={() => setEditingItem(item.item_id)}>
+                                    {item.quantity || 'Quantité ?'} {item.portions > 1 ? `• ${item.portions} portions` : ''}
+                                    <span className="ml-1 text-primary">✏️</span>
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => deleteShoppingItem(item.item_id)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
                           </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive"
-                          onClick={() => deleteShoppingItem(item.item_id)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                        ))}
                       </div>
                     ))}
                   </div>
@@ -1927,7 +1967,115 @@ export default function NutritionPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Articles Section */}
+        {articles.length > 0 && activeTab === 'diary' && (
+          <div className="mt-6">
+            <h3 className="font-heading text-lg mb-3 flex items-center gap-2">
+              <Newspaper className="w-5 h-5 text-primary" />
+              Articles du jour
+            </h3>
+            <div className="space-y-3">
+              {articles.slice(0, 3).map((article) => (
+                <Card 
+                  key={article.id} 
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => { setSelectedArticle(article); setShowArticleDialog(true); }}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex gap-3">
+                      <img 
+                        src={article.image} 
+                        alt={article.title}
+                        className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <Badge variant="secondary" className="text-[10px] mb-1">{article.category}</Badge>
+                        <h4 className="font-medium text-sm line-clamp-2">{article.title}</h4>
+                        <p className="text-xs text-muted-foreground mt-1">{article.source} • {article.read_time}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
+
+      {/* Article Dialog */}
+      <Dialog open={showArticleDialog} onOpenChange={setShowArticleDialog}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          {selectedArticle && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-lg pr-4">{selectedArticle.title}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <img 
+                  src={selectedArticle.image} 
+                  alt={selectedArticle.title}
+                  className="w-full h-48 rounded-lg object-cover"
+                />
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Badge variant="secondary">{selectedArticle.category}</Badge>
+                  <span>{selectedArticle.source}</span>
+                  <span>•</span>
+                  <span>{selectedArticle.read_time}</span>
+                </div>
+                <div className="prose prose-sm dark:prose-invert whitespace-pre-wrap text-sm">
+                  {selectedArticle.content}
+                </div>
+                <DialogFooter className="flex-row gap-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setShowArticleDialog(false)}>
+                    Fermer
+                  </Button>
+                  <Button className="flex-1" onClick={() => { shareArticle(selectedArticle); setShowArticleDialog(false); }}>
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Partager
+                  </Button>
+                </DialogFooter>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add to Agenda Dialog */}
+      <Dialog open={showAgendaDialog} onOpenChange={setShowAgendaDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter à l'agenda</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {agendaItem && (
+              <p className="text-sm text-muted-foreground">
+                {agendaItem.name || agendaItem.title}
+              </p>
+            )}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Date</label>
+              <Input
+                type="date"
+                value={agendaDate}
+                onChange={(e) => setAgendaDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Heure</label>
+              <Input
+                type="time"
+                value={agendaTime}
+                onChange={(e) => setAgendaTime(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAgendaDialog(false)}>Annuler</Button>
+              <Button onClick={addToAgenda}>Ajouter</Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Date Picker Dialog for adding meals */}
       <Dialog open={datePickerOpen} onOpenChange={setDatePickerOpen}>
