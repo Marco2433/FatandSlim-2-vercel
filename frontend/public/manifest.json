@@ -113,31 +113,31 @@
   ],
   "shortcuts": [
     {
-      "name": "Scanner un aliment",
-      "short_name": "Scanner",
-      "description": "Analyser un aliment avec l'IA",
-      "url": "/scanner?utm_source=shortcut",
-      "icons": [{ "src": "/api/pwa/icon-96x96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Mon suivi",
-      "short_name": "Nutrition",
-      "description": "Voir mon journal alimentaire",
-      "url": "/nutrition?utm_source=shortcut",
-      "icons": [{ "src": "/api/pwa/icon-96x96.png", "sizes": "96x96" }]
-    },
-    {
       "name": "Communauté",
       "short_name": "Social",
-      "description": "Amis, messagerie et défis",
+      "description": "Fil public, groupes et classements",
       "url": "/social?utm_source=shortcut",
       "icons": [{ "src": "/api/pwa/icon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "Recettes",
-      "short_name": "Recettes",
-      "description": "Découvrir des recettes saines",
-      "url": "/nutrition?tab=catalog&utm_source=shortcut",
+      "name": "Entraînements",
+      "short_name": "Sport",
+      "description": "Vidéos et programmes sportifs",
+      "url": "/workouts?utm_source=shortcut",
+      "icons": [{ "src": "/api/pwa/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Nutrition",
+      "short_name": "Nutrition",
+      "description": "Recettes et suivi alimentaire",
+      "url": "/nutrition?utm_source=shortcut",
+      "icons": [{ "src": "/api/pwa/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Mon Progrès",
+      "short_name": "Progrès",
+      "description": "Statistiques et badges",
+      "url": "/progress?utm_source=shortcut",
       "icons": [{ "src": "/api/pwa/icon-96x96.png", "sizes": "96x96" }]
     }
   ],
