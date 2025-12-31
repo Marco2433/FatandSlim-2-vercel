@@ -908,8 +908,8 @@ async def get_bariatric_recipes(user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="No bariatric profile found")
     
     phase_info = calculate_bariatric_phase(profile.get("bariatric_surgery_date"))
-    phase = phase_info.get("phase", 4)
-    texture = phase_info.get("texture", "solid_adapted")
+    phase = phase_info.get("phase") or 4  # Default to phase 4 if None
+    texture = phase_info.get("texture") or "solid_adapted"
     
     # Bariatric-specific recipes by phase (rules-based, no AI)
     recipes_by_phase = {
