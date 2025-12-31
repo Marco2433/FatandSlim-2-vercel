@@ -115,6 +115,10 @@ export default function NutritionPage() {
   const [agendaDate, setAgendaDate] = useState('');
   const [agendaTime, setAgendaTime] = useState('12:00');
   
+  // AI Warning dialog state
+  const [showAIWarning, setShowAIWarning] = useState(false);
+  const [pendingAIAction, setPendingAIAction] = useState(null);
+  
   // Note state
   const [newNote, setNewNote] = useState({ date: '', content: '' });
   
