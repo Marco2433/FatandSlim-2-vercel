@@ -1089,6 +1089,114 @@ export default function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Recipe Modal */}
+      <Dialog open={showRecipeModal} onOpenChange={setShowRecipeModal}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          {selectedRecipe && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {selectedRecipe.name}
+                  {selectedRecipe.nutri_score && (
+                    <span className={`w-6 h-6 rounded text-white text-xs flex items-center justify-center font-bold ${getNutriScoreColor(selectedRecipe.nutri_score)}`}>
+                      {selectedRecipe.nutri_score}
+                    </span>
+                  )}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                {selectedRecipe.image && (
+                  <img 
+                    src={selectedRecipe.image} 
+                    alt={selectedRecipe.name}
+                    className="w-full h-48 rounded-lg object-cover"
+                    onError={(e) => e.target.style.display = 'none'}
+                  />
+                )}
+                
+                {/* Nutrition Info */}
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  <div className="p-2 rounded-lg bg-muted">
+                    <p className="text-lg font-bold text-primary">{selectedRecipe.calories}</p>
+                    <p className="text-xs text-muted-foreground">kcal</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-muted">
+                    <p className="text-lg font-bold">{selectedRecipe.protein || 0}g</p>
+                    <p className="text-xs text-muted-foreground">Prot.</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-muted">
+                    <p className="text-lg font-bold">{selectedRecipe.carbs || 0}g</p>
+                    <p className="text-xs text-muted-foreground">Gluc.</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-muted">
+                    <p className="text-lg font-bold">{selectedRecipe.fat || 0}g</p>
+                    <p className="text-xs text-muted-foreground">Lip.</p>
+                  </div>
+                </div>
+                
+                {/* Prep Time */}
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>⏱️ {selectedRecipe.prep_time}</span>
+                  <span>👥 {selectedRecipe.servings || 4} personnes</span>
+                  <span>📊 {selectedRecipe.difficulty || 'Facile'}</span>
+                </div>
+                
+                {/* Ingredients */}
+                {selectedRecipe.ingredients && (
+                  <div>
+                    <p className="font-medium mb-2">📝 Ingrédients</p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedRecipe.ingredients.map((ing, i) => (
+                        <Badge key={i} variant="outline" className="text-xs">
+                          {typeof ing === 'string' ? ing : `${ing.quantity || ''} ${ing.item || ing.name || ing}`}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Steps */}
+                {selectedRecipe.steps && (
+                  <div>
+                    <p className="font-medium mb-2">👨‍🍳 Préparation</p>
+                    <ol className="list-decimal list-inside space-y-2 text-sm">
+                      {selectedRecipe.steps.map((step, i) => (
+                        <li key={i} className="text-muted-foreground">{step}</li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+                
+                {/* Actions */}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addRecipeToFavorites(selectedRecipe);
+                    }}
+                  >
+                    <Heart className="w-4 h-4 mr-2" />
+                    Favoris
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addIngredientsToShoppingList(selectedRecipe.ingredients);
+                    }}
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Courses
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
