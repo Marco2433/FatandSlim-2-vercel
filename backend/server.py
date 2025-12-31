@@ -754,6 +754,377 @@ async def update_profile(data: dict, user: dict = Depends(get_current_user)):
     )
     return {"message": "Profile updated"}
 
+# ==================== BARIATRIC ENDPOINTS ====================
+
+def calculate_bariatric_phase(surgery_date_str: str) -> dict:
+    """Calculate bariatric phase based on surgery date"""
+    if not surgery_date_str:
+        return {"phase": None, "phase_name": None, "days_since_surgery": 0}
+    
+    try:
+        surgery_date = datetime.fromisoformat(surgery_date_str.replace('Z', '+00:00'))
+        days_since = (datetime.now(timezone.utc) - surgery_date).days
+        
+        if days_since < 0:
+            return {"phase": 0, "phase_name": "Pré-opératoire", "days_since_surgery": days_since, "texture": "normal"}
+        elif days_since <= 7:
+            return {"phase": 1, "phase_name": "Phase 1 - Liquide", "days_since_surgery": days_since, "texture": "liquid", "weeks": "J1-J7"}
+        elif days_since <= 21:
+            return {"phase": 2, "phase_name": "Phase 2 - Mixé", "days_since_surgery": days_since, "texture": "mixed", "weeks": "S2-S3"}
+        elif days_since <= 42:
+            return {"phase": 3, "phase_name": "Phase 3 - Mou", "days_since_surgery": days_since, "texture": "soft", "weeks": "S4-S6"}
+        else:
+            return {"phase": 4, "phase_name": "Phase 4 - Solide adapté", "days_since_surgery": days_since, "texture": "solid_adapted", "weeks": "> S6"}
+    except:
+        return {"phase": None, "phase_name": None, "days_since_surgery": 0}
+
+@api_router.get("/bariatric/dashboard")
+async def get_bariatric_dashboard(user: dict = Depends(get_current_user)):
+    """Get bariatric patient dashboard data"""
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    if not profile or not profile.get("bariatric_surgery"):
+        raise HTTPException(status_code=404, detail="No bariatric profile found")
+    
+    # Calculate current phase
+    phase_info = calculate_bariatric_phase(profile.get("bariatric_surgery_date"))
+    
+    # Get recent logs
+    logs = await db.bariatric_logs.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("date", -1).limit(30).to_list(30)
+    
+    # Get weight history
+    weights = await db.weight_history.find(
+        {"user_id": user["user_id"]},
+        {"_id": 0}
+    ).sort("date", -1).limit(30).to_list(30)
+    
+    # Calculate weight loss since surgery
+    pre_op_weight = profile.get("bariatric_pre_op_weight", profile.get("weight", 0))
+    current_weight = weights[0]["weight"] if weights else profile.get("weight", 0)
+    weight_lost = pre_op_weight - current_weight
+    
+    # Get today's log
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today_log = await db.bariatric_logs.find_one(
+        {"user_id": user["user_id"], "date": today},
+        {"_id": 0}
+    )
+    
+    return {
+        "profile": {
+            "surgery_type": profile.get("bariatric_surgery"),
+            "surgery_date": profile.get("bariatric_surgery_date"),
+            "pre_op_weight": pre_op_weight,
+            "pre_op_bmi": round(pre_op_weight / ((profile.get("bariatric_pre_op_height", profile.get("height", 170)) / 100) ** 2), 1) if profile.get("bariatric_pre_op_height") or profile.get("height") else None,
+            "current_weight": current_weight,
+            "weight_lost": round(weight_lost, 1),
+            "parcours": profile.get("bariatric_parcours"),
+            "supplements": profile.get("bariatric_supplements", []),
+            "intolerances": profile.get("bariatric_intolerances", []),
+            "clinic": profile.get("bariatric_clinic"),
+            "surgeon": profile.get("bariatric_surgeon"),
+            "nutritionist": profile.get("bariatric_nutritionist"),
+            "psychologist": profile.get("bariatric_psychologist"),
+            "allergies": profile.get("allergies", [])
+        },
+        "phase": phase_info,
+        "today_log": today_log,
+        "recent_logs": logs,
+        "weight_history": weights
+    }
+
+@api_router.post("/bariatric/log")
+async def create_bariatric_log(data: dict, user: dict = Depends(get_current_user)):
+    """Log daily bariatric tracking data"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    log_entry = {
+        "log_id": f"bari_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "date": data.get("date", today),
+        "weight": data.get("weight"),
+        "food_tolerance": data.get("food_tolerance"),  # "ok", "nausea", "vomiting"
+        "energy_level": data.get("energy_level"),  # 1-5
+        "hydration": data.get("hydration"),  # ml
+        "supplements_taken": data.get("supplements_taken", []),
+        "notes": data.get("notes", ""),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Update or insert
+    await db.bariatric_logs.update_one(
+        {"user_id": user["user_id"], "date": log_entry["date"]},
+        {"$set": log_entry},
+        upsert=True
+    )
+    
+    # Update weight history if weight provided
+    if data.get("weight"):
+        height = (await db.user_profiles.find_one({"user_id": user["user_id"]}))
+        h = height.get("height", 170) if height else 170
+        bmi = data["weight"] / ((h / 100) ** 2)
+        
+        await db.weight_history.update_one(
+            {"user_id": user["user_id"], "date": log_entry["date"]},
+            {"$set": {
+                "weight": data["weight"],
+                "bmi": round(bmi, 1),
+                "date": log_entry["date"],
+                "entry_id": f"weight_{uuid.uuid4().hex[:8]}"
+            }},
+            upsert=True
+        )
+    
+    # Check for alerts
+    alerts = []
+    if data.get("food_tolerance") == "vomiting":
+        alerts.append("⚠️ Vomissements signalés - consultez votre équipe médicale si ça persiste")
+    if data.get("energy_level") and data["energy_level"] <= 2:
+        alerts.append("⚠️ Niveau d'énergie bas - vérifiez votre hydratation et apports protéiques")
+    if data.get("hydration") and data["hydration"] < 1000:
+        alerts.append("⚠️ Hydratation insuffisante - visez au moins 1.5L par jour")
+    
+    return {"message": "Log saved", "log": log_entry, "alerts": alerts}
+
+@api_router.get("/bariatric/recipes")
+async def get_bariatric_recipes(user: dict = Depends(get_current_user)):
+    """Get recipes filtered by bariatric phase - NO AI, rules-based"""
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    if not profile or not profile.get("bariatric_surgery"):
+        raise HTTPException(status_code=404, detail="No bariatric profile found")
+    
+    phase_info = calculate_bariatric_phase(profile.get("bariatric_surgery_date"))
+    phase = phase_info.get("phase", 4)
+    texture = phase_info.get("texture", "solid_adapted")
+    
+    # Bariatric-specific recipes by phase (rules-based, no AI)
+    recipes_by_phase = {
+        1: [  # Liquid phase
+            {"name": "Bouillon de légumes", "texture": "liquid", "protein": 2, "calories": 25, "portion": "150ml", "ingredients": ["légumes", "eau", "sel"], "instructions": "Faire mijoter les légumes 30 min, filtrer"},
+            {"name": "Smoothie protéiné", "texture": "liquid", "protein": 20, "calories": 120, "portion": "150ml", "ingredients": ["protéine en poudre", "lait écrémé", "eau"], "instructions": "Mixer tous les ingrédients"},
+            {"name": "Yaourt liquide", "texture": "liquid", "protein": 8, "calories": 80, "portion": "125ml", "ingredients": ["yaourt nature 0%"], "instructions": "Diluer légèrement si nécessaire"},
+            {"name": "Soupe de potiron lisse", "texture": "liquid", "protein": 3, "calories": 45, "portion": "150ml", "ingredients": ["potiron", "bouillon", "sel"], "instructions": "Cuire et mixer très finement"},
+            {"name": "Compote de pomme liquide", "texture": "liquid", "protein": 0, "calories": 50, "portion": "100ml", "ingredients": ["pommes", "eau"], "instructions": "Cuire et mixer jusqu'à consistance liquide"},
+        ],
+        2: [  # Mixed phase
+            {"name": "Purée de légumes", "texture": "mixed", "protein": 4, "calories": 80, "portion": "100g", "ingredients": ["carottes", "courgettes", "pomme de terre"], "instructions": "Cuire et mixer en purée lisse"},
+            {"name": "Œufs brouillés très mous", "texture": "mixed", "protein": 12, "calories": 140, "portion": "80g", "ingredients": ["2 œufs", "lait"], "instructions": "Cuire doucement en remuant"},
+            {"name": "Fromage blanc mixé", "texture": "mixed", "protein": 15, "calories": 100, "portion": "100g", "ingredients": ["fromage blanc 0%", "compote"], "instructions": "Mixer jusqu'à consistance lisse"},
+            {"name": "Purée de poisson", "texture": "mixed", "protein": 18, "calories": 100, "portion": "80g", "ingredients": ["cabillaud", "crème légère"], "instructions": "Cuire le poisson et mixer avec la crème"},
+            {"name": "Velouté de poulet", "texture": "mixed", "protein": 15, "calories": 120, "portion": "150ml", "ingredients": ["poulet", "bouillon", "légumes"], "instructions": "Cuire et mixer finement"},
+        ],
+        3: [  # Soft phase
+            {"name": "Omelette moelleuse", "texture": "soft", "protein": 12, "calories": 160, "portion": "100g", "ingredients": ["2 œufs", "fromage râpé"], "instructions": "Cuire doucement, bien baveuse"},
+            {"name": "Poisson vapeur émietté", "texture": "soft", "protein": 20, "calories": 110, "portion": "100g", "ingredients": ["saumon", "citron"], "instructions": "Cuire vapeur et émietter à la fourchette"},
+            {"name": "Purée de patate douce", "texture": "soft", "protein": 2, "calories": 90, "portion": "100g", "ingredients": ["patate douce", "beurre"], "instructions": "Cuire et écraser"},
+            {"name": "Poulet haché tendre", "texture": "soft", "protein": 25, "calories": 150, "portion": "80g", "ingredients": ["poulet haché", "sauce tomate"], "instructions": "Cuire doucement dans la sauce"},
+            {"name": "Cottage cheese aux fruits", "texture": "soft", "protein": 14, "calories": 120, "portion": "120g", "ingredients": ["cottage cheese", "fruits mous"], "instructions": "Mélanger délicatement"},
+        ],
+        4: [  # Solid adapted phase
+            {"name": "Blanc de poulet grillé", "texture": "solid_adapted", "protein": 30, "calories": 165, "portion": "100g", "ingredients": ["poulet", "herbes"], "instructions": "Griller et couper en petits morceaux"},
+            {"name": "Saumon au four", "texture": "solid_adapted", "protein": 25, "calories": 200, "portion": "100g", "ingredients": ["saumon", "citron", "aneth"], "instructions": "Cuire au four 15 min"},
+            {"name": "Tofu sauté aux légumes", "texture": "solid_adapted", "protein": 15, "calories": 150, "portion": "120g", "ingredients": ["tofu", "légumes", "sauce soja"], "instructions": "Sauter à la poêle"},
+            {"name": "Œufs pochés", "texture": "solid_adapted", "protein": 12, "calories": 140, "portion": "2 œufs", "ingredients": ["œufs", "vinaigre"], "instructions": "Pocher 3 min dans l'eau frémissante"},
+            {"name": "Crevettes grillées", "texture": "solid_adapted", "protein": 24, "calories": 120, "portion": "100g", "ingredients": ["crevettes", "ail", "persil"], "instructions": "Griller rapidement à la poêle"},
+        ]
+    }
+    
+    # Get recipes for current phase and below
+    available_recipes = []
+    for p in range(1, phase + 1):
+        available_recipes.extend(recipes_by_phase.get(p, []))
+    
+    # Filter by allergies and intolerances
+    allergies = profile.get("allergies", [])
+    intolerances = profile.get("bariatric_intolerances", [])
+    excluded = set(allergies + intolerances)
+    
+    filtered_recipes = []
+    for recipe in available_recipes:
+        # Simple ingredient check
+        recipe_ingredients = " ".join(recipe.get("ingredients", [])).lower()
+        exclude = False
+        for allergen in excluded:
+            if allergen.lower() in recipe_ingredients:
+                exclude = True
+                break
+        if not exclude:
+            recipe["phase_allowed"] = phase
+            filtered_recipes.append(recipe)
+    
+    return {
+        "phase": phase_info,
+        "recipes": filtered_recipes,
+        "guidelines": {
+            "portion_size": "60-120g max par repas",
+            "protein_first": "Toujours commencer par les protéines",
+            "chew_well": "Mâcher au moins 20 fois chaque bouchée",
+            "no_drinking": "Ne pas boire pendant les repas (30 min avant/après)"
+        }
+    }
+
+@api_router.get("/bariatric/articles")
+async def get_bariatric_articles(user: dict = Depends(get_current_user)):
+    """Get daily bariatric-specific articles - NO AI"""
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    if not profile or not profile.get("bariatric_surgery"):
+        raise HTTPException(status_code=404, detail="No bariatric profile found")
+    
+    surgery_type = profile.get("bariatric_surgery", "bypass")
+    phase_info = calculate_bariatric_phase(profile.get("bariatric_surgery_date"))
+    
+    # Pool of bariatric articles
+    all_articles = [
+        {"title": "Les protéines après chirurgie bariatrique", "category": "nutrition", "surgery": "both", "summary": "Pourquoi viser 60-80g de protéines par jour est essentiel pour préserver votre masse musculaire.", "source": "HAS", "read_time": "3 min"},
+        {"title": "Gérer les carences en vitamines", "category": "santé", "surgery": "both", "summary": "B12, fer, calcium, vitamine D : les suppléments indispensables et leur importance.", "source": "SOFFCO", "read_time": "4 min"},
+        {"title": "Le dumping syndrome : comprendre et prévenir", "category": "bypass", "surgery": "bypass", "summary": "Symptômes, causes et conseils pour éviter ce phénomène fréquent après un bypass.", "source": "CHU", "read_time": "5 min"},
+        {"title": "Reprise alimentaire post-sleeve", "category": "sleeve", "surgery": "sleeve", "summary": "Les étapes de la réalimentation après une sleeve gastrectomie.", "source": "AFDN", "read_time": "4 min"},
+        {"title": "L'hydratation après chirurgie bariatrique", "category": "hydratation", "surgery": "both", "summary": "Comment atteindre 1.5L par jour quand l'estomac est réduit.", "source": "HAS", "read_time": "3 min"},
+        {"title": "Activité physique et perte de poids", "category": "sport", "surgery": "both", "summary": "Reprendre le sport progressivement pour optimiser vos résultats.", "source": "SOFFCO", "read_time": "4 min"},
+        {"title": "Les signaux de faim et satiété", "category": "comportement", "surgery": "both", "summary": "Réapprendre à écouter son corps après une chirurgie bariatrique.", "source": "CHU", "read_time": "3 min"},
+        {"title": "Eviter le grignotage émotionnel", "category": "psychologie", "surgery": "both", "summary": "Stratégies pour gérer les envies de manger liées aux émotions.", "source": "AFDN", "read_time": "5 min"},
+        {"title": "La peau après une perte de poids importante", "category": "corps", "surgery": "both", "summary": "Comment prendre soin de sa peau et options de chirurgie réparatrice.", "source": "SOFFCO", "read_time": "4 min"},
+        {"title": "Alcool et chirurgie bariatrique", "category": "santé", "surgery": "both", "summary": "Pourquoi l'alcool est plus dangereux après une chirurgie et les précautions à prendre.", "source": "HAS", "read_time": "3 min"},
+        {"title": "Plateau de perte de poids : que faire ?", "category": "motivation", "surgery": "both", "summary": "Comprendre et surmonter les phases de stagnation.", "source": "CHU", "read_time": "4 min"},
+        {"title": "RGO et bypass gastrique", "category": "bypass", "surgery": "bypass", "summary": "Le reflux gastro-œsophagien : amélioration fréquente après bypass.", "source": "SOFFCO", "read_time": "3 min"},
+        {"title": "Chute de cheveux post-opératoire", "category": "santé", "surgery": "both", "summary": "Causes, durée et solutions pour limiter la perte de cheveux.", "source": "AFDN", "read_time": "4 min"},
+        {"title": "Grossesse après chirurgie bariatrique", "category": "santé", "surgery": "both", "summary": "Délais recommandés et suivi particulier pour une grossesse en sécurité.", "source": "HAS", "read_time": "5 min"},
+        {"title": "Sleeve et reflux gastrique", "category": "sleeve", "surgery": "sleeve", "summary": "Comprendre pourquoi le reflux peut apparaître après une sleeve.", "source": "CHU", "read_time": "4 min"},
+    ]
+    
+    # Filter by surgery type
+    filtered = [a for a in all_articles if a["surgery"] in ["both", surgery_type]]
+    
+    # Use day of year to rotate articles (3 per day)
+    day_of_year = datetime.now(timezone.utc).timetuple().tm_yday
+    start_idx = (day_of_year * 3) % len(filtered)
+    
+    daily_articles = []
+    for i in range(3):
+        idx = (start_idx + i) % len(filtered)
+        article = filtered[idx].copy()
+        article["article_id"] = f"bari_art_{idx}"
+        daily_articles.append(article)
+    
+    return {"articles": daily_articles, "surgery_type": surgery_type}
+
+@api_router.post("/bariatric/coach")
+async def bariatric_coach(data: dict, user: dict = Depends(get_current_user)):
+    """Bariatric AI coach with strict medical guardrails - uses AI credits"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    if not profile or not profile.get("bariatric_surgery"):
+        raise HTTPException(status_code=404, detail="No bariatric profile found")
+    
+    question = data.get("question", "").strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Question required")
+    
+    # Check AI usage limit
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    usage = await db.ai_usage_logs.find_one({"user_id": user["user_id"], "date": today})
+    daily_count = usage.get("count", 0) if usage else 0
+    
+    if daily_count >= 2:
+        raise HTTPException(status_code=429, detail={"message": "Limite quotidienne IA atteinte (2/jour). Revenez demain !", "used": daily_count, "limit": 2})
+    
+    # Calculate phase
+    phase_info = calculate_bariatric_phase(profile.get("bariatric_surgery_date"))
+    surgery_type = profile.get("bariatric_surgery")
+    surgery_name = "bypass gastrique" if surgery_type == "bypass" else "sleeve gastrectomie"
+    
+    # Check cache first
+    cache_key = f"bariatric_{surgery_type}_phase{phase_info.get('phase')}_{question[:50]}"
+    cache_hash = hashlib.md5(cache_key.encode()).hexdigest()
+    
+    cached = await db.ai_cache.find_one({"prompt_hash": cache_hash})
+    if cached:
+        await db.ai_cache.update_one({"prompt_hash": cache_hash}, {"$inc": {"hits": 1}})
+        return {"response": cached["response"], "from_cache": True, "phase": phase_info}
+    
+    # Build strict system prompt
+    system_prompt = f"""Tu es un coach de soutien pour patients ayant subi une {surgery_name}.
+
+RÈGLES STRICTES À RESPECTER ABSOLUMENT :
+1. Tu n'es PAS un professionnel de santé
+2. Tu ne donnes JAMAIS d'avis médical
+3. Tu ne modifies JAMAIS les traitements ou prescriptions
+4. Tu ne fais JAMAIS de diagnostic
+5. Pour toute question médicale, tu renvoies vers l'équipe soignante
+
+CONTEXTE DU PATIENT :
+- Type d'opération : {surgery_name}
+- Phase actuelle : {phase_info.get('phase_name', 'Non définie')} ({phase_info.get('days_since_surgery', 0)} jours post-op)
+- Texture autorisée : {phase_info.get('texture', 'solide adapté')}
+- Suppléments prescrits : {', '.join(profile.get('bariatric_supplements', [])) or 'Non renseignés'}
+- Intolérances : {', '.join(profile.get('bariatric_intolerances', [])) or 'Aucune'}
+- Allergies : {', '.join(profile.get('allergies', [])) or 'Aucune'}
+
+TU PEUX :
+- Donner des conseils nutritionnels généraux adaptés à la phase
+- Proposer des idées de repas adaptées à la texture autorisée
+- Encourager et motiver
+- Expliquer des phénomènes courants (dumping, plateau, etc.)
+- Rappeler l'importance des suppléments
+
+TU DOIS TOUJOURS :
+- Commencer par ce disclaimer : "⚕️ Je ne suis pas un professionnel de santé. Mes conseils sont généraux et ne remplacent pas l'avis de votre équipe médicale."
+- Rester bienveillant et encourageant
+- Adapter tes conseils à la phase du patient
+- Répondre en français
+
+QUESTION DU PATIENT : {question}"""
+
+    try:
+        llm = LlmChat(api_key=os.environ.get('EMERGENT_API_KEY'))
+        response = await llm.send_async(
+            model="gpt-4o",
+            messages=[UserMessage(text=system_prompt)]
+        )
+        
+        # Log AI usage
+        await db.ai_usage_logs.update_one(
+            {"user_id": user["user_id"], "date": today},
+            {"$inc": {"count": 1}, "$setOnInsert": {"created_at": datetime.now(timezone.utc).isoformat()}},
+            upsert=True
+        )
+        
+        # Cache response
+        await db.ai_cache.insert_one({
+            "prompt_hash": cache_hash,
+            "response": response.text,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "hits": 0
+        })
+        
+        return {"response": response.text, "from_cache": False, "phase": phase_info}
+        
+    except Exception as e:
+        logger.error(f"Bariatric coach error: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la génération de la réponse")
+
+@api_router.get("/bariatric/check-disclaimer")
+async def check_bariatric_disclaimer(user: dict = Depends(get_current_user)):
+    """Check if user has seen the bariatric disclaimer"""
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    return {"seen_disclaimer": profile.get("bariatric_disclaimer_seen", False) if profile else False}
+
+@api_router.post("/bariatric/accept-disclaimer")
+async def accept_bariatric_disclaimer(user: dict = Depends(get_current_user)):
+    """Mark bariatric disclaimer as seen"""
+    await db.user_profiles.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"bariatric_disclaimer_seen": True}}
+    )
+    return {"message": "Disclaimer accepted"}
+
 # ==================== FOOD & NUTRITION ENDPOINTS ====================
 
 @api_router.post("/food/analyze")
