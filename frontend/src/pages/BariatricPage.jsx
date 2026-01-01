@@ -816,6 +816,17 @@ export default function BariatricPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* AI Warning Dialog */}
+      <AIWarningDialog
+        open={showAIWarning}
+        onOpenChange={setShowAIWarning}
+        onConfirm={() => {
+          setShowAIWarning(false);
+          askCoach();
+        }}
+        feature="Coach IA Bariatrique"
+      />
     </div>
   );
 }
