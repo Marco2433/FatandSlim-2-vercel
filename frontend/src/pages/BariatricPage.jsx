@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
+import AIWarningDialog from '@/components/AIWarningDialog';
 import { 
   ArrowLeft,
   Activity,
