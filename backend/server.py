@@ -3907,7 +3907,7 @@ async def get_workout_videos(category: Optional[str] = None):
 
 @api_router.get("/workouts/video-stream/{video_id}")
 async def stream_workout_video(video_id: str, request: Request):
-    """Proxy pour streamer les vidéos workout (contourne CORS) avec support Range"""
+    """Proxy pour les vidéos workout - Retourne l'URL de redirection"""
     import httpx
     
     videos = get_workout_videos_list()
@@ -3916,45 +3916,8 @@ async def stream_workout_video(video_id: str, request: Request):
     if not video or not video.get("video_url"):
         return JSONResponse({"error": "Video not found"}, status_code=404)
     
-    video_url = video["video_url"]
-    
-    # Get range header if present
-    range_header = request.headers.get("range")
-    headers = {}
-    if range_header:
-        headers["Range"] = range_header
-    
-    async def video_streamer():
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            async with client.stream("GET", video_url, headers=headers) as response:
-                async for chunk in response.aiter_bytes(chunk_size=65536):
-                    yield chunk
-    
-    # Get content length for proper video seeking
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        head_response = await client.head(video_url)
-        content_length = head_response.headers.get("content-length", "0")
-    
-    response_headers = {
-        "Accept-Ranges": "bytes",
-        "Content-Length": content_length,
-        "Cache-Control": "public, max-age=3600",
-        "Content-Type": "video/mp4"
-    }
-    
-    if range_header:
-        return StreamingResponse(
-            video_streamer(),
-            status_code=206,
-            media_type="video/mp4",
-            headers=response_headers
-        )
-    
-    return StreamingResponse(
-        video_streamer(),
-        media_type="video/mp4",
-        headers=response_headers
-    )
+    # Redirect directement vers la source vidéo
+    return RedirectResponse(url=video["video_url"], status_code=302)
 
 @api_router.post("/badges/award")
 async def award_video_badge(data: dict, user: dict = Depends(get_current_user)):
