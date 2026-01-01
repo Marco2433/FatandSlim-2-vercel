@@ -10,7 +10,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone, timedelta
