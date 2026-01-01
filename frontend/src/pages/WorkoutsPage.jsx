@@ -938,60 +938,65 @@ export default function WorkoutsPage() {
         <DialogContent className="max-w-2xl p-0">
           {playingVideo && (
             <>
-              <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-                {playingVideo.youtube_id ? (
-                  <iframe
-                    src={`https://www.youtube.com/embed/${playingVideo.youtube_id}?autoplay=1&rel=0`}
-                    title={playingVideo.title}
-                    className="w-full h-full"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                ) : (
-                  <>
-                    <img 
-                      src={playingVideo.thumbnail} 
-                      alt={playingVideo.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                      <div className="text-center text-white">
-                        <Play className="w-16 h-16 mx-auto mb-4" />
-                        <p className="text-sm">Vidéo non disponible</p>
-                      </div>
-                    </div>
-                  </>
-                )}
+              {/* Video Exercise Interface - No external links */}
+              <div className="relative aspect-video rounded-lg overflow-hidden" style={{
+                background: `linear-gradient(135deg, ${playingVideo.category_color || '#6366f1'} 0%, ${playingVideo.category_color || '#6366f1'}99 100%)`
+              }}>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4">
+                  <span className="text-5xl mb-3">{playingVideo.category_icon || '🏋️'}</span>
+                  <h3 className="text-xl font-bold text-center">{playingVideo.title}</h3>
+                  <div className="flex items-center gap-3 mt-3">
+                    <Badge variant="secondary" className="bg-white/20 text-white">
+                      <Clock className="w-3 h-3 mr-1" />
+                      {playingVideo.duration}
+                    </Badge>
+                    <Badge variant="secondary" className="bg-white/20 text-white">
+                      <Flame className="w-3 h-3 mr-1" />
+                      ~{playingVideo.calories_estimate || playingVideo.duration_minutes * 10} kcal
+                    </Badge>
+                  </div>
+                </div>
               </div>
-              <div className="p-4">
-                <h3 className="font-semibold">{playingVideo.title}</h3>
-                <div className="flex items-center gap-2 mt-2">
+              
+              <div className="p-4 space-y-4">
+                {/* Level & Equipment */}
+                <div className="flex items-center justify-between">
                   <Badge className={DIFFICULTY_LABELS[playingVideo.level]?.color}>
                     {DIFFICULTY_LABELS[playingVideo.level]?.label}
                   </Badge>
-                  <span className="text-sm text-muted-foreground">{playingVideo.duration}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {playingVideo.equipment || 'Aucun équipement'}
+                  </span>
                 </div>
-                <div className="flex gap-2 mt-4">
-                  {playingVideo.youtube_id && (
-                    <Button 
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => window.open(`https://www.youtube.com/watch?v=${playingVideo.youtube_id}`, '_blank')}
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      YouTube
-                    </Button>
-                  )}
-                  <Button 
-                    className="flex-1" 
-                    onClick={() => handleVideoComplete(playingVideo)}
-                  >
-                    <Check className="w-4 h-4 mr-2" />
-                    J'ai terminé !
-                  </Button>
-                </div>
-                <Button variant="ghost" className="w-full mt-2" onClick={() => setPlayingVideo(null)}>
+
+                {/* Description */}
+                {playingVideo.description && (
+                  <p className="text-sm text-muted-foreground">{playingVideo.description}</p>
+                )}
+
+                {/* Instructions */}
+                {playingVideo.instructions && (
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-xs font-medium mb-2">📋 Instructions :</p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      {playingVideo.instructions.map((inst, i) => (
+                        <li key={i}>• {inst}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Action Button */}
+                <Button 
+                  className="w-full" 
+                  size="lg"
+                  onClick={() => handleVideoComplete(playingVideo)}
+                >
+                  <Check className="w-5 h-5 mr-2" />
+                  J'ai terminé cet exercice !
+                </Button>
+                
+                <Button variant="ghost" className="w-full" onClick={() => setPlayingVideo(null)}>
                   Fermer
                 </Button>
               </div>
