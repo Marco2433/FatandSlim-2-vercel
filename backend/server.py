@@ -448,6 +448,63 @@ async def login(user: UserLogin, response: Response):
     if "password_hash" in user_doc and not verify_password(user.password, user_doc["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
+    # ============ MIGRATION AUTOMATIQUE DES ANCIENS PROFILS ============
+    # Vérifie si le profil a besoin d'être migré vers la nouvelle version
+    profile = await db.profiles.find_one({"user_id": user_doc["user_id"]}, {"_id": 0})
+    if profile and profile.get("profile_version", 1) < 3:
+        # Migration: ajouter les champs manquants avec valeurs par défaut
+        migration_updates = {
+            "profile_version": 3,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # Champs obligatoires pour l'onboarding
+        defaults = {
+            "age": 30,
+            "height": 170,
+            "weight": 70,
+            "target_weight": 65,
+            "goal": "health",
+            "activity_level": "moderate",
+            "dietary_preferences": [],
+            "allergies": [],
+            "fitness_level": "beginner",
+            "gender": "male",
+            "health_conditions": [],
+            "food_likes": [],
+            "food_dislikes": [],
+            "time_constraint": "moderate",
+            "budget": "medium",
+            "cooking_skill": "intermediate",
+            "meals_per_day": 3,
+            "bariatric_surgery": None,
+            "bariatric_surgery_date": None,
+            "bariatric_phase": None,
+            "bariatric_supplements": [],
+            "bariatric_intolerances": [],
+        }
+        
+        for field, default_value in defaults.items():
+            if field not in profile or profile[field] is None:
+                migration_updates[field] = default_value
+        
+        # Appliquer la migration
+        if len(migration_updates) > 2:  # Plus que juste version et updated_at
+            await db.profiles.update_one(
+                {"user_id": user_doc["user_id"]},
+                {"$set": migration_updates}
+            )
+            logger.info(f"Profile migrated for user {user_doc['user_id']}: {list(migration_updates.keys())}")
+    
+    # Vérifie aussi si onboarding_completed est None ou manquant
+    if user_doc.get("onboarding_completed") is None:
+        await db.users.update_one(
+            {"user_id": user_doc["user_id"]},
+            {"$set": {"onboarding_completed": False}}
+        )
+        user_doc["onboarding_completed"] = False
+    # ============ FIN MIGRATION ============
+    
     token = create_token(user_doc["user_id"])
     response.set_cookie(
         key="session_token",
