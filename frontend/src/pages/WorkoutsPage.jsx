@@ -694,25 +694,22 @@ export default function WorkoutsPage() {
         </Tabs>
       </main>
 
-      {/* Video Player Dialog - Lecteur MP4 natif */}
+      {/* Video Player Dialog - Lecteur YouTube intégré */}
       <Dialog open={!!playingVideo} onOpenChange={() => setPlayingVideo(null)}>
         <DialogContent className="max-w-2xl p-0 overflow-hidden">
           {playingVideo && (
             <>
-              {/* Lecteur vidéo HTML5 natif - Pas de lien externe */}
+              {/* Lecteur YouTube iframe intégré */}
               <div className="relative aspect-video bg-black">
-                {playingVideo.video_url ? (
-                  <video
-                    ref={videoRef}
-                    className="w-full h-full object-contain"
-                    controls
-                    autoPlay
-                    playsInline
-                    key={playingVideo.id}
-                  >
-                    <source src={playingVideo.video_url} type="video/mp4" />
-                    Votre navigateur ne supporte pas la lecture vidéo.
-                  </video>
+                {playingVideo.youtube_id ? (
+                  <iframe
+                    className="w-full h-full"
+                    src={`https://www.youtube.com/embed/${playingVideo.youtube_id}?autoplay=1&rel=0&modestbranding=1`}
+                    title={playingVideo.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
                 ) : (
                   <div 
                     className="absolute inset-0 flex flex-col items-center justify-center text-white p-4"
@@ -745,18 +742,13 @@ export default function WorkoutsPage() {
                   </div>
                 </div>
 
-                {/* Description */}
-                {playingVideo.description && (
-                  <p className="text-sm text-muted-foreground">{playingVideo.description}</p>
-                )}
-
                 {/* Equipment */}
                 <p className="text-sm">
                   <span className="font-medium">Équipement:</span>{' '}
                   <span className="text-muted-foreground">{playingVideo.equipment || 'Aucun'}</span>
                 </p>
 
-                {/* Action Buttons */}
+                {/* Action Buttons - PAS de bouton YouTube externe */}
                 <div className="flex gap-2 pt-2">
                   <Button 
                     className="flex-1" 
