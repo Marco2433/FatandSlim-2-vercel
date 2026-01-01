@@ -708,7 +708,8 @@ export default function WorkoutsPage() {
                     controls
                     autoPlay
                     playsInline
-                    poster=""
+                    crossOrigin="anonymous"
+                    onError={(e) => console.log('Video error:', e)}
                   >
                     <source src={playingVideo.video_url} type="video/mp4" />
                     Votre navigateur ne supporte pas la lecture vidéo.
