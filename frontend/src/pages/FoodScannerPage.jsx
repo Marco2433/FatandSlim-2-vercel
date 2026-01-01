@@ -300,7 +300,66 @@ export default function FoodScannerPage() {
                     </div>
                   </CardContent>
                 </Card>
+
+                <Card className="cursor-pointer card-interactive border-2 border-dashed border-accent/50 hover:border-accent" onClick={() => setScanMode('barcode')}>
+                  <CardContent className="p-6 flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center">
+                      <ScanBarcode className="w-7 h-7 text-accent" />
+                    </div>
+                    <div>
+                      <h3 className="font-heading font-semibold">Scanner un code-barres</h3>
+                      <p className="text-sm text-muted-foreground">OpenFoodFacts (gratuit, sans IA)</p>
+                    </div>
+                  </CardContent>
+                </Card>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+              </div>
+            </div>
+          )}
+
+          {/* Barcode Scanner Mode */}
+          {scanMode === 'barcode' && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="text-center py-4">
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-accent/10 flex items-center justify-center mb-4">
+                  <ScanBarcode className="w-8 h-8 text-accent" />
+                </div>
+                <h2 className="font-heading text-xl font-bold mb-2">Scanner un code-barres</h2>
+                <p className="text-sm text-muted-foreground">
+                  Entrez le code-barres du produit pour obtenir ses informations nutritionnelles
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Ex: 3017620422003"
+                    value={barcodeInput}
+                    onChange={(e) => setBarcodeInput(e.target.value.replace(/\D/g, ''))}
+                    className="flex-1 text-lg text-center tracking-widest"
+                    onKeyDown={(e) => e.key === 'Enter' && scanBarcode()}
+                  />
+                  <Button 
+                    onClick={scanBarcode} 
+                    disabled={barcodeLoading || !barcodeInput.trim()}
+                    className="px-6"
+                  >
+                    {barcodeLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl bg-muted/50 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    💡 Le code-barres se trouve généralement sous le produit (13 chiffres)
+                  </p>
+                </div>
+
+                <Button variant="outline" className="w-full" onClick={reset}>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Retour
+                </Button>
               </div>
             </div>
           )}
