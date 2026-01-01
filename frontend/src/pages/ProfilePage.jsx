@@ -546,6 +546,19 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </div>
+
+              {/* Delete Account Button - discret */}
+              <div className="pt-4 border-t border-border/30">
+                <button 
+                  className="text-xs text-muted-foreground/50 hover:text-destructive transition-colors"
+                  onClick={() => {
+                    setShowSettingsDialog(false);
+                    setShowDeleteDialog(true);
+                  }}
+                >
+                  Supprimer mon compte
+                </button>
+              </div>
             </div>
           )}
 
