@@ -44,6 +44,7 @@ export default function ProfilePage() {
   const [uploadingPicture, setUploadingPicture] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingProfile, setEditingProfile] = useState(null);
   const [savingProfile, setSavingProfile] = useState(false);
   const fileInputRef = useRef(null);
