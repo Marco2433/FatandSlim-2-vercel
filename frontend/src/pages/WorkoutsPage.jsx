@@ -937,19 +937,31 @@ export default function WorkoutsPage() {
         <DialogContent className="max-w-2xl p-0">
           {playingVideo && (
             <>
-              <div className="relative aspect-video bg-black">
-                <img 
-                  src={playingVideo.thumbnail} 
-                  alt={playingVideo.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                  <div className="text-center text-white">
-                    <Play className="w-16 h-16 mx-auto mb-4" />
-                    <p className="text-sm">Lecture intégrée disponible prochainement</p>
-                    <p className="text-xs mt-2 opacity-70">Cliquez sur "J'ai terminé" une fois la vidéo regardée</p>
-                  </div>
-                </div>
+              <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                {playingVideo.youtube_id ? (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${playingVideo.youtube_id}?autoplay=1&rel=0`}
+                    title={playingVideo.title}
+                    className="w-full h-full"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <>
+                    <img 
+                      src={playingVideo.thumbnail} 
+                      alt={playingVideo.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                      <div className="text-center text-white">
+                        <Play className="w-16 h-16 mx-auto mb-4" />
+                        <p className="text-sm">Vidéo non disponible</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="p-4">
                 <h3 className="font-semibold">{playingVideo.title}</h3>
@@ -960,6 +972,16 @@ export default function WorkoutsPage() {
                   <span className="text-sm text-muted-foreground">{playingVideo.duration}</span>
                 </div>
                 <div className="flex gap-2 mt-4">
+                  {playingVideo.youtube_id && (
+                    <Button 
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => window.open(`https://www.youtube.com/watch?v=${playingVideo.youtube_id}`, '_blank')}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      YouTube
+                    </Button>
+                  )}
                   <Button 
                     className="flex-1" 
                     onClick={() => handleVideoComplete(playingVideo)}
@@ -967,10 +989,10 @@ export default function WorkoutsPage() {
                     <Check className="w-4 h-4 mr-2" />
                     J'ai terminé !
                   </Button>
-                  <Button variant="outline" onClick={() => setPlayingVideo(null)}>
-                    Fermer
-                  </Button>
                 </div>
+                <Button variant="ghost" className="w-full mt-2" onClick={() => setPlayingVideo(null)}>
+                  Fermer
+                </Button>
               </div>
             </>
           )}
