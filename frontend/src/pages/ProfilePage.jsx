@@ -607,6 +607,31 @@ export default function ProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Supprimer définitivement le compte ?
+            </DialogTitle>
+            <DialogDescription>
+              Cette action est IRRÉVERSIBLE. Toutes vos données seront supprimées définitivement : 
+              profil, historique alimentaire, entraînements, favoris, messages, etc.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteAccount}>
+              <Trash2 className="w-4 h-4 mr-2" />
+              Supprimer mon compte
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
