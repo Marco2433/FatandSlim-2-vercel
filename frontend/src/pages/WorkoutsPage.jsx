@@ -741,12 +741,14 @@ export default function WorkoutsPage() {
                   >
                     <CardContent className="p-3">
                       <div className="flex gap-3">
-                        <div className="relative flex-shrink-0">
-                          <img 
-                            src={video.thumbnail} 
-                            alt={video.title}
-                            className="w-32 h-20 object-cover rounded-lg"
-                          />
+                        {/* Thumbnail coloré basé sur la catégorie - pas d'image externe */}
+                        <div 
+                          className="relative flex-shrink-0 w-32 h-20 rounded-lg flex items-center justify-center"
+                          style={{
+                            background: `linear-gradient(135deg, ${video.category_color || '#6366f1'} 0%, ${video.category_color || '#6366f1'}99 100%)`
+                          }}
+                        >
+                          <span className="text-3xl">{video.category_icon || '🏋️'}</span>
                           <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/80 rounded text-xs text-white">
                             {video.duration}
                           </div>
@@ -767,7 +769,7 @@ export default function WorkoutsPage() {
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Publié il y a {Math.floor((Date.now() - new Date(video.publishedAt).getTime()) / (24 * 60 * 60 * 1000))} jours
+                            ~{video.calories_estimate || video.duration_minutes * 10} kcal • {video.equipment || 'Sans équipement'}
                           </p>
                         </div>
                         <Button variant="ghost" size="icon" className="self-center">
