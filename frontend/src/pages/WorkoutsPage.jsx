@@ -251,294 +251,54 @@ export default function WorkoutsPage() {
   };
 
   const getMockVideos = () => {
-    return [
-      // Cardio
-      {
-        id: 'v1',
-        title: 'HIIT Brûle-Graisse 20 min - Sans équipement',
-        thumbnail: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400',
-        duration: '20:00',
-        category: 'cardio',
-        level: 'intermediate',
-        views: 125000,
-        publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'v2',
-        title: 'Cardio Dance Party - 30 min',
-        thumbnail: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400',
-        duration: '30:00',
-        category: 'cardio',
-        level: 'beginner',
-        views: 234000,
-        publishedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Gainage
-      {
-        id: 'v3',
-        title: 'Gainage Complet - 15 min pour des abdos en béton',
-        thumbnail: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400',
-        duration: '15:00',
-        category: 'gainage',
-        level: 'beginner',
-        views: 89000,
-        publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'v4',
-        title: 'Challenge Planche - 10 variations',
-        thumbnail: 'https://images.unsplash.com/photo-1566241142559-40e1dab266c6?w=400',
-        duration: '12:00',
-        category: 'gainage',
-        level: 'intermediate',
-        views: 67000,
-        publishedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Home
-      {
-        id: 'v5',
-        title: 'Musculation à la maison - Full Body',
-        thumbnail: 'https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=400',
-        duration: '35:00',
-        category: 'home',
-        level: 'intermediate',
-        views: 156000,
-        publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'v6',
-        title: 'Séance express - 15 min sans matériel',
-        thumbnail: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400',
-        duration: '15:00',
-        category: 'home',
-        level: 'beginner',
-        views: 198000,
-        publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Gym
-      {
-        id: 'v7',
-        title: 'Entraînement Jambes & Fessiers - Salle',
-        thumbnail: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400',
-        duration: '45:00',
-        category: 'gym',
-        level: 'expert',
-        views: 78000,
-        publishedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'v8',
-        title: 'Push Day - Pectoraux & Épaules',
-        thumbnail: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400',
-        duration: '50:00',
-        category: 'gym',
-        level: 'expert',
-        views: 145000,
-        publishedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // HIIT
-      {
-        id: 'v9',
-        title: 'HIIT Extreme - 25 min Tabata',
-        thumbnail: 'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=400',
-        duration: '25:00',
-        category: 'hiit',
-        level: 'expert',
-        views: 112000,
-        publishedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'v10',
-        title: 'HIIT Débutant - 15 min',
-        thumbnail: 'https://images.unsplash.com/photo-1601422407692-ec4eeec1d9b3?w=400',
-        duration: '15:00',
-        category: 'hiit',
-        level: 'beginner',
-        views: 187000,
-        publishedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Musculation
-      {
-        id: 'v11',
-        title: 'Musculation Haut du Corps - Prise de masse',
-        thumbnail: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400',
-        duration: '40:00',
-        category: 'musculation',
-        level: 'expert',
-        views: 145000,
-        publishedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'v12',
-        title: 'Biceps & Triceps - Bras sculptés',
-        thumbnail: 'https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=400',
-        duration: '30:00',
-        category: 'bras',
-        level: 'intermediate',
-        views: 98000,
-        publishedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Yoga
-      {
-        id: 'v13',
-        title: 'Yoga Flow Matinal - 20 min',
-        thumbnail: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400',
-        duration: '20:00',
-        category: 'yoga',
-        level: 'beginner',
-        views: 256000,
-        publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'v14',
-        title: 'Yoga Vinyasa - Séance complète',
-        thumbnail: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400',
-        duration: '45:00',
-        category: 'yoga',
-        level: 'intermediate',
-        views: 134000,
-        publishedAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Fitness
-      {
-        id: 'v15',
-        title: 'Fitness Dance - Cardio Fun 30 min',
-        thumbnail: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400',
-        duration: '30:00',
-        category: 'fitness',
-        level: 'beginner',
-        views: 234000,
-        publishedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'v16',
-        title: 'Fitness Total Body - 40 min',
-        thumbnail: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400',
-        duration: '40:00',
-        category: 'fitness',
-        level: 'intermediate',
-        views: 178000,
-        publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Abdos
-      {
-        id: 'v17',
-        title: 'Abdos en 10 min - Routine quotidienne',
-        thumbnail: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400',
-        duration: '10:00',
-        category: 'abdos',
-        level: 'beginner',
-        views: 312000,
-        publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'v18',
-        title: 'Abdos Sculptés - Challenge 21 jours',
-        thumbnail: 'https://images.unsplash.com/photo-1566241142559-40e1dab266c6?w=400',
-        duration: '20:00',
-        category: 'abdos',
-        level: 'intermediate',
-        views: 245000,
-        publishedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Jambes
-      {
-        id: 'v19',
-        title: 'Jambes & Fessiers - 25 min',
-        thumbnail: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400',
-        duration: '25:00',
-        category: 'jambes',
-        level: 'intermediate',
-        views: 167000,
-        publishedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'v20',
-        title: 'Squat Challenge - 100 répétitions',
-        thumbnail: 'https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400',
-        duration: '15:00',
-        category: 'jambes',
-        level: 'expert',
-        views: 89000,
-        publishedAt: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Stretching
-      {
-        id: 'v21',
-        title: 'Étirements Complets - Récupération',
-        thumbnail: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400',
-        duration: '20:00',
-        category: 'stretching',
-        level: 'beginner',
-        views: 198000,
-        publishedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'v22',
-        title: 'Stretching du Soir - Détente 15 min',
-        thumbnail: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400',
-        duration: '15:00',
-        category: 'stretching',
-        level: 'beginner',
-        views: 156000,
-        publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Dos
-      {
-        id: 'v23',
-        title: 'Renforcement du Dos - 20 min',
-        thumbnail: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400',
-        duration: '20:00',
-        category: 'dos',
-        level: 'intermediate',
-        views: 87000,
-        publishedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Pectoraux
-      {
-        id: 'v24',
-        title: 'Pectoraux Sans Matériel - Pompes variées',
-        thumbnail: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400',
-        duration: '18:00',
-        category: 'pectoraux',
-        level: 'intermediate',
-        views: 134000,
-        publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Fessiers
-      {
-        id: 'v25',
-        title: 'Fessiers Bombés - 20 min',
-        thumbnail: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400',
-        duration: '20:00',
-        category: 'fessiers',
-        level: 'intermediate',
-        views: 289000,
-        publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Débutant
-      {
-        id: 'v26',
-        title: 'Sport pour Débutants - Premiers pas',
-        thumbnail: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400',
-        duration: '15:00',
-        category: 'debutant',
-        level: 'beginner',
-        views: 345000,
-        publishedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      // Expert
-      {
-        id: 'v27',
-        title: 'Challenge Extrême - 45 min intensif',
-        thumbnail: 'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=400',
-        duration: '45:00',
-        category: 'expert',
-        level: 'expert',
-        views: 67000,
-        publishedAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
-      },
+    // Fallback videos avec données locales - pas d'URLs externes
+    const categories = [
+      { id: 'cardio', name: 'Cardio', icon: '❤️', color: '#f43f5e' },
+      { id: 'hiit', name: 'HIIT', icon: '🔥', color: '#ef4444' },
+      { id: 'musculation', name: 'Musculation', icon: '💪', color: '#8b5cf6' },
+      { id: 'yoga', name: 'Yoga', icon: '🧘', color: '#10b981' },
+      { id: 'gainage', name: 'Gainage', icon: '🏋️', color: '#0ea5e9' },
+      { id: 'home', name: 'Maison', icon: '🏠', color: '#14b8a6' },
+      { id: 'gym', name: 'Salle', icon: '🏋️‍♂️', color: '#a855f7' },
+      { id: 'abdos', name: 'Abdos', icon: '🎯', color: '#f59e0b' },
+      { id: 'jambes', name: 'Jambes', icon: '🦵', color: '#ec4899' },
+      { id: 'stretching', name: 'Stretching', icon: '🌿', color: '#22c55e' },
     ];
+    
+    const mockVideos = [];
+    let id = 1;
+    
+    categories.forEach(cat => {
+      for (let i = 0; i < 5; i++) {
+        const duration = [15, 20, 25, 30, 35][i % 5];
+        const level = ['beginner', 'intermediate', 'expert'][i % 3];
+        mockVideos.push({
+          id: `mock-${id++}`,
+          title: `${cat.name} ${duration} min - Séance ${i + 1}`,
+          category: cat.id,
+          category_name: cat.name,
+          category_icon: cat.icon,
+          category_color: cat.color,
+          duration: `${duration}:00`,
+          duration_minutes: duration,
+          level,
+          views: Math.floor(Math.random() * 300000) + 50000,
+          calories_estimate: duration * 10,
+          equipment: ['cardio', 'hiit', 'yoga', 'stretching', 'home', 'abdos'].includes(cat.id) ? 'Aucun' : 'Haltères optionnels',
+          description: `Séance de ${cat.name.toLowerCase()} de ${duration} minutes. Niveau ${level}.`,
+          instructions: [
+            'Échauffement 2-3 minutes',
+            'Suivez le rythme indiqué',
+            'Hydratez-vous régulièrement',
+            'Respirez correctement',
+            'Étirements en fin de séance'
+          ],
+          publishedAt: new Date(Date.now() - (i + 1) * 24 * 60 * 60 * 1000).toISOString(),
+        });
+      }
+    });
+    
+    return mockVideos;
   };
 
   const handleVideoComplete = async (video) => {
