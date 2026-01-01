@@ -254,12 +254,11 @@ class OnboardingData(BaseModel):
     height: float
     weight: float
     target_weight: float
-    goal: str = "health"  # Default value
-    activity_level: str = "moderate"  # Default value
+    goal: str = "health"
+    activity_level: str = "moderate"
     dietary_preferences: List[str] = []
     allergies: List[str] = []
-    fitness_level: str = "beginner"  # Default value
-    # New fields
+    fitness_level: str = "beginner"
     gender: Optional[str] = "male"
     health_conditions: List[str] = []
     food_likes: List[str] = []
@@ -269,12 +268,12 @@ class OnboardingData(BaseModel):
     cooking_skill: Optional[str] = "intermediate"
     meals_per_day: Optional[int] = 3
     # Bariatric fields
-    bariatric_surgery: Optional[str] = None  # "bypass", "sleeve", or None
-    bariatric_surgery_date: Optional[str] = None  # ISO date
+    bariatric_surgery: Optional[str] = None
+    bariatric_surgery_date: Optional[str] = None
     bariatric_pre_op_weight: Optional[float] = None
     bariatric_pre_op_height: Optional[float] = None
-    bariatric_parcours: Optional[str] = None  # "pre_op" or "post_op"
-    bariatric_phase: Optional[int] = None  # 1, 2, 3, 4 for post-op
+    bariatric_parcours: Optional[str] = None
+    bariatric_phase: Optional[int] = None
     bariatric_supplements: Optional[List[str]] = []
     bariatric_intolerances: Optional[List[str]] = []
     bariatric_clinic: Optional[str] = None
@@ -282,16 +281,22 @@ class OnboardingData(BaseModel):
     bariatric_nutritionist: Optional[str] = None
     bariatric_psychologist: Optional[str] = None
     
-    # Allow empty strings to be converted to defaults
-    class Config:
-        extra = "ignore"  # Ignore extra fields
+    model_config = {"extra": "ignore"}
     
-    @validator('goal', 'activity_level', 'fitness_level', pre=True, always=True)
-    def set_default_if_empty(cls, v, field):
-        defaults = {'goal': 'health', 'activity_level': 'moderate', 'fitness_level': 'beginner'}
-        if not v or v == '':
-            return defaults.get(field.name, v)
-        return v
+    @field_validator('goal', mode='before')
+    @classmethod
+    def default_goal(cls, v):
+        return v if v and v != '' else 'health'
+    
+    @field_validator('activity_level', mode='before')
+    @classmethod
+    def default_activity(cls, v):
+        return v if v and v != '' else 'moderate'
+    
+    @field_validator('fitness_level', mode='before')
+    @classmethod
+    def default_fitness(cls, v):
+        return v if v and v != '' else 'beginner'
 
 class FoodLogEntry(BaseModel):
     food_name: str
