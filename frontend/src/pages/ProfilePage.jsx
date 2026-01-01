@@ -156,10 +156,8 @@ export default function ProfilePage() {
 
   const handleResetQuestionnaire = async () => {
     try {
-      // Reset onboarding flag to force user through questionnaire again
-      await axios.put(`${API}/profile`, { 
-        onboarding_completed: false 
-      }, { withCredentials: true });
+      // Use the dedicated reset endpoint
+      await axios.post(`${API}/profile/reset-onboarding`, {}, { withCredentials: true });
       
       // Update user state
       updateUser({ onboarding_completed: false });
@@ -171,6 +169,17 @@ export default function ProfilePage() {
       navigate('/onboarding');
     } catch (error) {
       toast.error('Erreur lors de la réinitialisation');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await axios.delete(`${API}/profile/account`, { withCredentials: true });
+      toast.success('Compte supprimé');
+      await logout();
+      navigate('/');
+    } catch (error) {
+      toast.error('Erreur lors de la suppression du compte');
     }
   };
 
