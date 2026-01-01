@@ -2281,6 +2281,139 @@ async def delete_scan(scan_id: str, user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Scan not found")
     return {"message": "Scan deleted"}
 
+# --- Barcode Scanner (OpenFoodFacts) ---
+@api_router.get("/food/barcode/{barcode}")
+async def scan_barcode(barcode: str, user: dict = Depends(get_current_user)):
+    """Scan a barcode using OpenFoodFacts API - NO AI CREDITS USED"""
+    import httpx
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json",
+                headers={"User-Agent": "FatAndSlim/2.5 (contact@fatandslim.com)"}
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=404, detail="Produit non trouvé")
+            
+            data = response.json()
+            
+            if data.get("status") != 1:
+                raise HTTPException(status_code=404, detail="Produit non trouvé dans OpenFoodFacts")
+            
+            product = data.get("product", {})
+            
+            # Extract nutritional info (per 100g)
+            nutrients = product.get("nutriments", {})
+            
+            result = {
+                "barcode": barcode,
+                "food_name": product.get("product_name_fr") or product.get("product_name") or "Produit inconnu",
+                "brand": product.get("brands", ""),
+                "quantity": product.get("quantity", ""),
+                "categories": product.get("categories_tags_fr", product.get("categories", "")).split(",")[:3] if isinstance(product.get("categories_tags_fr", product.get("categories", "")), str) else [],
+                "image_url": product.get("image_front_url") or product.get("image_url"),
+                "nutri_score": (product.get("nutriscore_grade") or "?").upper(),
+                "nova_group": product.get("nova_group"),
+                "eco_score": product.get("ecoscore_grade", "?").upper() if product.get("ecoscore_grade") else "?",
+                # Nutritional values per 100g
+                "calories": round(nutrients.get("energy-kcal_100g", nutrients.get("energy_100g", 0) / 4.184 if nutrients.get("energy_100g") else 0)),
+                "protein": round(nutrients.get("proteins_100g", 0), 1),
+                "carbs": round(nutrients.get("carbohydrates_100g", 0), 1),
+                "fat": round(nutrients.get("fat_100g", 0), 1),
+                "fiber": round(nutrients.get("fiber_100g", 0), 1),
+                "sugar": round(nutrients.get("sugars_100g", 0), 1),
+                "sodium": round(nutrients.get("sodium_100g", 0) * 1000 if nutrients.get("sodium_100g") else nutrients.get("salt_100g", 0) * 400, 0),
+                "saturated_fat": round(nutrients.get("saturated-fat_100g", 0), 1),
+                "serving_size": product.get("serving_size", "100g"),
+                "ingredients": product.get("ingredients_text_fr") or product.get("ingredients_text", ""),
+                "allergens": product.get("allergens_tags", []),
+                "labels": product.get("labels_tags", []),
+                "source": "OpenFoodFacts"
+            }
+            
+            # Determine category
+            food_name_lower = result["food_name"].lower()
+            category = "Autre"
+            if any(w in food_name_lower for w in ["légume", "carotte", "tomate", "salade"]):
+                category = "Légumes"
+            elif any(w in food_name_lower for w in ["fruit", "pomme", "banane", "orange"]):
+                category = "Fruits"
+            elif any(w in food_name_lower for w in ["viande", "poulet", "bœuf", "porc", "jambon"]):
+                category = "Viandes"
+            elif any(w in food_name_lower for w in ["poisson", "saumon", "thon"]):
+                category = "Poissons"
+            elif any(w in food_name_lower for w in ["pain", "pâtes", "riz", "céréale", "biscuit"]):
+                category = "Féculents"
+            elif any(w in food_name_lower for w in ["yaourt", "fromage", "lait", "crème"]):
+                category = "Produits laitiers"
+            elif any(w in food_name_lower for w in ["chocolat", "bonbon", "gâteau", "glace"]):
+                category = "Desserts"
+            elif any(w in food_name_lower for w in ["boisson", "jus", "eau", "soda", "café"]):
+                category = "Boissons"
+            
+            result["category"] = category
+            
+            # Generate health tips based on nutri-score
+            health_tips = []
+            warnings = []
+            
+            if result["nutri_score"] in ["D", "E"]:
+                warnings.append("⚠️ Nutri-Score bas - consommer avec modération")
+            if result["sugar"] > 15:
+                warnings.append("⚠️ Teneur élevée en sucres")
+            if result["sodium"] > 600:
+                warnings.append("⚠️ Teneur élevée en sel")
+            if result["saturated_fat"] > 5:
+                warnings.append("⚠️ Teneur élevée en graisses saturées")
+            
+            if result["fiber"] > 3:
+                health_tips.append("✅ Bonne source de fibres")
+            if result["protein"] > 10:
+                health_tips.append("✅ Riche en protéines")
+            if result["nutri_score"] in ["A", "B"]:
+                health_tips.append("✅ Bon Nutri-Score")
+            
+            result["health_tips"] = health_tips
+            result["warnings"] = warnings
+            result["is_healthy"] = result["nutri_score"] in ["A", "B", "C"]
+            
+            # Save to scan history
+            scan_entry = {
+                "scan_id": f"scan_{uuid.uuid4().hex[:12]}",
+                "user_id": user["user_id"],
+                "food_name": result["food_name"],
+                "brand": result["brand"],
+                "barcode": barcode,
+                "category": category,
+                "calories": result["calories"],
+                "protein": result["protein"],
+                "carbs": result["carbs"],
+                "fat": result["fat"],
+                "fiber": result["fiber"],
+                "sugar": result["sugar"],
+                "sodium": result["sodium"],
+                "nutri_score": result["nutri_score"],
+                "serving_size": result["serving_size"],
+                "health_tips": health_tips,
+                "warnings": warnings,
+                "is_healthy": result["is_healthy"],
+                "image_data": result["image_url"],  # Store OpenFoodFacts image URL
+                "scan_type": "barcode",
+                "scanned_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.scan_history.insert_one(scan_entry)
+            result["scan_id"] = scan_entry["scan_id"]
+            
+            return result
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Barcode scan error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors du scan: {str(e)}")
+
 @api_router.post("/food/recommend-alternatives")
 async def recommend_alternatives(entry: dict, user: dict = Depends(get_current_user)):
     """Get AI recommendations for healthier alternatives - IN FRENCH"""
