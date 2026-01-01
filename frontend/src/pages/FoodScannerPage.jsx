@@ -150,7 +150,7 @@ export default function FoodScannerPage() {
 
   const analyzeFood = async () => {
     if (!imageFile) return;
-    setMode('analyzing');
+    setScanMode('analyzing');
     setLoading(true);
     
     try {
@@ -163,7 +163,7 @@ export default function FoodScannerPage() {
       });
       
       setResult(response.data);
-      setMode('result');
+      setScanMode('result');
     } catch (error) {
       console.error('Analysis error:', error);
       if (error.response?.status === 429) {
@@ -172,7 +172,7 @@ export default function FoodScannerPage() {
       } else {
         toast.error('Erreur lors de l\'analyse');
       }
-      setMode('preview');
+      setScanMode('preview');
     } finally {
       setLoading(false);
     }
@@ -212,7 +212,7 @@ export default function FoodScannerPage() {
     setImage(null);
     setImageFile(null);
     setResult(null);
-    setMode('select');
+    setScanMode('select');
   };
 
   const getNutriScoreColor = (score) => {
@@ -261,7 +261,7 @@ export default function FoodScannerPage() {
 
         {/* Scanner Tab */}
         <TabsContent value="scanner" className="p-4 pb-24">
-          {mode === 'select' && (
+          {scanMode === 'select' && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center py-6">
                 <div className="w-20 h-20 mx-auto rounded-3xl gradient-premium flex items-center justify-center mb-4">
@@ -274,7 +274,7 @@ export default function FoodScannerPage() {
               </div>
 
               <div className="grid gap-4">
-                <Card className="cursor-pointer card-interactive border-2 border-dashed border-secondary/50 hover:border-secondary" onClick={() => setMode('camera')}>
+                <Card className="cursor-pointer card-interactive border-2 border-dashed border-secondary/50 hover:border-secondary" onClick={() => setScanMode('camera')}>
                   <CardContent className="p-6 flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-secondary/10 flex items-center justify-center">
                       <Camera className="w-7 h-7 text-secondary" />
@@ -302,7 +302,7 @@ export default function FoodScannerPage() {
             </div>
           )}
 
-          {mode === 'camera' && (
+          {scanMode === 'camera' && (
             <div className="space-y-4 animate-fade-in">
               <div className="relative rounded-2xl overflow-hidden bg-black aspect-square">
                 <Webcam
@@ -329,7 +329,7 @@ export default function FoodScannerPage() {
             </div>
           )}
 
-          {mode === 'preview' && image && (
+          {scanMode === 'preview' && image && (
             <div className="space-y-4 animate-fade-in">
               <div className="relative rounded-2xl overflow-hidden">
                 <img src={image} alt="Preview" className="w-full aspect-square object-cover" />
@@ -345,7 +345,7 @@ export default function FoodScannerPage() {
             </div>
           )}
 
-          {mode === 'analyzing' && (
+          {scanMode === 'analyzing' && (
             <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
               <div className="relative">
                 <div className="w-24 h-24 rounded-full gradient-premium animate-pulse" />
@@ -356,7 +356,7 @@ export default function FoodScannerPage() {
             </div>
           )}
 
-          {mode === 'result' && result && (
+          {scanMode === 'result' && result && (
             <div className="space-y-4 animate-fade-in">
               <div className="relative rounded-2xl overflow-hidden">
                 <img src={image} alt="Food" className="w-full aspect-video object-cover" />
