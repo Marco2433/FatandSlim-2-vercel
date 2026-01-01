@@ -161,15 +161,21 @@ export default function BariatricPage() {
     }
   };
 
-  const askCoach = async () => {
+  const handleAskCoach = () => {
     if (!coachQuestion.trim()) return;
+    setPendingCoachQuestion(coachQuestion.trim());
+    setShowAIWarning(true);
+  };
+
+  const askCoach = async () => {
+    if (!pendingCoachQuestion) return;
     
     setCoachLoading(true);
     setCoachResponse('');
     
     try {
       const response = await axios.post(`${API}/bariatric/coach`, {
-        question: coachQuestion.trim()
+        question: pendingCoachQuestion
       }, { withCredentials: true });
       
       setCoachResponse(response.data.response);
@@ -184,6 +190,7 @@ export default function BariatricPage() {
       }
     } finally {
       setCoachLoading(false);
+      setPendingCoachQuestion('');
     }
   };
 
