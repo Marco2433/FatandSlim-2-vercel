@@ -1,28 +1,22 @@
 """
-Workout videos database - Vidéos MP4 libres de droits
+Workout videos database - Vidéos MP4 avec CORS activé
 Lecteur HTML5 natif - Pas de liens externes
 """
 
 import random
 from datetime import datetime, timezone, timedelta
 
-# Vidéos MP4 fitness libres de droits - URLs FONCTIONNELLES
-# Sources: Archive.org, public domain fitness videos
+# Vidéos MP4 avec CORS activé - Sources fiables
+# Ces URLs proviennent de CDN qui autorisent les requêtes cross-origin
 WORKOUT_VIDEO_URLS = [
-    # Vidéos de démonstration fitness libres
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    # Vidéos courtes de test
+    # Vidéos de test officielles avec CORS
     "https://www.w3schools.com/html/mov_bbb.mp4",
+    "https://www.w3schools.com/html/movie.mp4",
     "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+    # Vidéos Cloudflare samples (CORS enabled)
+    "https://test-streams.mux.dev/x36xhzz/x36xhzz.mp4",
+    # Archive.org public domain (CORS enabled)
+    "https://archive.org/download/ElephstsD/ElephstsD_512kb.mp4",
 ]
 
 # Video categories config
@@ -230,7 +224,7 @@ def generate_workout_videos():
                 "views": random.randint(15000, 450000),
                 "likes": random.randint(500, 15000),
                 "days_ago": random.randint(1, 60),
-                "video_url": video_url,  # URL MP4 directe
+                "video_url": video_url,
                 "description": f"Séance de {config['name'].lower()} de {duration} minutes. Niveau {level}.",
                 "instructions": [
                     "Échauffement 2-3 minutes",
