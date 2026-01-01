@@ -712,7 +712,7 @@ export default function BariatricPage() {
               />
 
               <Button 
-                onClick={askCoach} 
+                onClick={handleAskCoach} 
                 disabled={coachLoading || !coachQuestion.trim()}
                 className="w-full"
               >
