@@ -258,7 +258,7 @@ class OnboardingData(BaseModel):
     activity_level: str
     dietary_preferences: List[str] = []
     allergies: List[str] = []
-    fitness_level: str
+    fitness_level: str = "beginner"  # Default value to prevent validation error
     # New fields
     gender: Optional[str] = "male"
     health_conditions: List[str] = []
