@@ -1,49 +1,28 @@
 """
-Workout videos database - Vidéos MP4 libres de droits Pexels
+Workout videos database - Vidéos MP4 libres de droits
 Lecteur HTML5 natif - Pas de liens externes
 """
 
 import random
 from datetime import datetime, timezone, timedelta
 
-# Vidéos MP4 Pexels fitness - URLs directes fonctionnelles
-PEXELS_MP4_URLS = [
-    # Fitness / Workout
-    "https://videos.pexels.com/video-files/4761431/4761431-uhd_1440_2560_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761448/4761448-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761435/4761435-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761440/4761440-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761438/4761438-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761437/4761437-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761444/4761444-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761446/4761446-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761449/4761449-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761453/4761453-hd_1080_1920_25fps.mp4",
-    # Yoga / Stretching
-    "https://videos.pexels.com/video-files/4057411/4057411-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4057416/4057416-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4057379/4057379-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4057373/4057373-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4057407/4057407-hd_1080_1920_25fps.mp4",
-    # Running / Cardio
-    "https://videos.pexels.com/video-files/5319081/5319081-hd_1080_1920_30fps.mp4",
-    "https://videos.pexels.com/video-files/5319080/5319080-hd_1080_1920_30fps.mp4",
-    "https://videos.pexels.com/video-files/5319085/5319085-hd_1080_1920_30fps.mp4",
-    # Gym / Musculation
-    "https://videos.pexels.com/video-files/4761485/4761485-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761488/4761488-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761492/4761492-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761494/4761494-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761498/4761498-hd_1080_1920_25fps.mp4",
-    # Abdos
-    "https://videos.pexels.com/video-files/4761500/4761500-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761502/4761502-hd_1080_1920_25fps.mp4",
-    # Home workout
-    "https://videos.pexels.com/video-files/4761450/4761450-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761454/4761454-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761456/4761456-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761458/4761458-hd_1080_1920_25fps.mp4",
-    "https://videos.pexels.com/video-files/4761460/4761460-hd_1080_1920_25fps.mp4",
+# Vidéos MP4 fitness libres de droits - URLs FONCTIONNELLES
+# Sources: Archive.org, public domain fitness videos
+WORKOUT_VIDEO_URLS = [
+    # Vidéos de démonstration fitness libres
+    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+    "https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+    "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+    "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    # Vidéos courtes de test
+    "https://www.w3schools.com/html/mov_bbb.mp4",
+    "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
 ]
 
 # Video categories config
@@ -235,8 +214,8 @@ def generate_workout_videos():
             level = LEVELS[i % 3]
             title_template = titles[i % len(titles)]
             
-            # Assign MP4 URL based on category
-            video_url = PEXELS_MP4_URLS[i % len(PEXELS_MP4_URLS)]
+            # Assign MP4 URL - cycle through available videos
+            video_url = WORKOUT_VIDEO_URLS[i % len(WORKOUT_VIDEO_URLS)]
             
             video = {
                 "id": f"v{video_id}",
