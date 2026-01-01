@@ -9,14 +9,11 @@ from datetime import datetime, timezone, timedelta
 # Vidéos MP4 avec CORS activé - Sources fiables
 # Ces URLs proviennent de CDN qui autorisent les requêtes cross-origin
 WORKOUT_VIDEO_URLS = [
-    # Vidéos de test officielles avec CORS
+    # W3Schools sample videos - toujours disponibles
     "https://www.w3schools.com/html/mov_bbb.mp4",
     "https://www.w3schools.com/html/movie.mp4",
+    # MDN sample video
     "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-    # Vidéos Cloudflare samples (CORS enabled)
-    "https://test-streams.mux.dev/x36xhzz/x36xhzz.mp4",
-    # Archive.org public domain (CORS enabled)
-    "https://archive.org/download/ElephstsD/ElephstsD_512kb.mp4",
 ]
 
 # Video categories config
