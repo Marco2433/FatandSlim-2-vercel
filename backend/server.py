@@ -254,11 +254,11 @@ class OnboardingData(BaseModel):
     height: float
     weight: float
     target_weight: float
-    goal: str
-    activity_level: str
+    goal: str = "health"  # Default value
+    activity_level: str = "moderate"  # Default value
     dietary_preferences: List[str] = []
     allergies: List[str] = []
-    fitness_level: str = "beginner"  # Default value to prevent validation error
+    fitness_level: str = "beginner"  # Default value
     # New fields
     gender: Optional[str] = "male"
     health_conditions: List[str] = []
@@ -281,6 +281,17 @@ class OnboardingData(BaseModel):
     bariatric_surgeon: Optional[str] = None
     bariatric_nutritionist: Optional[str] = None
     bariatric_psychologist: Optional[str] = None
+    
+    # Allow empty strings to be converted to defaults
+    class Config:
+        extra = "ignore"  # Ignore extra fields
+    
+    @validator('goal', 'activity_level', 'fitness_level', pre=True, always=True)
+    def set_default_if_empty(cls, v, field):
+        defaults = {'goal': 'health', 'activity_level': 'moderate', 'fitness_level': 'beginner'}
+        if not v or v == '':
+            return defaults.get(field.name, v)
+        return v
 
 class FoodLogEntry(BaseModel):
     food_name: str
