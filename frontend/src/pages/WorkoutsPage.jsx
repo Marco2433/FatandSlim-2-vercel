@@ -701,17 +701,16 @@ export default function WorkoutsPage() {
             <>
               {/* Lecteur vidéo HTML5 natif - Pas de lien externe */}
               <div className="relative aspect-video bg-black">
-                {playingVideo.video_url ? (
+                {playingVideo.id ? (
                   <video
                     ref={videoRef}
                     className="w-full h-full object-contain"
                     controls
                     autoPlay
                     playsInline
-                    crossOrigin="anonymous"
                     onError={(e) => console.log('Video error:', e)}
                   >
-                    <source src={playingVideo.video_url} type="video/mp4" />
+                    <source src={`${API}/workouts/video-stream/${playingVideo.id}`} type="video/mp4" />
                     Votre navigateur ne supporte pas la lecture vidéo.
                   </video>
                 ) : (
