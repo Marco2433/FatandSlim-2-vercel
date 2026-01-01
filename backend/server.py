@@ -3463,6 +3463,58 @@ async def delete_profile_picture(user: dict = Depends(get_current_user)):
     
     return {"message": "Profile picture deleted"}
 
+@api_router.delete("/profile/account")
+async def delete_account(user: dict = Depends(get_current_user)):
+    """Delete user account and all associated data"""
+    user_id = user["user_id"]
+    
+    # Delete all user data from all collections
+    collections_to_clean = [
+        "users", "user_profiles", "user_points", "user_badges",
+        "food_logs", "workout_logs", "weight_history", "bmi_history",
+        "agenda_events", "bariatric_logs", "scan_history",
+        "social_posts", "friendships", "conversations", "messages",
+        "group_members", "favorite_recipes", "shopping_list",
+        "ai_usage", "ai_cache", "recipe_generation_cache"
+    ]
+    
+    for collection in collections_to_clean:
+        try:
+            await db[collection].delete_many({"user_id": user_id})
+        except Exception:
+            pass
+    
+    # Also delete where user might be friend_id
+    try:
+        await db.friendships.delete_many({"friend_id": user_id})
+    except Exception:
+        pass
+    
+    return {"message": "Account deleted successfully"}
+
+@api_router.post("/profile/reset-onboarding")
+async def reset_onboarding(user: dict = Depends(get_current_user)):
+    """Reset onboarding to allow user to redo the questionnaire"""
+    user_id = user["user_id"]
+    
+    # Delete old profile data
+    await db.user_profiles.delete_many({"user_id": user_id})
+    
+    # Reset onboarding flag
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$set": {"onboarding_completed": False}}
+    )
+    
+    # Clear old weight/bmi history to start fresh
+    await db.weight_history.delete_many({"user_id": user_id})
+    await db.bmi_history.delete_many({"user_id": user_id})
+    
+    # Clear bariatric logs if any
+    await db.bariatric_logs.delete_many({"user_id": user_id})
+    
+    return {"message": "Onboarding reset successfully", "onboarding_completed": False}
+
 # ==================== ADD MEAL FROM AI PLAN TO DIARY ====================
 
 @api_router.post("/meals/add-to-diary")
