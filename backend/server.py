@@ -297,6 +297,27 @@ class OnboardingData(BaseModel):
     @classmethod
     def default_fitness(cls, v):
         return v if v and v != '' else 'beginner'
+    
+    @field_validator('bariatric_pre_op_weight', 'bariatric_pre_op_height', mode='before')
+    @classmethod
+    def empty_str_to_none_float(cls, v):
+        if v == '' or v is None:
+            return None
+        return v
+    
+    @field_validator('bariatric_surgery_date', 'bariatric_parcours', 'bariatric_clinic', 'bariatric_surgeon', 'bariatric_nutritionist', 'bariatric_psychologist', mode='before')
+    @classmethod
+    def empty_str_to_none_str(cls, v):
+        if v == '' or v is None:
+            return None
+        return v
+    
+    @field_validator('bariatric_phase', mode='before')
+    @classmethod
+    def empty_str_to_none_int(cls, v):
+        if v == '' or v is None:
+            return None
+        return v
 
 class FoodLogEntry(BaseModel):
     food_name: str
