@@ -60,11 +60,15 @@ export default function FoodScannerPage() {
   const webcamRef = useRef(null);
   const fileInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState('scanner');
-  const [mode, setMode] = useState('select');
+  const [scanMode, setScanMode] = useState('select'); // select, camera, barcode, preview, analyzing, result
   const [image, setImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  // Barcode state
+  const [barcodeInput, setBarcodeInput] = useState('');
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
   
   // History state
   const [scanHistory, setScanHistory] = useState([]);
@@ -92,6 +96,31 @@ export default function FoodScannerPage() {
     }
   };
 
+  // Barcode scan function
+  const scanBarcode = async () => {
+    if (!barcodeInput.trim()) {
+      toast.error('Veuillez entrer un code-barres');
+      return;
+    }
+    
+    setBarcodeLoading(true);
+    try {
+      const response = await axios.get(`${API}/food/barcode/${barcodeInput.trim()}`, { withCredentials: true });
+      setResult(response.data);
+      setImage(response.data.image_url);
+      setScanMode('result');
+      toast.success('Produit trouvé !');
+    } catch (error) {
+      if (error.response?.status === 404) {
+        toast.error('Produit non trouvé dans OpenFoodFacts');
+      } else {
+        toast.error('Erreur lors du scan');
+      }
+    } finally {
+      setBarcodeLoading(false);
+    }
+  };
+
   const capture = useCallback(() => {
     const imageSrc = webcamRef.current?.getScreenshot();
     if (imageSrc) {
@@ -101,7 +130,7 @@ export default function FoodScannerPage() {
         .then(blob => {
           const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
           setImageFile(file);
-          setMode('preview');
+          setScanMode('preview');
         });
     }
   }, [webcamRef]);
@@ -113,7 +142,7 @@ export default function FoodScannerPage() {
       const reader = new FileReader();
       reader.onload = (event) => {
         setImage(event.target.result);
-        setMode('preview');
+        setScanMode('preview');
       };
       reader.readAsDataURL(file);
     }
