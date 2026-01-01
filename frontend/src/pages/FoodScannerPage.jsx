@@ -34,8 +34,11 @@ import {
   Grape,
   ChevronRight,
   Info,
-  AlertTriangle
+  AlertTriangle,
+  ScanBarcode,
+  Search
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
