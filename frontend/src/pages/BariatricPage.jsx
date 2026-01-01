@@ -576,6 +576,16 @@ export default function BariatricPage() {
             </p>
           </div>
 
+          {/* Button to full recipe catalog */}
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => navigate('/nutrition?tab=catalog')}
+          >
+            <ChefHat className="w-4 h-4 mr-2" />
+            Voir toutes les recettes (catalogue complet)
+          </Button>
+
           {recipes.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
