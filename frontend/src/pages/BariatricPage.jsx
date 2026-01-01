@@ -71,6 +71,10 @@ export default function BariatricPage() {
   const [coachResponse, setCoachResponse] = useState('');
   const [coachLoading, setCoachLoading] = useState(false);
   
+  // AI Warning state
+  const [showAIWarning, setShowAIWarning] = useState(false);
+  const [pendingCoachQuestion, setPendingCoachQuestion] = useState('');
+  
   // Disclaimer
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
