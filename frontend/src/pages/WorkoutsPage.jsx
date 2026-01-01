@@ -40,7 +40,6 @@ import {
   Pause,
   X,
   Share2,
-  ExternalLink
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
