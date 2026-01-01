@@ -3905,6 +3905,34 @@ async def get_workout_videos(category: Optional[str] = None):
     
     return videos
 
+@api_router.get("/workouts/video-stream/{video_id}")
+async def stream_workout_video(video_id: str):
+    """Proxy pour streamer les vidéos workout (contourne CORS)"""
+    import httpx
+    
+    videos = get_workout_videos_list()
+    video = next((v for v in videos if v["id"] == video_id), None)
+    
+    if not video or not video.get("video_url"):
+        return JSONResponse({"error": "Video not found"}, status_code=404)
+    
+    video_url = video["video_url"]
+    
+    async def video_streamer():
+        async with httpx.AsyncClient() as client:
+            async with client.stream("GET", video_url) as response:
+                async for chunk in response.aiter_bytes(chunk_size=8192):
+                    yield chunk
+    
+    return StreamingResponse(
+        video_streamer(),
+        media_type="video/mp4",
+        headers={
+            "Accept-Ranges": "bytes",
+            "Cache-Control": "public, max-age=3600"
+        }
+    )
+
 @api_router.post("/badges/award")
 async def award_video_badge(data: dict, user: dict = Depends(get_current_user)):
     """Award a badge for completing a workout video"""
