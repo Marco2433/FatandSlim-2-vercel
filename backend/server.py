@@ -2204,7 +2204,7 @@ Nutri-Score guidelines:
                 "health_tips": result.get("health_tips", []),
                 "warnings": result.get("warnings", []),
                 "is_healthy": result.get("is_healthy", True),
-                "image_data": image_base64[:1000] if image_base64 else None,  # Store thumbnail
+                "image_data": image_base64 if image_base64 else None,  # Store full image
                 "scanned_at": datetime.now(timezone.utc).isoformat()
             }
             await db.scan_history.insert_one(scan_entry)
