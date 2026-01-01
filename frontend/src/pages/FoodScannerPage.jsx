@@ -576,6 +576,18 @@ export default function FoodScannerPage() {
               </DialogHeader>
               
               <div className="space-y-4">
+                {/* Image */}
+                {selectedScan.image_data && (
+                  <div className="rounded-lg overflow-hidden">
+                    <img 
+                      src={selectedScan.image_data.startsWith('http') ? selectedScan.image_data : `data:image/jpeg;base64,${selectedScan.image_data}`}
+                      alt={selectedScan.food_name}
+                      className="w-full h-40 object-cover"
+                      onError={(e) => e.target.style.display = 'none'}
+                    />
+                  </div>
+                )}
+
                 {/* Date & Category */}
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2 text-sm">
@@ -587,6 +599,11 @@ export default function FoodScannerPage() {
                     <span className="ml-1">{selectedScan.category}</span>
                   </Badge>
                 </div>
+
+                {/* Brand if available */}
+                {selectedScan.brand && (
+                  <p className="text-sm text-muted-foreground">Marque : {selectedScan.brand}</p>
+                )}
 
                 {/* Nutrition Grid */}
                 <div className="grid grid-cols-4 gap-2 text-center">
