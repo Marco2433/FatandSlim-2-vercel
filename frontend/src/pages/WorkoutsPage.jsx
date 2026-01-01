@@ -694,40 +694,55 @@ export default function WorkoutsPage() {
         </Tabs>
       </main>
 
-      {/* Video Player Dialog */}
+      {/* Video Player Dialog - Lecteur MP4 natif */}
       <Dialog open={!!playingVideo} onOpenChange={() => setPlayingVideo(null)}>
-        <DialogContent className="max-w-2xl p-0">
+        <DialogContent className="max-w-2xl p-0 overflow-hidden">
           {playingVideo && (
             <>
-              {/* Video Exercise Interface - No external links */}
-              <div className="relative aspect-video rounded-lg overflow-hidden" style={{
-                background: `linear-gradient(135deg, ${playingVideo.category_color || '#6366f1'} 0%, ${playingVideo.category_color || '#6366f1'}99 100%)`
-              }}>
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4">
-                  <span className="text-5xl mb-3">{playingVideo.category_icon || '🏋️'}</span>
-                  <h3 className="text-xl font-bold text-center">{playingVideo.title}</h3>
-                  <div className="flex items-center gap-3 mt-3">
-                    <Badge variant="secondary" className="bg-white/20 text-white">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {playingVideo.duration}
-                    </Badge>
-                    <Badge variant="secondary" className="bg-white/20 text-white">
-                      <Flame className="w-3 h-3 mr-1" />
-                      ~{playingVideo.calories_estimate || playingVideo.duration_minutes * 10} kcal
-                    </Badge>
+              {/* Lecteur vidéo HTML5 natif - Pas de lien externe */}
+              <div className="relative aspect-video bg-black">
+                {playingVideo.video_url ? (
+                  <video
+                    ref={videoRef}
+                    className="w-full h-full object-contain"
+                    controls
+                    autoPlay
+                    playsInline
+                    poster=""
+                  >
+                    <source src={playingVideo.video_url} type="video/mp4" />
+                    Votre navigateur ne supporte pas la lecture vidéo.
+                  </video>
+                ) : (
+                  <div 
+                    className="absolute inset-0 flex flex-col items-center justify-center text-white p-4"
+                    style={{
+                      background: `linear-gradient(135deg, ${playingVideo.category_color || '#6366f1'} 0%, ${playingVideo.category_color || '#6366f1'}99 100%)`
+                    }}
+                  >
+                    <span className="text-5xl mb-3">{playingVideo.category_icon || '🏋️'}</span>
+                    <h3 className="text-xl font-bold text-center">{playingVideo.title}</h3>
                   </div>
-                </div>
+                )}
               </div>
               
-              <div className="p-4 space-y-4">
-                {/* Level & Equipment */}
-                <div className="flex items-center justify-between">
-                  <Badge className={DIFFICULTY_LABELS[playingVideo.level]?.color}>
-                    {DIFFICULTY_LABELS[playingVideo.level]?.label}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    {playingVideo.equipment || 'Aucun équipement'}
-                  </span>
+              <div className="p-4 space-y-3">
+                {/* Title & Info */}
+                <div>
+                  <h3 className="font-semibold text-lg">{playingVideo.title}</h3>
+                  <div className="flex items-center gap-3 mt-1">
+                    <Badge className={DIFFICULTY_LABELS[playingVideo.level]?.color}>
+                      {DIFFICULTY_LABELS[playingVideo.level]?.label}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {playingVideo.duration}
+                    </span>
+                    <span className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Flame className="w-3 h-3" />
+                      ~{playingVideo.calories_estimate || playingVideo.duration_minutes * 10} kcal
+                    </span>
+                  </div>
                 </div>
 
                 {/* Description */}
@@ -735,31 +750,26 @@ export default function WorkoutsPage() {
                   <p className="text-sm text-muted-foreground">{playingVideo.description}</p>
                 )}
 
-                {/* Instructions */}
-                {playingVideo.instructions && (
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-xs font-medium mb-2">📋 Instructions :</p>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      {playingVideo.instructions.map((inst, i) => (
-                        <li key={i}>• {inst}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {/* Equipment */}
+                <p className="text-sm">
+                  <span className="font-medium">Équipement:</span>{' '}
+                  <span className="text-muted-foreground">{playingVideo.equipment || 'Aucun'}</span>
+                </p>
 
-                {/* Action Button */}
-                <Button 
-                  className="w-full" 
-                  size="lg"
-                  onClick={() => handleVideoComplete(playingVideo)}
-                >
-                  <Check className="w-5 h-5 mr-2" />
-                  J'ai terminé cet exercice !
-                </Button>
-                
-                <Button variant="ghost" className="w-full" onClick={() => setPlayingVideo(null)}>
-                  Fermer
-                </Button>
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    className="flex-1" 
+                    size="lg"
+                    onClick={() => handleVideoComplete(playingVideo)}
+                  >
+                    <Check className="w-5 h-5 mr-2" />
+                    Terminé !
+                  </Button>
+                  <Button variant="outline" size="lg" onClick={() => setPlayingVideo(null)}>
+                    Fermer
+                  </Button>
+                </div>
               </div>
             </>
           )}
