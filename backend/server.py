@@ -4197,8 +4197,10 @@ async def add_workout_to_agenda(data: dict, user: dict = Depends(get_current_use
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
-    await db.appointments.insert_one(appointment)
-    return {"message": "Entraînement ajouté à l'agenda", "appointment": appointment}
+    result = await db.appointments.insert_one(appointment)
+    # Remove the _id field for JSON serialization
+    appointment_response = {k: v for k, v in appointment.items() if k != '_id'}
+    return {"message": "Entraînement ajouté à l'agenda", "appointment": appointment_response}
 
 @api_router.post("/workouts/share")
 async def share_workout_to_feed(data: dict, user: dict = Depends(get_current_user)):
