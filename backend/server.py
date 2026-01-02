@@ -565,6 +565,30 @@ async def process_session(request: Request, response: Response):
             "created_at": datetime.now(timezone.utc).isoformat()
         })
     
+    # ============ MIGRATION AUTOMATIQUE POUR GOOGLE AUTH ============
+    profile = await db.profiles.find_one({"user_id": user_id}, {"_id": 0})
+    if profile and profile.get("profile_version", 1) < 3:
+        migration_updates = {
+            "profile_version": 3,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        defaults = {
+            "age": 30, "height": 170, "weight": 70, "target_weight": 65,
+            "goal": "health", "activity_level": "moderate", "dietary_preferences": [],
+            "allergies": [], "fitness_level": "beginner", "gender": "male",
+            "health_conditions": [], "food_likes": [], "food_dislikes": [],
+            "time_constraint": "moderate", "budget": "medium", "cooking_skill": "intermediate",
+            "meals_per_day": 3, "bariatric_surgery": None, "bariatric_phase": None,
+            "bariatric_supplements": [], "bariatric_intolerances": [],
+        }
+        for field, default_value in defaults.items():
+            if field not in profile or profile[field] is None:
+                migration_updates[field] = default_value
+        if len(migration_updates) > 2:
+            await db.profiles.update_one({"user_id": user_id}, {"$set": migration_updates})
+            logger.info(f"Google OAuth profile migrated for user {user_id}")
+    # ============ FIN MIGRATION ============
+    
     # Create session
     session_token = user_data.get("session_token", f"session_{uuid.uuid4().hex}")
     await db.user_sessions.insert_one({
