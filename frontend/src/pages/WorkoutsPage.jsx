@@ -171,6 +171,9 @@ export default function WorkoutsPage() {
   const [showCongratsDialog, setShowCongratsDialog] = useState(false);
   const [congratsMessage, setCongratsMessage] = useState('');
   const [earnedBadge, setEarnedBadge] = useState(null);
+  const [favorites, setFavorites] = useState([]);
+  const [showAddToAgenda, setShowAddToAgenda] = useState(false);
+  const [agendaDate, setAgendaDate] = useState('');
   const videoRef = useRef(null);
   
   // Coach IA state
