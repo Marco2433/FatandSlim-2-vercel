@@ -299,9 +299,11 @@ export default function WorkoutsPage() {
   const addToAgenda = async (video, date) => {
     try {
       const token = localStorage.getItem('token');
+      const scheduledDate = date || new Date().toISOString().split('T')[0];
+      
       await axios.post(`${API}/workouts/add-to-agenda`, {
         video_data: video,
-        scheduled_date: date
+        scheduled_date: scheduledDate
       }, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true
@@ -310,6 +312,7 @@ export default function WorkoutsPage() {
       setShowAddToAgenda(false);
       setAgendaDate('');
     } catch (error) {
+      console.error('Agenda error:', error);
       toast.error('Erreur lors de l\'ajout à l\'agenda');
     }
   };
