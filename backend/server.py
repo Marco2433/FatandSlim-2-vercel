@@ -4259,7 +4259,7 @@ async def complete_workout(data: dict, user: dict = Depends(get_current_user)):
         "date": today
     }
     
-    await db.workout_logs.insert_one({**workout_log, "_id": None})
+    await db.workout_logs.insert_one(workout_log)
     
     # Update daily calories burned in nutrition log
     existing_log = await db.nutrition_logs.find_one({"user_id": user["user_id"], "date": today})
