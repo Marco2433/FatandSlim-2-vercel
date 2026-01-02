@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from
 import "@/App.css";
 
 // Version management
-import { initVersionCheck, shouldForceRefresh } from "@/utils/versionManager";
+import { initVersionCheck, shouldForceRefresh, getAppVersion } from "@/utils/versionManager";
 
 // Pages
 import LandingPage from "@/pages/LandingPage";
