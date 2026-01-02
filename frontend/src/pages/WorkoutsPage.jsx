@@ -542,9 +542,9 @@ export default function WorkoutsPage() {
     }
   };
 
-  const filteredVideos = videos.filter(v => 
-    videoCategory === 'all' || v.category === videoCategory
-  );
+  const filteredVideos = videoCategory === 'favorites' 
+    ? favoriteVideos 
+    : videos.filter(v => videoCategory === 'all' || v.category === videoCategory);
 
   if (loading) {
     return (
