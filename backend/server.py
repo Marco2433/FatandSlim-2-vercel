@@ -2107,7 +2107,7 @@ QUESTION DU PATIENT : {question}"""
             api_key=os.environ.get('EMERGENT_API_KEY') or os.environ.get('EMERGENT_LLM_KEY'),
             session_id=session_id,
             system_message=system_prompt
-        ).with_model("gpt-4o")
+        ).with_model("openai", "gpt-4o")
         
         response = await llm.send_message(UserMessage(text=question))
         
