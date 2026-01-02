@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-01-02T15:51:58.072735",
+  "total_tests": 12,
+  "passed_tests": 8,
+  "success_rate": 66.66666666666666,
+  "results": [
+    {
+      "test": "Workouts Add to Agenda",
+      "success": false,
+      "details": "Status: 520, Expected: 200",
+      "timestamp": "2026-01-02T15:51:57.990529"
+    },
+    {
+      "test": "Workouts Share",
+      "success": false,
+      "details": "Status: 520, Expected: 200",
+      "timestamp": "2026-01-02T15:51:58.013964"
+    },
+    {
+      "test": "User Groups - Response Structure",
+      "success": true,
+      "details": "Response keys: ['groups']",
+      "timestamp": "2026-01-02T15:51:58.031863"
+    },
+    {
+      "test": "User Groups - Groups List",
+      "success": true,
+      "details": "Groups type: <class 'list'>, Count: 0",
+      "timestamp": "2026-01-02T15:51:58.031873"
+    },
+    {
+      "test": "User Groups",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2026-01-02T15:51:58.031876"
+    },
+    {
+      "test": "Share Achievement (Challenge)",
+      "success": false,
+      "details": "Status: 520, Expected: 200",
+      "timestamp": "2026-01-02T15:51:58.047455"
+    },
+    {
+      "test": "Share Achievement (Badge)",
+      "success": false,
+      "details": "Status: 520, Expected: 200",
+      "timestamp": "2026-01-02T15:51:58.060762"
+    },
+    {
+      "test": "Articles - Response Structure",
+      "success": true,
+      "details": "Response keys: ['articles', 'total', 'date', 'day_seed']",
+      "timestamp": "2026-01-02T15:51:58.072615"
+    },
+    {
+      "test": "Articles - Count (10 articles)",
+      "success": true,
+      "details": "Articles count: 10, Total: 10",
+      "timestamp": "2026-01-02T15:51:58.072624"
+    },
+    {
+      "test": "Articles - Article Fields",
+      "success": true,
+      "details": "First article fields: ['id', 'title', 'summary', 'content', 'category', 'image', 'source', 'date', 'read_time', 'published_at']",
+      "timestamp": "2026-01-02T15:51:58.072630"
+    },
+    {
+      "test": "Articles - Multiple Categories",
+      "success": true,
+      "details": "Categories found: ['nutrition', 'sant\u00e9', 'bariatrique', 'lifestyle', 'fitness']",
+      "timestamp": "2026-01-02T15:51:58.072639"
+    },
+    {
+      "test": "Articles Endpoint",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2026-01-02T15:51:58.072641"
+    }
+  ]
+}
