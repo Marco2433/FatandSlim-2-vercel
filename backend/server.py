@@ -3630,56 +3630,89 @@ async def clear_shopping_list(user: dict = Depends(get_current_user)):
 
 @api_router.get("/articles")
 async def get_health_articles(user: dict = Depends(get_current_user)):
-    """Get health and nutrition articles - 10 articles rotating daily"""
+    """Get health and nutrition articles - 10 articles rotating DAILY with unique content each day"""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     day_of_year = datetime.now(timezone.utc).timetuple().tm_yday
+    year = datetime.now(timezone.utc).year
     
-    # Large pool of articles
+    # Large pool of 50+ articles for better rotation
     all_articles = [
-        # Nutrition
-        {"title": "10 aliments brûle-graisses à intégrer", "summary": "Découvrez les aliments qui accélèrent votre métabolisme.", "category": "nutrition", "source": "Santé Magazine", "read_time": "4 min"},
-        {"title": "Les super-aliments : mythe ou réalité ?", "summary": "Analyse scientifique des aliments dits 'miracles'.", "category": "nutrition", "source": "Le Figaro Santé", "read_time": "5 min"},
-        {"title": "Comment manger équilibré avec un petit budget", "summary": "Conseils pratiques pour une alimentation saine et économique.", "category": "nutrition", "source": "Femme Actuelle", "read_time": "6 min"},
-        {"title": "Les protéines végétales : le guide complet", "summary": "Tout savoir sur les alternatives aux protéines animales.", "category": "nutrition", "source": "Bio Magazine", "read_time": "7 min"},
-        {"title": "Sucres cachés : où se trouvent-ils ?", "summary": "Apprenez à repérer les sucres ajoutés dans vos aliments.", "category": "nutrition", "source": "Top Santé", "read_time": "4 min"},
-        {"title": "Les bienfaits du jeûne intermittent", "summary": "Ce que dit la science sur cette pratique alimentaire.", "category": "nutrition", "source": "Doctissimo", "read_time": "6 min"},
-        {"title": "Microbiote : l'intestin, notre deuxième cerveau", "summary": "Comment prendre soin de sa flore intestinale.", "category": "nutrition", "source": "Science & Vie", "read_time": "8 min"},
+        # Nutrition (15 articles)
+        {"title": "10 aliments brûle-graisses à intégrer", "summary": "Découvrez les aliments qui accélèrent votre métabolisme.", "category": "nutrition", "source": "Santé Magazine", "read_time": "4 min", "content": "Les aliments thermogéniques comme le piment, le thé vert et le café peuvent augmenter votre métabolisme de 4 à 5%. Intégrez-les progressivement dans votre alimentation."},
+        {"title": "Les super-aliments : mythe ou réalité ?", "summary": "Analyse scientifique des aliments dits 'miracles'.", "category": "nutrition", "source": "Le Figaro Santé", "read_time": "5 min", "content": "Si certains aliments sont effectivement riches en nutriments, aucun ne peut à lui seul transformer votre santé. La clé reste la diversité alimentaire."},
+        {"title": "Comment manger équilibré avec un petit budget", "summary": "Conseils pratiques pour une alimentation saine et économique.", "category": "nutrition", "source": "Femme Actuelle", "read_time": "6 min", "content": "Privilégiez les légumineuses, les œufs et les légumes de saison. Le meal prep permet aussi de réduire le gaspillage et les coûts."},
+        {"title": "Les protéines végétales : le guide complet", "summary": "Tout savoir sur les alternatives aux protéines animales.", "category": "nutrition", "source": "Bio Magazine", "read_time": "7 min", "content": "Lentilles, pois chiches, tofu, tempeh... Les protéines végétales peuvent couvrir tous vos besoins si elles sont bien combinées."},
+        {"title": "Sucres cachés : où se trouvent-ils ?", "summary": "Apprenez à repérer les sucres ajoutés dans vos aliments.", "category": "nutrition", "source": "Top Santé", "read_time": "4 min", "content": "Sauces, pain de mie, yaourts aromatisés... Le sucre se cache partout. Lisez les étiquettes : glucose, fructose, sirop sont tous des sucres."},
+        {"title": "Les bienfaits du jeûne intermittent", "summary": "Ce que dit la science sur cette pratique alimentaire.", "category": "nutrition", "source": "Doctissimo", "read_time": "6 min", "content": "Le jeûne 16/8 peut améliorer la sensibilité à l'insuline et favoriser la perte de poids, mais il ne convient pas à tout le monde."},
+        {"title": "Microbiote : l'intestin, notre deuxième cerveau", "summary": "Comment prendre soin de sa flore intestinale.", "category": "nutrition", "source": "Science & Vie", "read_time": "8 min", "content": "Fibres, aliments fermentés et probiotiques sont vos alliés. Évitez les édulcorants artificiels qui perturbent le microbiote."},
+        {"title": "Petit-déjeuner : le repas le plus important ?", "summary": "Décryptage d'une idée reçue très répandue.", "category": "nutrition", "source": "Santé Magazine", "read_time": "5 min", "content": "Ce n'est pas obligatoire pour tous. L'important est d'écouter sa faim et de faire des choix nutritifs quand on mange."},
+        {"title": "Les oméga-3 : pourquoi sont-ils essentiels ?", "summary": "Rôle des acides gras dans la santé.", "category": "nutrition", "source": "Le Monde Santé", "read_time": "5 min", "content": "Anti-inflammatoires, bons pour le cœur et le cerveau. On les trouve dans les poissons gras, les noix et les graines de lin."},
+        {"title": "Hydratation : combien d'eau boire par jour ?", "summary": "Les vrais besoins en eau de l'organisme.", "category": "nutrition", "source": "Top Santé", "read_time": "4 min", "content": "1,5 à 2 litres en moyenne, mais cela varie selon l'activité physique, la météo et votre alimentation."},
+        {"title": "Index glycémique : comprendre et utiliser", "summary": "Guide pratique de l'index glycémique.", "category": "nutrition", "source": "Doctissimo", "read_time": "6 min", "content": "Privilégiez les aliments à IG bas pour une énergie stable : légumineuses, céréales complètes, légumes."},
+        {"title": "Les vitamines essentielles en hiver", "summary": "Comment éviter les carences saisonnières.", "category": "nutrition", "source": "Femme Actuelle", "read_time": "5 min", "content": "Vitamine D, C et zinc sont particulièrement importants. Pensez aux agrumes, aux champignons et aux fruits de mer."},
+        {"title": "Alimentation anti-inflammatoire", "summary": "Réduire l'inflammation par l'assiette.", "category": "nutrition", "source": "Bio Magazine", "read_time": "6 min", "content": "Curcuma, gingembre, fruits rouges, légumes verts... Ces aliments aident à lutter contre l'inflammation chronique."},
+        {"title": "Les collations saines pour sportifs", "summary": "Que manger avant et après l'effort.", "category": "nutrition", "source": "Sport Magazine", "read_time": "4 min", "content": "Avant : glucides complexes. Après : protéines + glucides pour la récupération. Banane, yaourt grec, amandes sont parfaits."},
+        {"title": "Détox : arnaque ou réalité ?", "summary": "La vérité sur les régimes détox.", "category": "nutrition", "source": "Science & Vie", "read_time": "5 min", "content": "Le foie et les reins font déjà le travail. Les cures détox ne sont pas nécessaires si vous mangez équilibré."},
         
-        # Santé
-        {"title": "Chirurgie bariatrique : tout savoir", "summary": "Bypass, sleeve : comprendre les options disponibles.", "category": "santé", "source": "Le Monde Santé", "read_time": "7 min"},
-        {"title": "Diabète de type 2 : prévention et gestion", "summary": "Comment réduire les risques par l'alimentation.", "category": "santé", "source": "Santé Magazine", "read_time": "5 min"},
-        {"title": "L'impact du sommeil sur le poids", "summary": "Pourquoi bien dormir aide à maintenir un poids sain.", "category": "santé", "source": "Top Santé", "read_time": "4 min"},
-        {"title": "Stress et prise de poids : le lien", "summary": "Comment le cortisol influence votre silhouette.", "category": "santé", "source": "Psychologies", "read_time": "5 min"},
-        {"title": "Hypertension : alimentation et conseils", "summary": "Les habitudes alimentaires qui protègent votre cœur.", "category": "santé", "source": "Le Figaro Santé", "read_time": "6 min"},
+        # Santé (12 articles)
+        {"title": "Chirurgie bariatrique : tout savoir", "summary": "Bypass, sleeve : comprendre les options disponibles.", "category": "santé", "source": "Le Monde Santé", "read_time": "7 min", "content": "Ces interventions sont réservées aux obésités sévères. Le suivi médical et nutritionnel post-opératoire est essentiel."},
+        {"title": "Diabète de type 2 : prévention et gestion", "summary": "Comment réduire les risques par l'alimentation.", "category": "santé", "source": "Santé Magazine", "read_time": "5 min", "content": "Perte de poids, activité physique régulière et alimentation équilibrée peuvent prévenir ou inverser le prédiabète."},
+        {"title": "L'impact du sommeil sur le poids", "summary": "Pourquoi bien dormir aide à maintenir un poids sain.", "category": "santé", "source": "Top Santé", "read_time": "4 min", "content": "Le manque de sommeil perturbe les hormones de la faim (ghréline et leptine), favorisant les grignotages."},
+        {"title": "Stress et prise de poids : le lien", "summary": "Comment le cortisol influence votre silhouette.", "category": "santé", "source": "Psychologies", "read_time": "5 min", "content": "Le stress chronique augmente le cortisol qui favorise le stockage des graisses abdominales. La gestion du stress est clé."},
+        {"title": "Hypertension : alimentation et conseils", "summary": "Les habitudes alimentaires qui protègent votre cœur.", "category": "santé", "source": "Le Figaro Santé", "read_time": "6 min", "content": "Réduisez le sel, augmentez le potassium (bananes, épinards), limitez l'alcool et bougez régulièrement."},
+        {"title": "Cholestérol : bon vs mauvais", "summary": "Comprendre les différents types de cholestérol.", "category": "santé", "source": "Doctissimo", "read_time": "5 min", "content": "Le HDL (bon) protège, le LDL (mauvais) en excès bouche les artères. Les fibres et les oméga-3 améliorent le ratio."},
+        {"title": "Santé mentale et alimentation", "summary": "Le lien entre ce que vous mangez et votre humeur.", "category": "santé", "source": "Psychologies", "read_time": "6 min", "content": "Oméga-3, magnésium, vitamines B influencent la sérotonine et la dopamine. Mangez varié pour un cerveau en forme."},
+        {"title": "Inflammations chroniques : les signaux", "summary": "Reconnaître et combattre l'inflammation.", "category": "santé", "source": "Science & Vie", "read_time": "5 min", "content": "Fatigue, douleurs articulaires, problèmes digestifs peuvent indiquer une inflammation. L'alimentation peut aider."},
+        {"title": "Thyroïde et poids : comprendre le lien", "summary": "Impact de la thyroïde sur le métabolisme.", "category": "santé", "source": "Santé Magazine", "read_time": "5 min", "content": "L'hypothyroïdie ralentit le métabolisme. Un bilan thyroïdien est recommandé si la perte de poids est difficile."},
+        {"title": "Apnée du sommeil et obésité", "summary": "Un cercle vicieux à briser.", "category": "santé", "source": "Le Monde Santé", "read_time": "6 min", "content": "L'excès de poids favorise l'apnée, qui elle-même complique la perte de poids. Consultez si vous ronflez beaucoup."},
+        {"title": "Probiotiques : quand les prendre ?", "summary": "Guide d'utilisation des probiotiques.", "category": "santé", "source": "Top Santé", "read_time": "4 min", "content": "Après des antibiotiques, en cas de troubles digestifs ou pour renforcer l'immunité. Choisissez des souches adaptées."},
+        {"title": "Métabolisme lent : mythe ou réalité ?", "summary": "Ce qui influence vraiment votre métabolisme.", "category": "santé", "source": "Doctissimo", "read_time": "5 min", "content": "Le métabolisme varie peu entre individus. La masse musculaire, l'âge et l'activité physique sont les vrais facteurs."},
         
-        # Fitness
-        {"title": "5 exercices pour perdre du ventre à la maison", "summary": "Programme simple pour tonifier votre ceinture abdominale.", "category": "fitness", "source": "Doctissimo", "read_time": "5 min"},
-        {"title": "HIIT : pourquoi c'est efficace", "summary": "Les avantages de l'entraînement par intervalles.", "category": "fitness", "source": "Men's Health", "read_time": "4 min"},
-        {"title": "La marche : sous-estimée mais efficace", "summary": "10 000 pas par jour : bénéfices réels pour la santé.", "category": "fitness", "source": "Santé Magazine", "read_time": "4 min"},
-        {"title": "Yoga et perte de poids : ça fonctionne ?", "summary": "Comment le yoga peut aider dans votre parcours minceur.", "category": "fitness", "source": "Yoga Journal", "read_time": "5 min"},
-        {"title": "Musculation et métabolisme", "summary": "Comment les muscles brûlent des calories au repos.", "category": "fitness", "source": "Sport Magazine", "read_time": "5 min"},
+        # Fitness (12 articles)
+        {"title": "5 exercices pour perdre du ventre à la maison", "summary": "Programme simple pour tonifier votre ceinture abdominale.", "category": "fitness", "source": "Doctissimo", "read_time": "5 min", "content": "Planche, mountain climbers, crunchs, relevés de jambes et gainage latéral. 15-20 min par jour suffisent."},
+        {"title": "HIIT : pourquoi c'est efficace", "summary": "Les avantages de l'entraînement par intervalles.", "category": "fitness", "source": "Men's Health", "read_time": "4 min", "content": "20 minutes de HIIT brûlent plus de calories qu'1h de cardio classique, grâce à l'effet afterburn."},
+        {"title": "La marche : sous-estimée mais efficace", "summary": "10 000 pas par jour : bénéfices réels pour la santé.", "category": "fitness", "source": "Santé Magazine", "read_time": "4 min", "content": "La marche rapide améliore la santé cardiovasculaire, l'humeur et aide à maintenir un poids sain."},
+        {"title": "Yoga et perte de poids : ça fonctionne ?", "summary": "Comment le yoga peut aider dans votre parcours minceur.", "category": "fitness", "source": "Yoga Journal", "read_time": "5 min", "content": "Le yoga réduit le stress (donc le cortisol), améliore la conscience corporelle et peut tonifier."},
+        {"title": "Musculation et métabolisme", "summary": "Comment les muscles brûlent des calories au repos.", "category": "fitness", "source": "Sport Magazine", "read_time": "5 min", "content": "1 kg de muscle brûle environ 13 kcal/jour au repos contre 4 pour la graisse. Investissez dans vos muscles !"},
+        {"title": "Cardio vs musculation pour maigrir", "summary": "Quelle est la meilleure approche ?", "category": "fitness", "source": "Men's Health", "read_time": "5 min", "content": "L'idéal est de combiner les deux. Le cardio brûle des calories, la musculation augmente le métabolisme de base."},
+        {"title": "Récupération : aussi importante que l'effort", "summary": "Pourquoi vos jours de repos comptent.", "category": "fitness", "source": "Sport Magazine", "read_time": "4 min", "content": "Les muscles se construisent pendant le repos. Dormez bien, hydratez-vous et alternez les groupes musculaires."},
+        {"title": "Entraînement à jeun : pour ou contre ?", "summary": "Les effets du sport avant le petit-déjeuner.", "category": "fitness", "source": "Doctissimo", "read_time": "5 min", "content": "Pour le cardio léger, ça peut aider à brûler les graisses. Pour l'intensif, mieux vaut avoir du carburant."},
+        {"title": "Erreurs communes à la salle", "summary": "Ce qui freine vos progrès sans le savoir.", "category": "fitness", "source": "Men's Health", "read_time": "4 min", "content": "Mauvaise forme, charges trop lourdes, pas assez de repos, négliger l'échauffement... Corrigez ces erreurs !"},
+        {"title": "Programme débutant : par où commencer", "summary": "Guide pour se lancer dans le sport.", "category": "fitness", "source": "Santé Magazine", "read_time": "6 min", "content": "Commencez doucement, 2-3 fois par semaine, 20-30 min. Marche, yoga, exercices au poids du corps sont parfaits."},
+        {"title": "Étirements : avant ou après l'effort ?", "summary": "La bonne façon de s'étirer.", "category": "fitness", "source": "Sport Magazine", "read_time": "4 min", "content": "Échauffement dynamique avant, étirements statiques après. Ne jamais s'étirer à froid."},
+        {"title": "Sport en extérieur vs salle de gym", "summary": "Avantages et inconvénients de chaque option.", "category": "fitness", "source": "Yoga Journal", "read_time": "5 min", "content": "L'extérieur boost l'humeur et la vitamine D. La salle offre équipement et structure. Alternez selon la saison !"},
         
-        # Lifestyle
-        {"title": "Meal prep : organiser ses repas de la semaine", "summary": "Gagner du temps tout en mangeant sainement.", "category": "lifestyle", "source": "Femme Actuelle", "read_time": "6 min"},
-        {"title": "Applications nutrition : lesquelles choisir ?", "summary": "Comparatif des meilleures apps pour suivre son alimentation.", "category": "lifestyle", "source": "Tech Santé", "read_time": "5 min"},
-        {"title": "Manger en pleine conscience", "summary": "Les bienfaits de l'alimentation intuitive.", "category": "lifestyle", "source": "Psychologies", "read_time": "4 min"},
-        {"title": "Recettes healthy pour la semaine", "summary": "7 idées de plats équilibrés et savoureux.", "category": "lifestyle", "source": "Cuisine Actuelle", "read_time": "6 min"},
-        {"title": "Comment lire une étiquette nutritionnelle", "summary": "Décrypter les informations sur vos produits.", "category": "lifestyle", "source": "60 Millions", "read_time": "4 min"},
+        # Lifestyle (8 articles)
+        {"title": "Meal prep : organiser ses repas de la semaine", "summary": "Gagner du temps tout en mangeant sainement.", "category": "lifestyle", "source": "Femme Actuelle", "read_time": "6 min", "content": "Préparez vos bases le dimanche : légumes découpés, céréales cuites, protéines. Assemblez en 5 min le jour J."},
+        {"title": "Applications nutrition : lesquelles choisir ?", "summary": "Comparatif des meilleures apps pour suivre son alimentation.", "category": "lifestyle", "source": "Tech Santé", "read_time": "5 min", "content": "Fat & Slim combine suivi nutritionnel, recettes IA, entraînements et communauté en une seule app !"},
+        {"title": "Manger en pleine conscience", "summary": "Les bienfaits de l'alimentation intuitive.", "category": "lifestyle", "source": "Psychologies", "read_time": "4 min", "content": "Mangez lentement, sans écrans, en savourant chaque bouchée. Cela améliore la digestion et la satiété."},
+        {"title": "Recettes healthy pour la semaine", "summary": "7 idées de plats équilibrés et savoureux.", "category": "lifestyle", "source": "Cuisine Actuelle", "read_time": "6 min", "content": "Lundi : bowl aux légumes. Mardi : poulet grillé. Mercredi : poisson vapeur. Variez les couleurs et les textures !"},
+        {"title": "Comment lire une étiquette nutritionnelle", "summary": "Décrypter les informations sur vos produits.", "category": "lifestyle", "source": "60 Millions", "read_time": "4 min", "content": "Regardez les valeurs pour 100g, vérifiez le sucre et le sel, méfiez-vous des longues listes d'ingrédients."},
+        {"title": "Gestion du stress au quotidien", "summary": "Techniques simples pour décompresser.", "category": "lifestyle", "source": "Psychologies", "read_time": "5 min", "content": "Respiration profonde, marche, méditation 5 min... De petits gestes qui font une grande différence."},
+        {"title": "Dormir mieux pour mincir", "summary": "L'importance du sommeil dans la perte de poids.", "category": "lifestyle", "source": "Top Santé", "read_time": "5 min", "content": "7-9h de sommeil, pas d'écrans avant de dormir, chambre fraîche et sombre. Votre corps vous remerciera."},
+        {"title": "Motivation : comment rester sur la bonne voie", "summary": "Stratégies pour ne pas abandonner.", "category": "lifestyle", "source": "Psychologies", "read_time": "5 min", "content": "Fixez des mini-objectifs, célébrez chaque victoire, trouvez un partenaire d'entraînement, utilisez la communauté !"},
         
-        # Bariatrique
-        {"title": "Après la sleeve : adaptation alimentaire", "summary": "Guide des premières semaines post-opératoires.", "category": "bariatrique", "source": "Obésité Info", "read_time": "7 min"},
-        {"title": "Bypass : les carences à surveiller", "summary": "Vitamines et minéraux essentiels après l'opération.", "category": "bariatrique", "source": "Chirurgie Santé", "read_time": "6 min"},
-        {"title": "Témoignage : ma vie après le bypass", "summary": "Histoire inspirante d'une transformation.", "category": "bariatrique", "source": "Santé Magazine", "read_time": "8 min"},
-        {"title": "Sport après chirurgie bariatrique", "summary": "Reprendre l'activité physique en toute sécurité.", "category": "bariatrique", "source": "Sport Santé", "read_time": "5 min"},
+        # Bariatrique (8 articles)
+        {"title": "Après la sleeve : adaptation alimentaire", "summary": "Guide des premières semaines post-opératoires.", "category": "bariatrique", "source": "Obésité Info", "read_time": "7 min", "content": "Liquides d'abord, puis mixé, puis morceaux. Mangez lentement, petites quantités, et mastiquez bien."},
+        {"title": "Bypass : les carences à surveiller", "summary": "Vitamines et minéraux essentiels après l'opération.", "category": "bariatrique", "source": "Chirurgie Santé", "read_time": "6 min", "content": "Fer, B12, calcium, vitamine D sont les plus à risque. Supplémentation à vie et bilans réguliers obligatoires."},
+        {"title": "Témoignage : ma vie après le bypass", "summary": "Histoire inspirante d'une transformation.", "category": "bariatrique", "source": "Santé Magazine", "read_time": "8 min", "content": "Marie a perdu 50 kg en 18 mois. Elle partage ses hauts, ses bas et ses conseils pour réussir."},
+        {"title": "Sport après chirurgie bariatrique", "summary": "Reprendre l'activité physique en toute sécurité.", "category": "bariatrique", "source": "Sport Santé", "read_time": "5 min", "content": "Commencez par la marche, puis natation, puis renforcement. Attendez l'accord de votre chirurgien."},
+        {"title": "Dumping syndrome : le comprendre", "summary": "Ce malaise fréquent après bypass.", "category": "bariatrique", "source": "Obésité Info", "read_time": "5 min", "content": "Sueurs, nausées, palpitations après les sucres rapides. Évitez les sodas, jus, sucreries."},
+        {"title": "Peau relâchée après amaigrissement", "summary": "Solutions et prévention.", "category": "bariatrique", "source": "Chirurgie Santé", "read_time": "6 min", "content": "Hydratation, musculation, perte progressive aident. La chirurgie réparatrice est possible si besoin."},
+        {"title": "Suivi psychologique post-opératoire", "summary": "L'importance du soutien mental.", "category": "bariatrique", "source": "Psychologies", "read_time": "5 min", "content": "La relation à la nourriture change. Un suivi psy aide à gérer les émotions et prévenir les transferts."},
+        {"title": "Grossesse après chirurgie bariatrique", "summary": "Ce qu'il faut savoir.", "category": "bariatrique", "source": "Le Monde Santé", "read_time": "6 min", "content": "Attendez 12-18 mois post-op, stabilisez votre poids, suivez les carences de près. C'est possible et sûr !"},
     ]
     
-    # Shuffle based on day of year for daily rotation
+    # Use a combination of day_of_year AND year to ensure truly different articles each day
+    # This creates a unique seed that changes daily and yearly
+    unique_seed = (year * 1000) + day_of_year
+    
     import random as rnd
-    rnd.seed(day_of_year * 100)
+    rnd.seed(unique_seed)
     shuffled = all_articles.copy()
     rnd.shuffle(shuffled)
     
-    # Select 10 articles and add metadata
+    # Select 10 articles with metadata
     selected = []
     images = [
         "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400",
@@ -3697,22 +3730,29 @@ async def get_health_articles(user: dict = Depends(get_current_user)):
     categories_order = ["nutrition", "santé", "fitness", "lifestyle", "bariatrique"]
     
     for i, article in enumerate(shuffled[:10]):
+        hours_ago = i * 2 + rnd.randint(0, 3)  # Add randomness to publication time
+        published_date = datetime.now(timezone.utc) - timedelta(hours=hours_ago)
+        
         selected.append({
-            "id": f"art_{today}_{i}",
+            "id": f"art_{today}_{i}_{unique_seed % 100}",
             "title": article["title"],
             "summary": article["summary"],
+            "content": article.get("content", article["summary"]),
             "category": article["category"],
             "image": images[i % len(images)],
             "source": article["source"],
-            "date": (datetime.now(timezone.utc) - timedelta(hours=i*2)).strftime("%Y-%m-%d"),
+            "date": published_date.strftime("%Y-%m-%d"),
             "read_time": article["read_time"],
-            "published_at": (datetime.now(timezone.utc) - timedelta(hours=i*2)).isoformat()
+            "published_at": published_date.isoformat()
         })
     
-    # Sort by category then by most recent
-    selected.sort(key=lambda x: (categories_order.index(x["category"]) if x["category"] in categories_order else 99))
+    # Sort by category (order defined) then by most recent within category
+    selected.sort(key=lambda x: (
+        categories_order.index(x["category"]) if x["category"] in categories_order else 99,
+        x["published_at"]
+    ), reverse=False)
     
-    return {"articles": selected, "total": len(selected), "date": today}
+    return {"articles": selected, "total": len(selected), "date": today, "day_seed": unique_seed}
 
 # ==================== DAILY RECIPES (RECETTES DU JOUR) ====================
 
