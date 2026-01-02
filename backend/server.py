@@ -2118,15 +2118,18 @@ QUESTION DU PATIENT : {question}"""
             upsert=True
         )
         
+        # response is a string directly
+        response_text = response if isinstance(response, str) else str(response)
+        
         # Cache response
         await db.ai_cache.insert_one({
             "prompt_hash": cache_hash,
-            "response": response.text,
+            "response": response_text,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "hits": 0
         })
         
-        return {"response": response.text, "from_cache": False, "phase": phase_info}
+        return {"response": response_text, "from_cache": False, "phase": phase_info}
         
     except Exception as e:
         logger.error(f"Bariatric coach error: {e}")
