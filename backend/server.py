@@ -3191,14 +3191,20 @@ RÈGLES OBLIGATOIRES:
         
         category_filter = f"pour {category}" if category != "all" else "variées (petit-déjeuner, déjeuner, dîner, collation)"
         
-        prompt = f"""Génère {count} recettes exclusives, simples et économiques {category_filter}.
+        prompt = f"""Génère {count} recettes COHÉRENTES, simples et économiques {category_filter}.
+
+IMPORTANT - COHÉRENCE OBLIGATOIRE:
+- Le NOM doit refléter le plat (ex: "Saumon grillé aux légumes" → saumon + légumes dans ingrédients)
+- Les INGRÉDIENTS doivent permettre de réaliser le plat nommé
+- Les ÉTAPES doivent utiliser TOUS les ingrédients listés et UNIQUEMENT ceux-ci
+- Chaque étape doit être claire et logique
 
 Réponds UNIQUEMENT avec ce JSON:
 {{
     "recipes": [
         {{
             "id": "recipe_1",
-            "name": "Nom de la recette",
+            "name": "Nom descriptif de la recette",
             "category": "breakfast|lunch|dinner|snack",
             "calories": 350,
             "protein": 20,
@@ -3210,14 +3216,14 @@ Réponds UNIQUEMENT avec ce JSON:
             "difficulty": "facile",
             "cost": "économique",
             "ingredients": [
-                {{"item": "Ingrédient 1", "quantity": "200g"}},
-                {{"item": "Ingrédient 2", "quantity": "1 pièce"}}
+                {{"item": "Ingrédient principal", "quantity": "200g"}},
+                {{"item": "Légume ou accompagnement", "quantity": "100g"}}
             ],
             "steps": [
-                "Étape 1: ...",
-                "Étape 2: ..."
+                "Étape 1: Préparer [ingrédient] en [action]",
+                "Étape 2: Cuire [ingrédient] pendant [durée]"
             ],
-            "tips": "Conseil pour cette recette",
+            "tips": "Conseil pratique pour cette recette",
             "nutri_score": "A"
         }}
     ]
