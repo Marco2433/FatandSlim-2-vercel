@@ -1002,7 +1002,21 @@ export default function DashboardPage() {
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex items-center gap-1">
+                    {challenge.completed && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAchievementToShare({ type: 'challenge', data: challenge });
+                          setShowShareAchievementDialog(true);
+                        }}
+                      >
+                        <Share2 className="w-3 h-3" />
+                      </Button>
+                    )}
                     <Badge 
                       variant={challenge.completed ? 'default' : 'outline'}
                       className={challenge.completed ? 'bg-gradient-to-r from-primary to-secondary' : ''}
