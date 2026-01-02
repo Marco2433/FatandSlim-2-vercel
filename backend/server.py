@@ -3639,72 +3639,857 @@ async def get_health_articles(user: dict = Depends(get_current_user)):
     day_of_year = datetime.now(timezone.utc).timetuple().tm_yday
     year = datetime.now(timezone.utc).year
     
-    # Large pool of 50+ articles for better rotation
+    # Large pool of 50+ articles with FULL CONTENT for reading
     all_articles = [
         # Nutrition (15 articles)
-        {"title": "10 aliments brûle-graisses à intégrer", "summary": "Découvrez les aliments qui accélèrent votre métabolisme.", "category": "nutrition", "source": "Santé Magazine", "read_time": "4 min", "content": "Les aliments thermogéniques comme le piment, le thé vert et le café peuvent augmenter votre métabolisme de 4 à 5%. Intégrez-les progressivement dans votre alimentation."},
-        {"title": "Les super-aliments : mythe ou réalité ?", "summary": "Analyse scientifique des aliments dits 'miracles'.", "category": "nutrition", "source": "Le Figaro Santé", "read_time": "5 min", "content": "Si certains aliments sont effectivement riches en nutriments, aucun ne peut à lui seul transformer votre santé. La clé reste la diversité alimentaire."},
-        {"title": "Comment manger équilibré avec un petit budget", "summary": "Conseils pratiques pour une alimentation saine et économique.", "category": "nutrition", "source": "Femme Actuelle", "read_time": "6 min", "content": "Privilégiez les légumineuses, les œufs et les légumes de saison. Le meal prep permet aussi de réduire le gaspillage et les coûts."},
-        {"title": "Les protéines végétales : le guide complet", "summary": "Tout savoir sur les alternatives aux protéines animales.", "category": "nutrition", "source": "Bio Magazine", "read_time": "7 min", "content": "Lentilles, pois chiches, tofu, tempeh... Les protéines végétales peuvent couvrir tous vos besoins si elles sont bien combinées."},
-        {"title": "Sucres cachés : où se trouvent-ils ?", "summary": "Apprenez à repérer les sucres ajoutés dans vos aliments.", "category": "nutrition", "source": "Top Santé", "read_time": "4 min", "content": "Sauces, pain de mie, yaourts aromatisés... Le sucre se cache partout. Lisez les étiquettes : glucose, fructose, sirop sont tous des sucres."},
-        {"title": "Les bienfaits du jeûne intermittent", "summary": "Ce que dit la science sur cette pratique alimentaire.", "category": "nutrition", "source": "Doctissimo", "read_time": "6 min", "content": "Le jeûne 16/8 peut améliorer la sensibilité à l'insuline et favoriser la perte de poids, mais il ne convient pas à tout le monde."},
-        {"title": "Microbiote : l'intestin, notre deuxième cerveau", "summary": "Comment prendre soin de sa flore intestinale.", "category": "nutrition", "source": "Science & Vie", "read_time": "8 min", "content": "Fibres, aliments fermentés et probiotiques sont vos alliés. Évitez les édulcorants artificiels qui perturbent le microbiote."},
-        {"title": "Petit-déjeuner : le repas le plus important ?", "summary": "Décryptage d'une idée reçue très répandue.", "category": "nutrition", "source": "Santé Magazine", "read_time": "5 min", "content": "Ce n'est pas obligatoire pour tous. L'important est d'écouter sa faim et de faire des choix nutritifs quand on mange."},
-        {"title": "Les oméga-3 : pourquoi sont-ils essentiels ?", "summary": "Rôle des acides gras dans la santé.", "category": "nutrition", "source": "Le Monde Santé", "read_time": "5 min", "content": "Anti-inflammatoires, bons pour le cœur et le cerveau. On les trouve dans les poissons gras, les noix et les graines de lin."},
-        {"title": "Hydratation : combien d'eau boire par jour ?", "summary": "Les vrais besoins en eau de l'organisme.", "category": "nutrition", "source": "Top Santé", "read_time": "4 min", "content": "1,5 à 2 litres en moyenne, mais cela varie selon l'activité physique, la météo et votre alimentation."},
-        {"title": "Index glycémique : comprendre et utiliser", "summary": "Guide pratique de l'index glycémique.", "category": "nutrition", "source": "Doctissimo", "read_time": "6 min", "content": "Privilégiez les aliments à IG bas pour une énergie stable : légumineuses, céréales complètes, légumes."},
-        {"title": "Les vitamines essentielles en hiver", "summary": "Comment éviter les carences saisonnières.", "category": "nutrition", "source": "Femme Actuelle", "read_time": "5 min", "content": "Vitamine D, C et zinc sont particulièrement importants. Pensez aux agrumes, aux champignons et aux fruits de mer."},
-        {"title": "Alimentation anti-inflammatoire", "summary": "Réduire l'inflammation par l'assiette.", "category": "nutrition", "source": "Bio Magazine", "read_time": "6 min", "content": "Curcuma, gingembre, fruits rouges, légumes verts... Ces aliments aident à lutter contre l'inflammation chronique."},
-        {"title": "Les collations saines pour sportifs", "summary": "Que manger avant et après l'effort.", "category": "nutrition", "source": "Sport Magazine", "read_time": "4 min", "content": "Avant : glucides complexes. Après : protéines + glucides pour la récupération. Banane, yaourt grec, amandes sont parfaits."},
-        {"title": "Détox : arnaque ou réalité ?", "summary": "La vérité sur les régimes détox.", "category": "nutrition", "source": "Science & Vie", "read_time": "5 min", "content": "Le foie et les reins font déjà le travail. Les cures détox ne sont pas nécessaires si vous mangez équilibré."},
+        {
+            "title": "10 aliments brûle-graisses à intégrer", 
+            "summary": "Découvrez les aliments qui accélèrent votre métabolisme.", 
+            "category": "nutrition", 
+            "source": "Santé Magazine", 
+            "read_time": "4 min", 
+            "content": """Les aliments thermogéniques peuvent augmenter votre métabolisme de 4 à 5%. Voici les 10 meilleurs à intégrer dans votre alimentation :
+
+**1. Le piment** 🌶️
+La capsaïcine qu'il contient augmente la température corporelle et stimule la combustion des graisses.
+
+**2. Le thé vert** 🍵
+Riche en catéchines, il booste le métabolisme et favorise l'oxydation des graisses.
+
+**3. Le café** ☕
+La caféine stimule le système nerveux et augmente la dépense énergétique de 3 à 11%.
+
+**4. Le gingembre**
+Anti-inflammatoire naturel, il améliore la digestion et la thermogenèse.
+
+**5. La cannelle**
+Elle régule la glycémie et réduit les envies de sucre.
+
+**6. Les agrumes** 🍊
+Riches en vitamine C, ils aident à brûler les graisses pendant l'exercice.
+
+**7. Les protéines maigres**
+Le poulet, le poisson et les œufs nécessitent plus d'énergie pour être digérés.
+
+**8. Les légumes verts**
+Faibles en calories mais riches en fibres, ils prolongent la satiété.
+
+**9. L'avocat** 🥑
+Ses graisses saines stimulent le métabolisme et réduisent l'inflammation.
+
+**10. Les baies**
+Riches en antioxydants, elles combattent le stress oxydatif lié à l'obésité.
+
+💡 **Conseil** : Intégrez ces aliments progressivement dans votre alimentation quotidienne pour des résultats durables."""
+        },
+        {
+            "title": "Les super-aliments : mythe ou réalité ?", 
+            "summary": "Analyse scientifique des aliments dits 'miracles'.", 
+            "category": "nutrition", 
+            "source": "Le Figaro Santé", 
+            "read_time": "5 min", 
+            "content": """Le terme "super-aliment" est-il un argument marketing ou une réalité scientifique ? Décryptage.
+
+**Qu'est-ce qu'un super-aliment ?**
+Ce terme désigne des aliments particulièrement riches en nutriments : vitamines, minéraux, antioxydants. Cependant, ce n'est pas un terme scientifique officiel.
+
+**Les vrais champions nutritionnels :**
+
+🫐 **Les baies (myrtilles, açaí, goji)**
+- Riches en antioxydants
+- Protègent contre le vieillissement cellulaire
+- Réalité : efficaces, mais pas miraculeux
+
+🥬 **Le chou kale**
+- Excellente source de vitamines K, A et C
+- Bon rapport qualité/prix nutritionnel
+- Réalité : un très bon légume, remplaçable par d'autres choux
+
+🥜 **Les graines de chia**
+- Oméga-3, fibres et protéines
+- Réalité : intéressantes mais les graines de lin sont équivalentes
+
+**Le verdict de la science :**
+Aucun aliment ne peut à lui seul transformer votre santé. La clé reste :
+- La diversité alimentaire
+- L'équilibre des repas
+- La régularité des bonnes habitudes
+
+**À retenir :** Les super-aliments sont bénéfiques mais ne remplacent pas une alimentation variée et équilibrée. Méfiez-vous du marketing !"""
+        },
+        {
+            "title": "Comment manger équilibré avec un petit budget", 
+            "summary": "Conseils pratiques pour une alimentation saine et économique.", 
+            "category": "nutrition", 
+            "source": "Femme Actuelle", 
+            "read_time": "6 min", 
+            "content": """Manger sainement ne signifie pas forcément dépenser plus. Voici nos conseils pour allier nutrition et économies.
+
+**1. Planifiez vos repas** 📝
+- Faites un menu de la semaine
+- Rédigez une liste de courses précise
+- Évitez les achats impulsifs
+
+**2. Privilégiez les protéines économiques**
+- Œufs : 15g de protéines pour moins d'1€ les 6
+- Légumineuses : lentilles, pois chiches, haricots
+- Sardines en conserve : riches en oméga-3
+
+**3. Achetez de saison** 🥕
+Les fruits et légumes de saison sont :
+- Moins chers (pas de transport longue distance)
+- Plus savoureux
+- Plus riches en nutriments
+
+**4. Le meal prep, votre allié**
+Cuisinez en grande quantité le week-end :
+- Économie de temps et d'argent
+- Moins de gaspillage
+- Repas sains toujours prêts
+
+**5. Les basiques à toujours avoir**
+- Riz, pâtes, pommes de terre
+- Oignons, ail, carottes
+- Huile d'olive, vinaigre
+- Épices et herbes (transforment tout !)
+
+**6. Limitez les produits transformés**
+Souvent plus chers et moins nutritifs que les aliments bruts.
+
+**Budget exemple pour 1 semaine (1 personne) : ~35-40€**
+- Protéines : 10€
+- Fruits & légumes : 12€
+- Féculents : 5€
+- Produits laitiers : 5€
+- Divers : 5€
+
+💡 **Astuce finale** : Les marchés en fin de journée proposent souvent des prix réduits !"""
+        },
+        {
+            "title": "Les protéines végétales : le guide complet", 
+            "summary": "Tout savoir sur les alternatives aux protéines animales.", 
+            "category": "nutrition", 
+            "source": "Bio Magazine", 
+            "read_time": "7 min", 
+            "content": """Que vous soyez végétarien, vegan ou simplement curieux, voici tout ce qu'il faut savoir sur les protéines végétales.
+
+**Pourquoi diversifier ses sources de protéines ?**
+- Impact environnemental réduit
+- Coût généralement inférieur
+- Apport en fibres et micronutriments
+
+**Les meilleures sources :**
+
+🫘 **Légumineuses**
+- Lentilles : 25g de protéines/100g (sec)
+- Pois chiches : 19g/100g
+- Haricots rouges : 24g/100g
+- Fèves : 26g/100g
+
+🌾 **Céréales complètes**
+- Quinoa : 14g/100g (protéine complète !)
+- Avoine : 13g/100g
+- Épeautre : 15g/100g
+
+🥜 **Oléagineux**
+- Amandes : 21g/100g
+- Cacahuètes : 26g/100g
+- Graines de courge : 30g/100g
+
+🧈 **Dérivés du soja**
+- Tofu : 8-15g/100g selon fermeté
+- Tempeh : 19g/100g
+- Edamame : 11g/100g
+
+**La complémentation**
+Les protéines végétales sont souvent incomplètes (sauf quinoa et soja). La solution : combiner :
+- Légumineuses + céréales (ex: riz + lentilles)
+- Légumineuses + oléagineux
+
+**Combien par jour ?**
+Besoins : 0.8 à 1g par kg de poids corporel
+Pour 70 kg : environ 56-70g de protéines/jour
+
+💡 **Idée repas** : Buddha bowl avec quinoa, pois chiches rôtis, légumes et tahini (30g de protéines)"""
+        },
+        {
+            "title": "Sucres cachés : où se trouvent-ils ?", 
+            "summary": "Apprenez à repérer les sucres ajoutés dans vos aliments.", 
+            "category": "nutrition", 
+            "source": "Top Santé", 
+            "read_time": "4 min", 
+            "content": """Le sucre se cache partout, même dans des aliments que vous pensez sains. Apprenez à le débusquer !
+
+**Les différents noms du sucre** 🔍
+Sur les étiquettes, le sucre peut s'appeler :
+- Glucose, fructose, dextrose
+- Sirop de glucose-fructose
+- Maltodextrine
+- Sucre inverti
+- Concentré de jus de fruits
+
+**Où se cache-t-il ?**
+
+🥫 **Sauces et condiments**
+- Ketchup : 22g de sucre/100g
+- Sauce barbecue : jusqu'à 30g/100g
+- Vinaigrette industrielle : 5-10g/100g
+
+🍞 **Produits de boulangerie**
+- Pain de mie : 4-8g de sucre par tranche
+- Biscottes : souvent sucrées
+
+🥛 **Produits laitiers**
+- Yaourts aux fruits : 12-15g par pot
+- Lait végétal aromatisé : 10g par verre
+
+🥣 **Céréales du petit-déjeuner**
+- Certaines contiennent plus de 30% de sucre !
+
+**Comment limiter ?**
+1. Lisez TOUJOURS les étiquettes
+2. Regardez les valeurs pour 100g
+3. Comparez les produits similaires
+4. Privilégiez les produits bruts
+5. Cuisinez maison
+
+**Recommandation OMS :**
+Maximum 25g de sucres ajoutés par jour (6 cuillères à café)
+
+💡 **Astuce** : Un produit avec moins de 5g de sucre/100g est considéré comme peu sucré."""
+        },
+        {
+            "title": "Les bienfaits du jeûne intermittent", 
+            "summary": "Ce que dit la science sur cette pratique alimentaire.", 
+            "category": "nutrition", 
+            "source": "Doctissimo", 
+            "read_time": "6 min", 
+            "content": """Le jeûne intermittent fait de plus en plus d'adeptes. Que dit vraiment la science ?
+
+**Qu'est-ce que c'est ?**
+Ce n'est pas un régime, mais une façon d'organiser ses repas avec des périodes de jeûne et d'alimentation.
+
+**Les méthodes populaires :**
+
+⏰ **16/8** (le plus courant)
+- Jeûne : 16 heures
+- Fenêtre alimentaire : 8 heures
+- Exemple : manger entre 12h et 20h
+
+🍽️ **5:2**
+- 5 jours normaux
+- 2 jours à 500-600 calories
+
+**Les bénéfices prouvés :**
+✅ Amélioration de la sensibilité à l'insuline
+✅ Réduction de l'inflammation
+✅ Autophagie (nettoyage cellulaire)
+✅ Perte de poids (si déficit calorique)
+✅ Simplification des repas
+
+**Les limites :**
+❌ Ne convient pas à tous
+❌ Peut favoriser les troubles alimentaires
+❌ Déconseillé pendant la grossesse
+❌ À éviter si diabète non stabilisé
+
+**Pour qui ?**
+- Personnes en bonne santé
+- Pas d'antécédents de TCA
+- Mode de vie compatible
+
+**Comment commencer ?**
+1. Commencez par 12/12
+2. Augmentez progressivement
+3. Hydratez-vous bien pendant le jeûne
+4. Écoutez votre corps
+
+💡 **Important** : Consultez un médecin avant de commencer, surtout si vous prenez des médicaments."""
+        },
+        {
+            "title": "Microbiote : l'intestin, notre deuxième cerveau", 
+            "summary": "Comment prendre soin de sa flore intestinale.", 
+            "category": "nutrition", 
+            "source": "Science & Vie", 
+            "read_time": "8 min", 
+            "content": """Votre intestin abrite 100 000 milliards de bactéries. Comment en prendre soin ?
+
+**Le microbiote, c'est quoi ?**
+L'ensemble des micro-organismes (bactéries, virus, champignons) vivant dans notre intestin. Il pèse environ 2 kg !
+
+**Son rôle crucial :**
+🧠 Communication avec le cerveau (axe intestin-cerveau)
+🛡️ Immunité (70% du système immunitaire)
+🍽️ Digestion et absorption des nutriments
+⚖️ Régulation du poids
+
+**Signes d'un microbiote déséquilibré :**
+- Ballonnements, gaz
+- Troubles du transit
+- Fatigue chronique
+- Problèmes de peau
+- Troubles de l'humeur
+
+**Comment le nourrir ?**
+
+🥦 **Prébiotiques** (nourriture des bonnes bactéries)
+- Ail, oignon, poireau
+- Banane, asperges
+- Chicorée, artichaut
+
+🥛 **Probiotiques** (bonnes bactéries)
+- Yaourt, kéfir
+- Choucroute, kimchi
+- Miso, tempeh
+- Kombucha
+
+🌾 **Fibres variées**
+- Légumineuses
+- Céréales complètes
+- Fruits et légumes
+
+**À éviter :**
+❌ Édulcorants artificiels
+❌ Excès d'alcool
+❌ Antibiotiques inutiles
+❌ Stress chronique
+❌ Aliments ultra-transformés
+
+💡 **Conseil** : Visez 30 végétaux différents par semaine pour une diversité microbienne optimale."""
+        },
         
         # Santé (12 articles)
-        {"title": "Chirurgie bariatrique : tout savoir", "summary": "Bypass, sleeve : comprendre les options disponibles.", "category": "santé", "source": "Le Monde Santé", "read_time": "7 min", "content": "Ces interventions sont réservées aux obésités sévères. Le suivi médical et nutritionnel post-opératoire est essentiel."},
-        {"title": "Diabète de type 2 : prévention et gestion", "summary": "Comment réduire les risques par l'alimentation.", "category": "santé", "source": "Santé Magazine", "read_time": "5 min", "content": "Perte de poids, activité physique régulière et alimentation équilibrée peuvent prévenir ou inverser le prédiabète."},
-        {"title": "L'impact du sommeil sur le poids", "summary": "Pourquoi bien dormir aide à maintenir un poids sain.", "category": "santé", "source": "Top Santé", "read_time": "4 min", "content": "Le manque de sommeil perturbe les hormones de la faim (ghréline et leptine), favorisant les grignotages."},
-        {"title": "Stress et prise de poids : le lien", "summary": "Comment le cortisol influence votre silhouette.", "category": "santé", "source": "Psychologies", "read_time": "5 min", "content": "Le stress chronique augmente le cortisol qui favorise le stockage des graisses abdominales. La gestion du stress est clé."},
-        {"title": "Hypertension : alimentation et conseils", "summary": "Les habitudes alimentaires qui protègent votre cœur.", "category": "santé", "source": "Le Figaro Santé", "read_time": "6 min", "content": "Réduisez le sel, augmentez le potassium (bananes, épinards), limitez l'alcool et bougez régulièrement."},
-        {"title": "Cholestérol : bon vs mauvais", "summary": "Comprendre les différents types de cholestérol.", "category": "santé", "source": "Doctissimo", "read_time": "5 min", "content": "Le HDL (bon) protège, le LDL (mauvais) en excès bouche les artères. Les fibres et les oméga-3 améliorent le ratio."},
-        {"title": "Santé mentale et alimentation", "summary": "Le lien entre ce que vous mangez et votre humeur.", "category": "santé", "source": "Psychologies", "read_time": "6 min", "content": "Oméga-3, magnésium, vitamines B influencent la sérotonine et la dopamine. Mangez varié pour un cerveau en forme."},
-        {"title": "Inflammations chroniques : les signaux", "summary": "Reconnaître et combattre l'inflammation.", "category": "santé", "source": "Science & Vie", "read_time": "5 min", "content": "Fatigue, douleurs articulaires, problèmes digestifs peuvent indiquer une inflammation. L'alimentation peut aider."},
-        {"title": "Thyroïde et poids : comprendre le lien", "summary": "Impact de la thyroïde sur le métabolisme.", "category": "santé", "source": "Santé Magazine", "read_time": "5 min", "content": "L'hypothyroïdie ralentit le métabolisme. Un bilan thyroïdien est recommandé si la perte de poids est difficile."},
-        {"title": "Apnée du sommeil et obésité", "summary": "Un cercle vicieux à briser.", "category": "santé", "source": "Le Monde Santé", "read_time": "6 min", "content": "L'excès de poids favorise l'apnée, qui elle-même complique la perte de poids. Consultez si vous ronflez beaucoup."},
-        {"title": "Probiotiques : quand les prendre ?", "summary": "Guide d'utilisation des probiotiques.", "category": "santé", "source": "Top Santé", "read_time": "4 min", "content": "Après des antibiotiques, en cas de troubles digestifs ou pour renforcer l'immunité. Choisissez des souches adaptées."},
-        {"title": "Métabolisme lent : mythe ou réalité ?", "summary": "Ce qui influence vraiment votre métabolisme.", "category": "santé", "source": "Doctissimo", "read_time": "5 min", "content": "Le métabolisme varie peu entre individus. La masse musculaire, l'âge et l'activité physique sont les vrais facteurs."},
+        {
+            "title": "Chirurgie bariatrique : tout savoir", 
+            "summary": "Bypass, sleeve : comprendre les options disponibles.", 
+            "category": "santé", 
+            "source": "Le Monde Santé", 
+            "read_time": "7 min", 
+            "content": """La chirurgie bariatrique est une option pour les obésités sévères. Tour d'horizon des techniques.
+
+**Pour qui ?**
+- IMC > 40, ou > 35 avec comorbidités
+- Échec des autres méthodes
+- Suivi médical depuis 6-12 mois
+- Évaluation psychologique favorable
+
+**Les principales techniques :**
+
+🔹 **Sleeve gastrectomie**
+- Retrait de 75% de l'estomac
+- Intervention irréversible
+- Perte de poids : 60-70% de l'excès
+- Durée : 1-2 heures
+
+🔹 **Bypass gastrique**
+- Court-circuit de l'estomac et du début de l'intestin
+- Effet restrictif + malabsorptif
+- Perte de poids : 70-80% de l'excès
+- Nécessite une supplémentation à vie
+
+🔹 **Anneau gastrique**
+- Anneau ajustable autour de l'estomac
+- Réversible
+- Moins pratiqué aujourd'hui
+
+**Le suivi post-opératoire :**
+📋 Consultations régulières à vie
+💊 Supplémentation vitaminique
+🥗 Adaptation alimentaire progressive
+🏋️ Reprise d'activité physique
+🧠 Suivi psychologique
+
+**Résultats attendus :**
+- Perte de 50-80% de l'excès de poids
+- Amélioration des comorbidités (diabète, HTA)
+- Meilleure qualité de vie
+
+⚠️ **Risques à connaître :**
+Complications chirurgicales, carences nutritionnelles, échec à long terme si pas de changement d'hygiène de vie."""
+        },
+        {
+            "title": "Diabète de type 2 : prévention et gestion", 
+            "summary": "Comment réduire les risques par l'alimentation.", 
+            "category": "santé", 
+            "source": "Santé Magazine", 
+            "read_time": "5 min", 
+            "content": """Le diabète de type 2 est souvent lié au mode de vie. Bonne nouvelle : il peut être prévenu et même inversé !
+
+**Facteurs de risque :**
+- Surpoids, surtout abdominal
+- Sédentarité
+- Alimentation déséquilibrée
+- Antécédents familiaux
+- Âge > 45 ans
+
+**Signes d'alerte :**
+⚠️ Soif excessive
+⚠️ Envies fréquentes d'uriner
+⚠️ Fatigue inhabituelle
+⚠️ Vision floue
+⚠️ Cicatrisation lente
+
+**L'alimentation anti-diabète :**
+
+✅ **À privilégier :**
+- Légumes à chaque repas
+- Protéines maigres
+- Céréales complètes
+- Légumineuses
+- Bonnes graisses (olive, avocat)
+
+❌ **À limiter :**
+- Sucres rapides
+- Aliments transformés
+- Sodas et jus de fruits
+- Alcool
+- Excès de graisses saturées
+
+**L'importance de l'activité physique :**
+- 150 min/semaine minimum
+- Améliore la sensibilité à l'insuline
+- Aide à maintenir un poids sain
+
+**Peut-on guérir du diabète ?**
+Avec une perte de poids significative et des changements durables, certains patients retrouvent une glycémie normale (rémission).
+
+💡 **À savoir** : Perdre 5-10% de son poids réduit de 58% le risque de développer un diabète !"""
+        },
+        {
+            "title": "L'impact du sommeil sur le poids", 
+            "summary": "Pourquoi bien dormir aide à maintenir un poids sain.", 
+            "category": "santé", 
+            "source": "Top Santé", 
+            "read_time": "4 min", 
+            "content": """Dormir moins de 7 heures augmente le risque d'obésité. Voici pourquoi le sommeil est crucial.
+
+**Les hormones en jeu :**
+
+🍽️ **Ghréline** (hormone de la faim)
+- Augmente quand on manque de sommeil
+- +15% après une nuit courte
+
+🛑 **Leptine** (hormone de satiété)
+- Diminue avec le manque de sommeil
+- -15% après une nuit courte
+
+**Conséquences du manque de sommeil :**
+📈 Augmentation de l'appétit (+300 kcal/jour)
+🍫 Envies de sucre et gras
+⬇️ Motivation pour le sport
+🧠 Mauvaises décisions alimentaires
+⚡ Baisse du métabolisme
+
+**Combien dormir ?**
+- Adultes : 7-9 heures
+- Adolescents : 8-10 heures
+- Qualité aussi importante que quantité
+
+**Améliorer son sommeil :**
+1. 🕐 Heures régulières
+2. 📱 Pas d'écrans 1h avant
+3. 🌡️ Chambre fraîche (18-19°C)
+4. 🌑 Obscurité totale
+5. ☕ Pas de caféine après 14h
+6. 🍷 Limiter l'alcool
+7. 🏃 Sport, mais pas le soir
+
+**Le cercle vertueux :**
+Bon sommeil → Moins faim → Meilleurs choix → Plus d'énergie → Meilleur sommeil
+
+💡 **Astuce** : Tenez un journal de sommeil pendant 2 semaines pour identifier vos problèmes."""
+        },
         
         # Fitness (12 articles)
-        {"title": "5 exercices pour perdre du ventre à la maison", "summary": "Programme simple pour tonifier votre ceinture abdominale.", "category": "fitness", "source": "Doctissimo", "read_time": "5 min", "content": "Planche, mountain climbers, crunchs, relevés de jambes et gainage latéral. 15-20 min par jour suffisent."},
-        {"title": "HIIT : pourquoi c'est efficace", "summary": "Les avantages de l'entraînement par intervalles.", "category": "fitness", "source": "Men's Health", "read_time": "4 min", "content": "20 minutes de HIIT brûlent plus de calories qu'1h de cardio classique, grâce à l'effet afterburn."},
-        {"title": "La marche : sous-estimée mais efficace", "summary": "10 000 pas par jour : bénéfices réels pour la santé.", "category": "fitness", "source": "Santé Magazine", "read_time": "4 min", "content": "La marche rapide améliore la santé cardiovasculaire, l'humeur et aide à maintenir un poids sain."},
-        {"title": "Yoga et perte de poids : ça fonctionne ?", "summary": "Comment le yoga peut aider dans votre parcours minceur.", "category": "fitness", "source": "Yoga Journal", "read_time": "5 min", "content": "Le yoga réduit le stress (donc le cortisol), améliore la conscience corporelle et peut tonifier."},
-        {"title": "Musculation et métabolisme", "summary": "Comment les muscles brûlent des calories au repos.", "category": "fitness", "source": "Sport Magazine", "read_time": "5 min", "content": "1 kg de muscle brûle environ 13 kcal/jour au repos contre 4 pour la graisse. Investissez dans vos muscles !"},
-        {"title": "Cardio vs musculation pour maigrir", "summary": "Quelle est la meilleure approche ?", "category": "fitness", "source": "Men's Health", "read_time": "5 min", "content": "L'idéal est de combiner les deux. Le cardio brûle des calories, la musculation augmente le métabolisme de base."},
-        {"title": "Récupération : aussi importante que l'effort", "summary": "Pourquoi vos jours de repos comptent.", "category": "fitness", "source": "Sport Magazine", "read_time": "4 min", "content": "Les muscles se construisent pendant le repos. Dormez bien, hydratez-vous et alternez les groupes musculaires."},
-        {"title": "Entraînement à jeun : pour ou contre ?", "summary": "Les effets du sport avant le petit-déjeuner.", "category": "fitness", "source": "Doctissimo", "read_time": "5 min", "content": "Pour le cardio léger, ça peut aider à brûler les graisses. Pour l'intensif, mieux vaut avoir du carburant."},
-        {"title": "Erreurs communes à la salle", "summary": "Ce qui freine vos progrès sans le savoir.", "category": "fitness", "source": "Men's Health", "read_time": "4 min", "content": "Mauvaise forme, charges trop lourdes, pas assez de repos, négliger l'échauffement... Corrigez ces erreurs !"},
-        {"title": "Programme débutant : par où commencer", "summary": "Guide pour se lancer dans le sport.", "category": "fitness", "source": "Santé Magazine", "read_time": "6 min", "content": "Commencez doucement, 2-3 fois par semaine, 20-30 min. Marche, yoga, exercices au poids du corps sont parfaits."},
-        {"title": "Étirements : avant ou après l'effort ?", "summary": "La bonne façon de s'étirer.", "category": "fitness", "source": "Sport Magazine", "read_time": "4 min", "content": "Échauffement dynamique avant, étirements statiques après. Ne jamais s'étirer à froid."},
-        {"title": "Sport en extérieur vs salle de gym", "summary": "Avantages et inconvénients de chaque option.", "category": "fitness", "source": "Yoga Journal", "read_time": "5 min", "content": "L'extérieur boost l'humeur et la vitamine D. La salle offre équipement et structure. Alternez selon la saison !"},
+        {
+            "title": "5 exercices pour perdre du ventre à la maison", 
+            "summary": "Programme simple pour tonifier votre ceinture abdominale.", 
+            "category": "fitness", 
+            "source": "Doctissimo", 
+            "read_time": "5 min", 
+            "content": """Pas besoin de salle de sport ! Voici 5 exercices efficaces à faire chez vous.
+
+**Important à savoir :**
+On ne peut pas cibler la perte de graisse, mais on peut tonifier les muscles abdominaux et brûler des calories globalement.
+
+**Les 5 exercices :**
+
+**1. La planche** 🪵
+- Position : en appui sur les avant-bras et les orteils
+- Durée : 30 sec à 1 min
+- Séries : 3
+- Muscles : transverse, obliques
+
+**2. Mountain climbers** 🏔️
+- Position : position de pompe
+- Mouvement : ramener les genoux alternativement
+- Durée : 30 sec
+- Séries : 3
+- Effet : cardio + abdos
+
+**3. Crunchs** 
+- Position : allongé, genoux pliés
+- Mouvement : décoller les épaules
+- Répétitions : 15-20
+- Séries : 3
+- Attention : ne pas tirer sur la nuque !
+
+**4. Relevés de jambes** 🦵
+- Position : allongé sur le dos
+- Mouvement : lever les jambes tendues
+- Répétitions : 12-15
+- Séries : 3
+- Plus difficile : ne pas toucher le sol
+
+**5. Gainage latéral**
+- Position : sur le côté, en appui sur l'avant-bras
+- Durée : 20-30 sec de chaque côté
+- Séries : 2-3
+- Muscles : obliques
+
+**Programme suggéré :**
+- 4-5 fois par semaine
+- 15-20 minutes
+- Ajoutez du cardio pour brûler plus
+
+💡 **Rappel** : Les abdos se font aussi dans la cuisine ! L'alimentation compte pour 70% des résultats."""
+        },
+        {
+            "title": "HIIT : pourquoi c'est efficace", 
+            "summary": "Les avantages de l'entraînement par intervalles.", 
+            "category": "fitness", 
+            "source": "Men's Health", 
+            "read_time": "4 min", 
+            "content": """Le HIIT (High-Intensity Interval Training) est devenu la méthode préférée pour brûler un maximum de calories en peu de temps.
+
+**Qu'est-ce que le HIIT ?**
+Alternance de phases d'effort intense (80-95% de la fréquence cardiaque max) et de récupération.
+
+**Pourquoi ça fonctionne ?**
+
+🔥 **L'effet afterburn (EPOC)**
+- Votre corps continue de brûler des calories jusqu'à 48h après
+- Jusqu'à 15% de calories en plus qu'un cardio classique
+
+⏱️ **Gain de temps**
+- 20-30 minutes suffisent
+- Aussi efficace que 45-60 min de cardio modéré
+
+💪 **Préservation musculaire**
+- Contrairement au cardio long
+- Maintient la masse maigre
+
+**Exemple de séance HIIT (20 min) :**
+
+🏃 **Échauffement** : 3 min
+
+**Circuit (répéter 4 fois) :**
+- Burpees : 30 sec
+- Repos : 15 sec
+- Squats sautés : 30 sec
+- Repos : 15 sec
+- Mountain climbers : 30 sec
+- Repos : 15 sec
+- Jumping jacks : 30 sec
+- Repos : 30 sec
+
+🧘 **Retour au calme** : 2 min
+
+**Fréquence recommandée :**
+- 2-3 fois par semaine maximum
+- Alternez avec d'autres activités
+- Laissez 48h entre 2 séances
+
+⚠️ **Précautions :**
+Échauffez-vous bien, maîtrisez la technique, et consultez un médecin si débutant ou problème cardiaque."""
+        },
+        {
+            "title": "La marche : sous-estimée mais efficace", 
+            "summary": "10 000 pas par jour : bénéfices réels pour la santé.", 
+            "category": "fitness", 
+            "source": "Santé Magazine", 
+            "read_time": "4 min", 
+            "content": """La marche est l'activité physique la plus naturelle et accessible. Ses bienfaits sont nombreux et scientifiquement prouvés.
+
+**Pourquoi 10 000 pas ?**
+Ce chiffre vient d'une campagne marketing japonaise de 1964, mais la science le valide : c'est un bon objectif pour la santé.
+
+**Les bienfaits de la marche :**
+
+❤️ **Santé cardiovasculaire**
+- Réduit la pression artérielle
+- Améliore le cholestérol
+- -35% risque de maladies cardiaques
+
+🧠 **Santé mentale**
+- Réduit stress et anxiété
+- Améliore l'humeur
+- Boost la créativité
+
+⚖️ **Gestion du poids**
+- 1h de marche rapide ≈ 300 kcal
+- Facile à intégrer au quotidien
+
+🦴 **Os et articulations**
+- Renforce les os
+- Lubrifie les articulations
+- Doux pour le corps
+
+**Comment atteindre 10 000 pas ?**
+
+🚶 **Au quotidien :**
+- Descendez un arrêt avant
+- Prenez les escaliers
+- Marchez en téléphonant
+- Balade digestive après les repas
+
+📊 **Équivalences :**
+- 2 000 pas ≈ 1.5 km
+- 10 000 pas ≈ 7-8 km
+- 30 min marche rapide ≈ 4 000 pas
+
+**Progression suggérée :**
+- Semaine 1-2 : 5 000 pas/jour
+- Semaine 3-4 : 7 000 pas/jour
+- Semaine 5+ : 10 000 pas/jour
+
+💡 **Astuce** : Utilisez Fat & Slim pour suivre vos pas quotidiens !"""
+        },
         
         # Lifestyle (8 articles)
-        {"title": "Meal prep : organiser ses repas de la semaine", "summary": "Gagner du temps tout en mangeant sainement.", "category": "lifestyle", "source": "Femme Actuelle", "read_time": "6 min", "content": "Préparez vos bases le dimanche : légumes découpés, céréales cuites, protéines. Assemblez en 5 min le jour J."},
-        {"title": "Applications nutrition : lesquelles choisir ?", "summary": "Comparatif des meilleures apps pour suivre son alimentation.", "category": "lifestyle", "source": "Tech Santé", "read_time": "5 min", "content": "Fat & Slim combine suivi nutritionnel, recettes IA, entraînements et communauté en une seule app !"},
-        {"title": "Manger en pleine conscience", "summary": "Les bienfaits de l'alimentation intuitive.", "category": "lifestyle", "source": "Psychologies", "read_time": "4 min", "content": "Mangez lentement, sans écrans, en savourant chaque bouchée. Cela améliore la digestion et la satiété."},
-        {"title": "Recettes healthy pour la semaine", "summary": "7 idées de plats équilibrés et savoureux.", "category": "lifestyle", "source": "Cuisine Actuelle", "read_time": "6 min", "content": "Lundi : bowl aux légumes. Mardi : poulet grillé. Mercredi : poisson vapeur. Variez les couleurs et les textures !"},
-        {"title": "Comment lire une étiquette nutritionnelle", "summary": "Décrypter les informations sur vos produits.", "category": "lifestyle", "source": "60 Millions", "read_time": "4 min", "content": "Regardez les valeurs pour 100g, vérifiez le sucre et le sel, méfiez-vous des longues listes d'ingrédients."},
-        {"title": "Gestion du stress au quotidien", "summary": "Techniques simples pour décompresser.", "category": "lifestyle", "source": "Psychologies", "read_time": "5 min", "content": "Respiration profonde, marche, méditation 5 min... De petits gestes qui font une grande différence."},
-        {"title": "Dormir mieux pour mincir", "summary": "L'importance du sommeil dans la perte de poids.", "category": "lifestyle", "source": "Top Santé", "read_time": "5 min", "content": "7-9h de sommeil, pas d'écrans avant de dormir, chambre fraîche et sombre. Votre corps vous remerciera."},
-        {"title": "Motivation : comment rester sur la bonne voie", "summary": "Stratégies pour ne pas abandonner.", "category": "lifestyle", "source": "Psychologies", "read_time": "5 min", "content": "Fixez des mini-objectifs, célébrez chaque victoire, trouvez un partenaire d'entraînement, utilisez la communauté !"},
+        {
+            "title": "Meal prep : organiser ses repas de la semaine", 
+            "summary": "Gagner du temps tout en mangeant sainement.", 
+            "category": "lifestyle", 
+            "source": "Femme Actuelle", 
+            "read_time": "6 min", 
+            "content": """Le meal prep (préparation des repas) est la clé pour manger sainement même avec un emploi du temps chargé.
+
+**Pourquoi meal prepper ?**
+✅ Gain de temps en semaine
+✅ Économies (moins de gaspillage)
+✅ Alimentation plus saine
+✅ Moins de stress au quotidien
+✅ Meilleur contrôle des portions
+
+**Les bases du meal prep :**
+
+📝 **Étape 1 : Planifier**
+- Choisissez 3-4 protéines
+- Sélectionnez 4-5 légumes
+- Prévoyez 2-3 féculents
+- Variez les sauces/assaisonnements
+
+🛒 **Étape 2 : Courses**
+- Liste précise en main
+- Achetez en quantité
+- Privilégiez les produits de base
+
+🍳 **Étape 3 : Cuisiner (2-3h le dimanche)**
+
+**Ce qui se prépare bien à l'avance :**
+- Céréales : riz, quinoa, pâtes
+- Protéines : poulet, œufs durs, légumineuses
+- Légumes : rôtis, vapeur, crus lavés
+- Sauces : vinaigrettes, houmous
+
+**Ce qui se prépare le jour J :**
+- Salade verte (sinon elle flétrit)
+- Avocat (s'oxyde)
+- Poisson (mieux frais)
+
+**Exemple de batch cooking :**
+
+🐔 Poulet grillé en grande quantité
+🍚 Grand plat de riz complet
+🥕 Légumes rôtis variés
+🥚 Œufs durs pour la semaine
+🥗 2-3 vinaigrettes différentes
+
+**Conservation :**
+- Frigo : 3-4 jours
+- Congélateur : 2-3 mois
+- Boîtes hermétiques obligatoires
+
+💡 **Conseil** : Commencez petit ! Préparez juste les déjeuners au début."""
+        },
+        {
+            "title": "Motivation : comment rester sur la bonne voie", 
+            "summary": "Stratégies pour ne pas abandonner.", 
+            "category": "lifestyle", 
+            "source": "Psychologies", 
+            "read_time": "5 min", 
+            "content": """Garder sa motivation sur le long terme est le plus grand défi. Voici des stratégies qui fonctionnent vraiment.
+
+**Pourquoi on abandonne ?**
+- Objectifs trop ambitieux
+- Résultats trop lents
+- Environnement non favorable
+- Tout ou rien (perfectionnisme)
+
+**Les clés de la motivation durable :**
+
+🎯 **1. Objectifs SMART**
+- Spécifiques
+- Mesurables
+- Atteignables
+- Réalistes
+- Temporels
+
+Exemple : "Perdre 2 kg ce mois-ci" plutôt que "Perdre du poids"
+
+🏆 **2. Célébrez les petites victoires**
+- 1 kg perdu ? Bravo !
+- Une semaine sans soda ? Top !
+- 3 séances de sport ? Excellent !
+
+📊 **3. Suivez vos progrès**
+- Application Fat & Slim
+- Photos avant/après
+- Journal alimentaire
+- Mesures (pas que le poids !)
+
+👥 **4. Trouvez du soutien**
+- Partenaire d'entraînement
+- Communauté Fat & Slim
+- Partagez vos objectifs
+
+🔄 **5. Prévoyez les rechutes**
+- Elles font partie du processus
+- Ce n'est pas un échec
+- Reprenez dès le lendemain
+
+**Techniques mentales :**
+
+🧠 **Visualisation** : Imaginez-vous ayant atteint votre objectif
+
+📝 **Affirmations** : "Je fais des choix qui me rapprochent de mon objectif"
+
+⚡ **Règle des 5 secondes** : Comptez 5-4-3-2-1 et passez à l'action
+
+💡 **Rappel** : La motivation va et vient. Ce sont les habitudes et la discipline qui font la différence !"""
+        },
         
         # Bariatrique (8 articles)
-        {"title": "Après la sleeve : adaptation alimentaire", "summary": "Guide des premières semaines post-opératoires.", "category": "bariatrique", "source": "Obésité Info", "read_time": "7 min", "content": "Liquides d'abord, puis mixé, puis morceaux. Mangez lentement, petites quantités, et mastiquez bien."},
-        {"title": "Bypass : les carences à surveiller", "summary": "Vitamines et minéraux essentiels après l'opération.", "category": "bariatrique", "source": "Chirurgie Santé", "read_time": "6 min", "content": "Fer, B12, calcium, vitamine D sont les plus à risque. Supplémentation à vie et bilans réguliers obligatoires."},
-        {"title": "Témoignage : ma vie après le bypass", "summary": "Histoire inspirante d'une transformation.", "category": "bariatrique", "source": "Santé Magazine", "read_time": "8 min", "content": "Marie a perdu 50 kg en 18 mois. Elle partage ses hauts, ses bas et ses conseils pour réussir."},
-        {"title": "Sport après chirurgie bariatrique", "summary": "Reprendre l'activité physique en toute sécurité.", "category": "bariatrique", "source": "Sport Santé", "read_time": "5 min", "content": "Commencez par la marche, puis natation, puis renforcement. Attendez l'accord de votre chirurgien."},
-        {"title": "Dumping syndrome : le comprendre", "summary": "Ce malaise fréquent après bypass.", "category": "bariatrique", "source": "Obésité Info", "read_time": "5 min", "content": "Sueurs, nausées, palpitations après les sucres rapides. Évitez les sodas, jus, sucreries."},
-        {"title": "Peau relâchée après amaigrissement", "summary": "Solutions et prévention.", "category": "bariatrique", "source": "Chirurgie Santé", "read_time": "6 min", "content": "Hydratation, musculation, perte progressive aident. La chirurgie réparatrice est possible si besoin."},
-        {"title": "Suivi psychologique post-opératoire", "summary": "L'importance du soutien mental.", "category": "bariatrique", "source": "Psychologies", "read_time": "5 min", "content": "La relation à la nourriture change. Un suivi psy aide à gérer les émotions et prévenir les transferts."},
-        {"title": "Grossesse après chirurgie bariatrique", "summary": "Ce qu'il faut savoir.", "category": "bariatrique", "source": "Le Monde Santé", "read_time": "6 min", "content": "Attendez 12-18 mois post-op, stabilisez votre poids, suivez les carences de près. C'est possible et sûr !"},
+        {
+            "title": "Après la sleeve : adaptation alimentaire", 
+            "summary": "Guide des premières semaines post-opératoires.", 
+            "category": "bariatrique", 
+            "source": "Obésité Info", 
+            "read_time": "7 min", 
+            "content": """Après une sleeve gastrectomie, l'alimentation doit être adaptée progressivement. Voici le guide complet.
+
+**Les phases alimentaires :**
+
+**Phase 1 : Liquide (J1 à J14)**
+✅ Eau, bouillon clair
+✅ Thé, tisane
+✅ Jus de fruits dilués sans pulpe
+❌ Pas de paille !
+
+**Phase 2 : Mixé/Lisse (S2 à S4)**
+✅ Soupes mixées lisses
+✅ Yaourts nature
+✅ Compotes sans morceaux
+✅ Œufs brouillés très cuits
+
+**Phase 3 : Mouliné (S4 à S6)**
+✅ Viandes mixées
+✅ Légumes bien cuits écrasés
+✅ Fromages frais
+✅ Poisson émietté
+
+**Phase 4 : Normal adapté (après S6)**
+Réintroduction progressive des textures normales
+
+**Règles d'or à vie :**
+
+🍽️ **Manger**
+- Petites quantités (100-150 ml au début)
+- Très lentement (30 min par repas)
+- Bien mastiquer (20-30 fois)
+- Arrêter dès la satiété
+
+💧 **Boire**
+- Pas pendant les repas
+- 30 min avant ou après
+- 1.5L minimum par jour
+- Petites gorgées
+
+⚠️ **Éviter**
+- Boissons gazeuses
+- Sucres rapides
+- Aliments filandreux
+- Manger et boire ensemble
+
+**Signes d'alerte :**
+🚨 Vomissements répétés
+🚨 Douleurs importantes
+🚨 Impossibilité de s'hydrater
+→ Consultez immédiatement
+
+💡 **Conseil** : Tenez un journal alimentaire avec Fat & Slim pour suivre votre tolérance aux aliments."""
+        },
+        {
+            "title": "Bypass : les carences à surveiller", 
+            "summary": "Vitamines et minéraux essentiels après l'opération.", 
+            "category": "bariatrique", 
+            "source": "Chirurgie Santé", 
+            "read_time": "6 min", 
+            "content": """Le bypass modifie l'absorption des nutriments. Une supplémentation à vie est indispensable.
+
+**Pourquoi des carences ?**
+Le bypass court-circuite une partie de l'estomac et de l'intestin grêle, réduisant l'absorption de :
+- Fer
+- Vitamine B12
+- Calcium
+- Vitamine D
+- Zinc
+- Cuivre
+
+**Les carences les plus fréquentes :**
+
+🩸 **Fer**
+- Risque : anémie
+- Symptômes : fatigue, pâleur, essoufflement
+- Supplémentation : 45-60 mg/jour
+- Prendre avec vitamine C (améliore absorption)
+
+💊 **Vitamine B12**
+- Risque : anémie, troubles neurologiques
+- Symptômes : fatigue, fourmillements
+- Supplémentation : injection mensuelle ou comprimés quotidiens
+
+🦴 **Calcium + Vitamine D**
+- Risque : ostéoporose
+- Symptômes : crampes, fragilité osseuse
+- Supplémentation : 1500 mg calcium + 3000 UI vitamine D/jour
+- Citrate de calcium (mieux absorbé)
+
+**Suivi obligatoire :**
+
+📅 **Bilans sanguins**
+- 3 mois post-op
+- 6 mois post-op
+- Puis tous les ans à vie
+
+📋 **À contrôler :**
+- NFS (anémie)
+- Ferritine
+- B12
+- Vitamine D
+- Calcémie
+- PTH
+- Zinc, cuivre
+
+**Ma trousse quotidienne type :**
+- Multivitamines bariatriques
+- Fer (si besoin)
+- B12 (si besoin)
+- Calcium/Vitamine D
+
+⚠️ **Important** : Ne jamais arrêter la supplémentation sans avis médical, même si les bilans sont bons !"""
+        },
     ]
     
     # Use a combination of day_of_year AND year to ensure truly different articles each day
