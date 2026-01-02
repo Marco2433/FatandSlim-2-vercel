@@ -16,57 +16,57 @@ def get_image(cat, name):
     imgs = IMAGES.get(cat, IMAGES["lunch"])
     return imgs[hash(name) % len(imgs)]
 
-# Bases: (nom, [ingrédients], [étapes], calories, protein, carbs, fat)
-BREAKFAST = [
-    ("Œufs brouillés", ["Œufs:3", "Beurre:10g", "Sel:pincée"], ["Battez les œufs", "Cuisez dans le beurre", "Remuez", "Servez crémeux"], 250, 18, 2, 20),
-    ("Œufs au plat", ["Œufs:2", "Huile:1 c.à.s", "Sel:pincée"], ["Chauffez l'huile", "Cassez les œufs", "Cuisez 3 min", "Servez"], 200, 14, 1, 16),
-    ("Omelette", ["Œufs:3", "Beurre:15g", "Sel:pincée"], ["Battez les œufs", "Cuisez", "Pliez", "Servez"], 280, 18, 1, 22),
-    ("Pancakes", ["Farine:150g", "Lait:200ml", "Œuf:1", "Sucre:2 c.à.s"], ["Mélangez", "Versez", "Retournez", "Servez"], 320, 8, 50, 10),
-    ("Porridge", ["Avoine:50g", "Lait:200ml", "Miel:1 c.à.s"], ["Chauffez", "Ajoutez avoine", "Remuez", "Servez"], 280, 10, 45, 6),
-    ("Smoothie bowl", ["Banane:1", "Fruits:100g", "Yaourt:100g"], ["Mixez", "Versez", "Garnissez", "Servez"], 300, 8, 50, 8),
-    ("Toast avocat", ["Pain:2 tr", "Avocat:1", "Citron:1/2"], ["Toastez", "Écrasez avocat", "Tartinez", "Citronnez"], 320, 6, 32, 20),
-    ("Crêpes", ["Farine:250g", "Lait:500ml", "Œufs:3"], ["Mélangez", "Reposez", "Cuisez", "Servez"], 180, 6, 28, 5),
-    ("Granola", ["Avoine:200g", "Miel:60g", "Amandes:50g"], ["Mélangez", "Étalez", "Cuisez 25 min", "Refroidissez"], 180, 5, 28, 7),
-    ("French toast", ["Pain brioché:4 tr", "Œufs:2", "Lait:100ml"], ["Trempez", "Dorez", "Retournez", "Servez"], 380, 12, 48, 16),
+# Structure: {"name", "ingredients", "steps", "cal", "prot", "carbs", "fat"}
+BREAKFAST_BASES = [
+    {"name": "Œufs brouillés", "ingredients": ["Œufs:3", "Beurre:10g", "Sel:pincée"], "steps": ["Battez les œufs", "Cuisez dans le beurre", "Remuez doucement", "Servez crémeux"], "cal": 250, "prot": 18, "carbs": 2, "fat": 20},
+    {"name": "Œufs au plat", "ingredients": ["Œufs:2", "Huile:1 c.à.s", "Sel:pincée"], "steps": ["Chauffez l'huile", "Cassez les œufs", "Cuisez 3 min", "Servez"], "cal": 200, "prot": 14, "carbs": 1, "fat": 16},
+    {"name": "Omelette", "ingredients": ["Œufs:3", "Beurre:15g", "Sel:pincée"], "steps": ["Battez les œufs", "Cuisez à feu moyen", "Pliez en deux", "Servez dorée"], "cal": 280, "prot": 18, "carbs": 1, "fat": 22},
+    {"name": "Pancakes", "ingredients": ["Farine:150g", "Lait:200ml", "Œuf:1", "Sucre:2 c.à.s"], "steps": ["Mélangez les ingrédients", "Versez dans la poêle", "Retournez quand doré", "Servez chaud"], "cal": 320, "prot": 8, "carbs": 50, "fat": 10},
+    {"name": "Porridge", "ingredients": ["Avoine:50g", "Lait:200ml", "Miel:1 c.à.s"], "steps": ["Chauffez le lait", "Ajoutez l'avoine", "Remuez 5 min", "Servez avec miel"], "cal": 280, "prot": 10, "carbs": 45, "fat": 6},
+    {"name": "Smoothie bowl", "ingredients": ["Banane:1", "Fruits rouges:100g", "Yaourt:100g"], "steps": ["Mixez les fruits", "Versez dans un bol", "Ajoutez du granola", "Servez frais"], "cal": 300, "prot": 8, "carbs": 50, "fat": 8},
+    {"name": "Toast avocat", "ingredients": ["Pain:2 tranches", "Avocat:1", "Citron:1/2"], "steps": ["Toastez le pain", "Écrasez l'avocat", "Tartinez", "Ajoutez citron"], "cal": 320, "prot": 6, "carbs": 32, "fat": 20},
+    {"name": "Crêpes", "ingredients": ["Farine:250g", "Lait:500ml", "Œufs:3"], "steps": ["Mélangez tout", "Reposez 30 min", "Cuisez finement", "Servez"], "cal": 180, "prot": 6, "carbs": 28, "fat": 5},
+    {"name": "Granola", "ingredients": ["Avoine:200g", "Miel:60g", "Amandes:50g"], "steps": ["Mélangez", "Étalez sur plaque", "Cuisez 25 min à 160°C", "Refroidissez"], "cal": 180, "prot": 5, "carbs": 28, "fat": 7},
+    {"name": "French toast", "ingredients": ["Pain brioché:4 tranches", "Œufs:2", "Lait:100ml"], "steps": ["Trempez le pain", "Dorez à la poêle", "Retournez", "Servez chaud"], "cal": 380, "prot": 12, "carbs": 48, "fat": 16},
 ]
 
-LUNCH = [
-    ("Salade César", ["Laitue:1", "Poulet:150g", "Parmesan:30g"], ["Coupez", "Grillez", "Mélangez", "Assaisonnez"], 450, 35, 18, 28),
-    ("Salade grecque", ["Concombre:1", "Tomates:2", "Feta:100g"], ["Coupez", "Mélangez", "Émiettez feta", "Assaisonnez"], 350, 12, 15, 28),
-    ("Buddha bowl", ["Quinoa:100g", "Pois chiches:100g", "Avocat:1/2"], ["Cuisez", "Assemblez", "Saucez", "Servez"], 480, 16, 55, 22),
-    ("Wrap poulet", ["Tortilla:1", "Poulet:100g", "Crudités:100g"], ["Émincez", "Garnissez", "Roulez", "Servez"], 380, 26, 35, 14),
-    ("Sandwich club", ["Pain:3 tr", "Poulet:80g", "Bacon:3 tr"], ["Grillez", "Superposez", "Coupez", "Servez"], 520, 28, 42, 30),
-    ("Soupe légumes", ["Légumes:400g", "Bouillon:1L", "Herbes:à goût"], ["Coupez", "Cuisez", "Mixez", "Servez"], 180, 4, 32, 4),
-    ("Quiche", ["Pâte:1", "Lardons:150g", "Œufs:3", "Crème:200ml"], ["Foncez", "Garnissez", "Versez", "Cuisez"], 420, 16, 28, 30),
-    ("Taboulé", ["Boulgour:100g", "Persil:2 bouquets", "Tomates:3"], ["Trempez", "Hachez", "Mélangez", "Assaisonnez"], 280, 6, 38, 12),
-    ("Pâtes pesto", ["Pâtes:200g", "Pesto:4 c.à.s", "Parmesan:30g"], ["Cuisez", "Mélangez", "Parsemez", "Servez"], 520, 16, 62, 24),
-    ("Poké bowl", ["Riz:150g", "Saumon:120g", "Avocat:1/2"], ["Cuisez riz", "Coupez poisson", "Assemblez", "Saucez"], 520, 28, 58, 18),
+LUNCH_BASES = [
+    {"name": "Salade César", "ingredients": ["Laitue:1", "Poulet:150g", "Parmesan:30g", "Croûtons:50g"], "steps": ["Coupez la laitue", "Grillez le poulet", "Mélangez tout", "Ajoutez sauce"], "cal": 450, "prot": 35, "carbs": 18, "fat": 28},
+    {"name": "Salade grecque", "ingredients": ["Concombre:1", "Tomates:2", "Feta:100g", "Olives:50g"], "steps": ["Coupez les légumes", "Émiettez la feta", "Mélangez", "Assaisonnez"], "cal": 350, "prot": 12, "carbs": 15, "fat": 28},
+    {"name": "Buddha bowl", "ingredients": ["Quinoa:100g", "Pois chiches:100g", "Avocat:1/2", "Légumes:150g"], "steps": ["Cuisez le quinoa", "Préparez les légumes", "Assemblez", "Ajoutez sauce"], "cal": 480, "prot": 16, "carbs": 55, "fat": 22},
+    {"name": "Wrap poulet", "ingredients": ["Tortilla:1", "Poulet:100g", "Crudités:100g"], "steps": ["Émincez le poulet", "Garnissez la tortilla", "Roulez", "Servez"], "cal": 380, "prot": 26, "carbs": 35, "fat": 14},
+    {"name": "Sandwich club", "ingredients": ["Pain:3 tranches", "Poulet:80g", "Bacon:3 tranches", "Salade:feuilles"], "steps": ["Grillez le pain", "Superposez les ingrédients", "Coupez", "Servez"], "cal": 520, "prot": 28, "carbs": 42, "fat": 30},
+    {"name": "Soupe légumes", "ingredients": ["Légumes variés:400g", "Bouillon:1L", "Herbes:à goût"], "steps": ["Coupez les légumes", "Cuisez dans le bouillon", "Mixez", "Servez chaud"], "cal": 180, "prot": 4, "carbs": 32, "fat": 4},
+    {"name": "Quiche lorraine", "ingredients": ["Pâte brisée:1", "Lardons:150g", "Œufs:3", "Crème:200ml"], "steps": ["Foncez la pâte", "Garnissez", "Versez l'appareil", "Cuisez 35 min"], "cal": 420, "prot": 16, "carbs": 28, "fat": 30},
+    {"name": "Taboulé", "ingredients": ["Boulgour:100g", "Persil:2 bouquets", "Tomates:3", "Citron:2"], "steps": ["Faites tremper le boulgour", "Hachez les herbes", "Mélangez", "Assaisonnez"], "cal": 280, "prot": 6, "carbs": 38, "fat": 12},
+    {"name": "Pâtes pesto", "ingredients": ["Pâtes:200g", "Pesto:4 c.à.s", "Parmesan:30g"], "steps": ["Cuisez les pâtes", "Mélangez au pesto", "Parsemez de parmesan", "Servez"], "cal": 520, "prot": 16, "carbs": 62, "fat": 24},
+    {"name": "Poké bowl", "ingredients": ["Riz:150g", "Saumon:120g", "Avocat:1/2", "Edamame:50g"], "steps": ["Cuisez le riz", "Coupez le poisson", "Assemblez", "Saucez"], "cal": 520, "prot": 28, "carbs": 58, "fat": 18},
 ]
 
-DINNER = [
-    ("Poulet rôti", ["Poulet:1.2kg", "Herbes:à goût", "Beurre:50g"], ["Assaisonnez", "Enfournez 1h15", "Arrosez", "Servez"], 380, 42, 2, 22),
-    ("Saumon grillé", ["Saumon:200g", "Citron:1", "Aneth:branches"], ["Huilez", "Assaisonnez", "Grillez", "Servez"], 320, 32, 1, 20),
-    ("Bœuf bourguignon", ["Bœuf:600g", "Vin rouge:500ml", "Lardons:100g"], ["Saisissez", "Mijotez", "Ajoutez légumes", "Servez"], 480, 38, 18, 26),
-    ("Carbonara", ["Spaghetti:200g", "Guanciale:100g", "Œufs:2"], ["Cuisez pâtes", "Dorez viande", "Mélangez œufs", "Servez"], 620, 24, 65, 32),
-    ("Risotto", ["Riz:200g", "Bouillon:800ml", "Parmesan:50g"], ["Nacrez", "Mouillez", "Remuez", "Finissez au parmesan"], 480, 12, 65, 18),
-    ("Curry", ["Viande:400g", "Lait coco:400ml", "Curry:2 c.à.s"], ["Saisissez", "Ajoutez curry", "Versez lait", "Mijotez"], 450, 25, 45, 22),
-    ("Gratin", ["Légumes:500g", "Crème:200ml", "Fromage:100g"], ["Coupez", "Disposez", "Versez crème", "Gratinez"], 320, 16, 15, 24),
-    ("Wok légumes", ["Légumes:400g", "Sauce soja:3 c.à.s", "Tofu:150g"], ["Coupez", "Saisissez", "Saucez", "Servez"], 280, 18, 20, 12),
-    ("Lasagnes", ["Pâtes:12 feuilles", "Viande:400g", "Béchamel:500ml"], ["Préparez sauce", "Alternez couches", "Gratinez", "Cuisez 40 min"], 520, 28, 48, 26),
-    ("Ratatouille", ["Courgettes:2", "Aubergine:1", "Poivrons:2"], ["Coupez", "Sautez", "Mélangez", "Mijotez"], 180, 4, 22, 8),
+DINNER_BASES = [
+    {"name": "Poulet rôti", "ingredients": ["Poulet:1.2kg", "Herbes:à goût", "Beurre:50g"], "steps": ["Assaisonnez le poulet", "Enfournez 1h15 à 200°C", "Arrosez régulièrement", "Servez doré"], "cal": 380, "prot": 42, "carbs": 2, "fat": 22},
+    {"name": "Saumon grillé", "ingredients": ["Saumon:200g", "Citron:1", "Aneth:branches"], "steps": ["Badigeonnez d'huile", "Assaisonnez", "Grillez 10 min", "Servez avec citron"], "cal": 320, "prot": 32, "carbs": 1, "fat": 20},
+    {"name": "Bœuf bourguignon", "ingredients": ["Bœuf:600g", "Vin rouge:500ml", "Lardons:100g", "Champignons:200g"], "steps": ["Saisissez la viande", "Ajoutez le vin", "Mijotez 2h30", "Servez"], "cal": 480, "prot": 38, "carbs": 18, "fat": 26},
+    {"name": "Pâtes carbonara", "ingredients": ["Spaghetti:200g", "Guanciale:100g", "Œufs:2", "Pecorino:60g"], "steps": ["Cuisez les pâtes", "Dorez la viande", "Mélangez œufs et fromage", "Incorporez hors du feu"], "cal": 620, "prot": 24, "carbs": 65, "fat": 32},
+    {"name": "Risotto", "ingredients": ["Riz arborio:200g", "Bouillon:800ml", "Parmesan:50g", "Vin blanc:100ml"], "steps": ["Nacrez le riz", "Ajoutez bouillon progressivement", "Remuez constamment", "Terminez au parmesan"], "cal": 480, "prot": 12, "carbs": 65, "fat": 18},
+    {"name": "Curry", "ingredients": ["Viande:400g", "Lait de coco:400ml", "Pâte curry:2 c.à.s"], "steps": ["Saisissez la viande", "Ajoutez le curry", "Versez lait de coco", "Mijotez 30 min"], "cal": 450, "prot": 25, "carbs": 45, "fat": 22},
+    {"name": "Gratin", "ingredients": ["Légumes:500g", "Crème:200ml", "Fromage:100g"], "steps": ["Coupez les légumes", "Disposez dans le plat", "Versez la crème", "Gratinez 30 min"], "cal": 320, "prot": 16, "carbs": 15, "fat": 24},
+    {"name": "Wok de légumes", "ingredients": ["Légumes:400g", "Sauce soja:3 c.à.s", "Tofu:150g"], "steps": ["Coupez tout", "Saisissez à feu vif", "Ajoutez la sauce", "Servez chaud"], "cal": 280, "prot": 18, "carbs": 20, "fat": 12},
+    {"name": "Lasagnes", "ingredients": ["Pâtes lasagne:12", "Viande:400g", "Béchamel:500ml", "Tomates:400g"], "steps": ["Préparez la sauce", "Alternez les couches", "Parsemez de fromage", "Cuisez 40 min"], "cal": 520, "prot": 28, "carbs": 48, "fat": 26},
+    {"name": "Ratatouille", "ingredients": ["Courgettes:2", "Aubergine:1", "Poivrons:2", "Tomates:4"], "steps": ["Coupez les légumes", "Faites revenir séparément", "Mélangez", "Laissez compoter"], "cal": 180, "prot": 4, "carbs": 22, "fat": 8},
 ]
 
-SNACK = [
-    ("Energy balls", ["Dattes:150g", "Amandes:80g", "Cacao:2 c.à.s"], ["Mixez", "Formez boules", "Roulez", "Réfrigérez"], 120, 3, 18, 5),
-    ("Yaourt fruits", ["Yaourt:150g", "Fruits:100g", "Miel:1 c.à.c"], ["Versez yaourt", "Ajoutez fruits", "Sucrez", "Servez"], 200, 10, 30, 5),
-    ("Houmous", ["Pois chiches:400g", "Tahini:3 c.à.s", "Citron:1"], ["Mixez", "Assaisonnez", "Arrosez huile", "Servez"], 180, 8, 18, 10),
-    ("Guacamole", ["Avocats:2", "Citron vert:1", "Tomate:1"], ["Écrasez", "Ajoutez citron", "Incorporez tomate", "Assaisonnez"], 160, 2, 8, 14),
-    ("Smoothie", ["Fruits:200g", "Yaourt:100g", "Lait:100ml"], ["Coupez", "Mixez", "Servez frais", "Dégustez"], 180, 6, 35, 3),
-    ("Compote", ["Pommes:4", "Cannelle:1 c.à.c", "Eau:50ml"], ["Coupez", "Cuisez", "Écrasez", "Parfumez"], 90, 0, 22, 0),
-    ("Muffins", ["Farine:200g", "Sucre:100g", "Fruits:150g"], ["Mélangez", "Répartissez", "Enfournez", "Démoulez"], 180, 3, 28, 7),
-    ("Cookies", ["Farine:200g", "Beurre:125g", "Chocolat:100g"], ["Crémez", "Ajoutez farine", "Formez", "Cuisez"], 150, 2, 20, 7),
-    ("Barres céréales", ["Avoine:150g", "Miel:80g", "Fruits secs:50g"], ["Chauffez miel", "Mélangez", "Tassez", "Découpez"], 140, 4, 20, 5),
-    ("Tartine", ["Pain:1 tr", "Garniture:au choix", "Sel:pincée"], ["Toastez", "Garnissez", "Assaisonnez", "Servez"], 200, 6, 25, 8),
+SNACK_BASES = [
+    {"name": "Energy balls", "ingredients": ["Dattes:150g", "Amandes:80g", "Cacao:2 c.à.s"], "steps": ["Mixez tout", "Formez des boules", "Roulez dans la coco", "Réfrigérez"], "cal": 120, "prot": 3, "carbs": 18, "fat": 5},
+    {"name": "Yaourt aux fruits", "ingredients": ["Yaourt:150g", "Fruits:100g", "Miel:1 c.à.c"], "steps": ["Versez le yaourt", "Ajoutez les fruits", "Sucrez au miel", "Servez frais"], "cal": 200, "prot": 10, "carbs": 30, "fat": 5},
+    {"name": "Houmous", "ingredients": ["Pois chiches:400g", "Tahini:3 c.à.s", "Citron:1", "Ail:1 gousse"], "steps": ["Mixez les pois chiches", "Ajoutez tahini et citron", "Assaisonnez", "Servez avec pain pita"], "cal": 180, "prot": 8, "carbs": 18, "fat": 10},
+    {"name": "Guacamole", "ingredients": ["Avocats:2", "Citron vert:1", "Tomate:1"], "steps": ["Écrasez les avocats", "Ajoutez le citron", "Incorporez la tomate", "Assaisonnez"], "cal": 160, "prot": 2, "carbs": 8, "fat": 14},
+    {"name": "Smoothie", "ingredients": ["Fruits:200g", "Yaourt:100g", "Lait:100ml"], "steps": ["Coupez les fruits", "Mixez tout", "Servez frais", "Dégustez"], "cal": 180, "prot": 6, "carbs": 35, "fat": 3},
+    {"name": "Compote", "ingredients": ["Pommes:4", "Cannelle:1 c.à.c", "Eau:50ml"], "steps": ["Coupez les pommes", "Cuisez avec l'eau", "Écrasez", "Parfumez à la cannelle"], "cal": 90, "prot": 0, "carbs": 22, "fat": 0},
+    {"name": "Muffins", "ingredients": ["Farine:200g", "Sucre:100g", "Fruits:150g", "Œufs:2"], "steps": ["Mélangez les ingrédients", "Répartissez dans les moules", "Enfournez 20 min", "Démoulez"], "cal": 180, "prot": 3, "carbs": 28, "fat": 7},
+    {"name": "Cookies", "ingredients": ["Farine:200g", "Beurre:125g", "Chocolat:100g", "Œuf:1"], "steps": ["Crémez beurre et sucre", "Ajoutez farine et chocolat", "Formez des boules", "Cuisez 12 min"], "cal": 150, "prot": 2, "carbs": 20, "fat": 7},
+    {"name": "Barres céréales", "ingredients": ["Avoine:150g", "Miel:80g", "Fruits secs:50g"], "steps": ["Chauffez le miel", "Mélangez avec l'avoine", "Tassez", "Découpez"], "cal": 140, "prot": 4, "carbs": 20, "fat": 5},
+    {"name": "Tartine", "ingredients": ["Pain:1 tranche", "Garniture:au choix"], "steps": ["Toastez le pain", "Garnissez", "Assaisonnez", "Servez"], "cal": 200, "prot": 6, "carbs": 25, "fat": 8},
 ]
 
 VARIANTS = ["aux herbes", "au fromage", "aux champignons", "au saumon", "aux épinards", "au bacon", "à la tomate", "au jambon", "aux légumes", "au chèvre",
@@ -77,28 +77,46 @@ VARIANTS = ["aux herbes", "au fromage", "aux champignons", "au saumon", "aux ép
 "du chef", "maison", "signature", "classique", "original", "savoureux", "onctueux", "croustillant", "moelleux", "fondant", "gratiné", "épicé", "doux",
 "méditerranéen", "asiatique", "japonais", "thaï", "indien", "marocain", "libanais", "italien", "grec", "provençal", "fermier", "bio", "de saison"]
 
+def make_recipe(rid, base, variant, category):
+    name = f"{base['name']} {variant}"
+    return {
+        "id": f"r{rid:05d}",
+        "name": name,
+        "category": category,
+        "calories": base["cal"] + random.randint(-25, 25),
+        "protein": base["prot"],
+        "carbs": base["carbs"],
+        "fat": base["fat"],
+        "prep_time": f"{random.randint(5, 20)} min",
+        "cook_time": f"{random.randint(5, 45)} min",
+        "servings": random.choice([1, 2, 4]),
+        "difficulty": random.choice(["facile", "intermédiaire"]),
+        "cost": random.choice(["économique", "moyen"]),
+        "ingredients": [{"item": i.split(":")[0], "quantity": i.split(":")[1]} for i in base["ingredients"]],
+        "steps": base["steps"],
+        "tips": f"Conseil: préparez vos ingrédients à l'avance pour cette recette.",
+        "nutri_score": "A" if base["cal"] < 350 else "B",
+        "image": get_image(category, name)
+    }
+
 def generate_recipes():
     recipes = []
     rid = 1
-    for base in BREAKFAST:
+    for base in BREAKFAST_BASES:
         for v in VARIANTS[:75]:
-            name = f"{base[0]} {v}"
-            recipes.append({"id": f"r{rid:05d}", "name": name, "category": "breakfast", "calories": base[4]+random.randint(-20,20), "protein": base[5], "carbs": base[6], "fat": base[7], "prep_time": f"{random.randint(5,15)} min", "cook_time": f"{random.randint(5,20)} min", "servings": 2, "difficulty": "facile", "cost": "économique", "ingredients": [{"item": i.split(":")[0], "quantity": i.split(":")[1]} for i in base[1]], "steps": base[3], "tips": f"Conseil: préparez à l'avance.", "nutri_score": "A" if base[4]<350 else "B", "image": get_image("breakfast", name)})
+            recipes.append(make_recipe(rid, base, v, "breakfast"))
             rid += 1
-    for base in LUNCH:
+    for base in LUNCH_BASES:
         for v in VARIANTS[:75]:
-            name = f"{base[0]} {v}"
-            recipes.append({"id": f"r{rid:05d}", "name": name, "category": "lunch", "calories": base[4]+random.randint(-30,30), "protein": base[5], "carbs": base[6], "fat": base[7], "prep_time": f"{random.randint(10,20)} min", "cook_time": f"{random.randint(15,30)} min", "servings": 2, "difficulty": "facile", "cost": "moyen", "ingredients": [{"item": i.split(":")[0], "quantity": i.split(":")[1]} for i in base[1]], "steps": base[3], "tips": f"Conseil: utilisez des produits frais.", "nutri_score": "A" if base[4]<400 else "B", "image": get_image("lunch", name)})
+            recipes.append(make_recipe(rid, base, v, "lunch"))
             rid += 1
-    for base in DINNER:
+    for base in DINNER_BASES:
         for v in VARIANTS[:75]:
-            name = f"{base[0]} {v}"
-            recipes.append({"id": f"r{rid:05d}", "name": name, "category": "dinner", "calories": base[4]+random.randint(-40,40), "protein": base[5], "carbs": base[6], "fat": base[7], "prep_time": f"{random.randint(15,25)} min", "cook_time": f"{random.randint(20,45)} min", "servings": 4, "difficulty": "intermédiaire", "cost": "moyen", "ingredients": [{"item": i.split(":")[0], "quantity": i.split(":")[1]} for i in base[1]], "steps": base[3], "tips": f"Conseil: respectez les temps de cuisson.", "nutri_score": "A" if base[4]<400 else "B", "image": get_image("dinner", name)})
+            recipes.append(make_recipe(rid, base, v, "dinner"))
             rid += 1
-    for base in SNACK:
+    for base in SNACK_BASES:
         for v in VARIANTS[:75]:
-            name = f"{base[0]} {v}"
-            recipes.append({"id": f"r{rid:05d}", "name": name, "category": "snack", "calories": base[4]+random.randint(-15,15), "protein": base[5], "carbs": base[6], "fat": base[7], "prep_time": f"{random.randint(5,10)} min", "cook_time": f"{random.randint(0,15)} min", "servings": 4, "difficulty": "facile", "cost": "économique", "ingredients": [{"item": i.split(":")[0], "quantity": i.split(":")[1]} for i in base[1]], "steps": base[3], "tips": f"Se conserve plusieurs jours.", "nutri_score": "A", "image": get_image("snack", name)})
+            recipes.append(make_recipe(rid, base, v, "snack"))
             rid += 1
     return recipes
 
@@ -108,10 +126,11 @@ VERIFIED_RECIPES = ALL_RECIPES
 def get_verified_recipes(category="all", count=6):
     recipes = ALL_RECIPES if category == "all" else [r for r in ALL_RECIPES if r["category"] == category]
     random.seed(datetime.now().timetuple().tm_yday)
-    random.shuffle(recipes)
-    return recipes[:count]
+    shuffled = recipes.copy()
+    random.shuffle(shuffled)
+    return shuffled[:count]
 
 def search_recipes_by_name(query):
     return [r for r in ALL_RECIPES if query.lower() in r["name"].lower()][:50]
 
-print(f"Base chargée: {len(ALL_RECIPES)} recettes")
+print(f"Base de données chargée: {len(ALL_RECIPES)} recettes")
