@@ -1,80 +1,146 @@
 {
-  "timestamp": "2026-01-02T15:51:58.072735",
-  "total_tests": 12,
-  "passed_tests": 8,
-  "success_rate": 66.66666666666666,
+  "timestamp": "2026-01-02T15:52:58.059195",
+  "total_tests": 23,
+  "passed_tests": 23,
+  "success_rate": 100.0,
   "results": [
     {
+      "test": "Add to Agenda - Response Structure",
+      "success": true,
+      "details": "Has message: True, Has appointment: True",
+      "timestamp": "2026-01-02T15:52:57.943867"
+    },
+    {
+      "test": "Add to Agenda - Appointment Fields",
+      "success": true,
+      "details": "Missing fields: []",
+      "timestamp": "2026-01-02T15:52:57.943878"
+    },
+    {
+      "test": "Add to Agenda - Workout Type",
+      "success": true,
+      "details": "Type: workout",
+      "timestamp": "2026-01-02T15:52:57.943883"
+    },
+    {
       "test": "Workouts Add to Agenda",
-      "success": false,
-      "details": "Status: 520, Expected: 200",
-      "timestamp": "2026-01-02T15:51:57.990529"
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2026-01-02T15:52:57.943886"
+    },
+    {
+      "test": "Workout Share - Response Structure",
+      "success": true,
+      "details": "Has message: True, Has post: True, Has points: True",
+      "timestamp": "2026-01-02T15:52:57.996135"
+    },
+    {
+      "test": "Workout Share - Post Fields",
+      "success": true,
+      "details": "Missing fields: []",
+      "timestamp": "2026-01-02T15:52:57.996145"
+    },
+    {
+      "test": "Workout Share - Post Type",
+      "success": true,
+      "details": "Type: workout_share",
+      "timestamp": "2026-01-02T15:52:57.996150"
+    },
+    {
+      "test": "Workout Share - Target Wall",
+      "success": true,
+      "details": "Target: public",
+      "timestamp": "2026-01-02T15:52:57.996154"
     },
     {
       "test": "Workouts Share",
-      "success": false,
-      "details": "Status: 520, Expected: 200",
-      "timestamp": "2026-01-02T15:51:58.013964"
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2026-01-02T15:52:57.996163"
     },
     {
       "test": "User Groups - Response Structure",
       "success": true,
       "details": "Response keys: ['groups']",
-      "timestamp": "2026-01-02T15:51:58.031863"
+      "timestamp": "2026-01-02T15:52:58.013235"
     },
     {
       "test": "User Groups - Groups List",
       "success": true,
       "details": "Groups type: <class 'list'>, Count: 0",
-      "timestamp": "2026-01-02T15:51:58.031873"
+      "timestamp": "2026-01-02T15:52:58.013246"
     },
     {
       "test": "User Groups",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2026-01-02T15:51:58.031876"
+      "timestamp": "2026-01-02T15:52:58.013249"
+    },
+    {
+      "test": "Share Achievement - Response Structure",
+      "success": true,
+      "details": "Has message: True, Has post: True, Has points: True",
+      "timestamp": "2026-01-02T15:52:58.031041"
+    },
+    {
+      "test": "Share Achievement - Post Fields",
+      "success": true,
+      "details": "Missing fields: []",
+      "timestamp": "2026-01-02T15:52:58.031051"
+    },
+    {
+      "test": "Share Achievement - Challenge Type",
+      "success": true,
+      "details": "Type: challenge_share",
+      "timestamp": "2026-01-02T15:52:58.031055"
     },
     {
       "test": "Share Achievement (Challenge)",
-      "success": false,
-      "details": "Status: 520, Expected: 200",
-      "timestamp": "2026-01-02T15:51:58.047455"
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2026-01-02T15:52:58.031058"
+    },
+    {
+      "test": "Share Achievement - Badge Type",
+      "success": true,
+      "details": "Type: badge_share",
+      "timestamp": "2026-01-02T15:52:58.047480"
     },
     {
       "test": "Share Achievement (Badge)",
-      "success": false,
-      "details": "Status: 520, Expected: 200",
-      "timestamp": "2026-01-02T15:51:58.060762"
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "timestamp": "2026-01-02T15:52:58.047487"
     },
     {
       "test": "Articles - Response Structure",
       "success": true,
       "details": "Response keys: ['articles', 'total', 'date', 'day_seed']",
-      "timestamp": "2026-01-02T15:51:58.072615"
+      "timestamp": "2026-01-02T15:52:58.059069"
     },
     {
       "test": "Articles - Count (10 articles)",
       "success": true,
       "details": "Articles count: 10, Total: 10",
-      "timestamp": "2026-01-02T15:51:58.072624"
+      "timestamp": "2026-01-02T15:52:58.059077"
     },
     {
       "test": "Articles - Article Fields",
       "success": true,
       "details": "First article fields: ['id', 'title', 'summary', 'content', 'category', 'image', 'source', 'date', 'read_time', 'published_at']",
-      "timestamp": "2026-01-02T15:51:58.072630"
+      "timestamp": "2026-01-02T15:52:58.059082"
     },
     {
       "test": "Articles - Multiple Categories",
       "success": true,
-      "details": "Categories found: ['nutrition', 'sant\u00e9', 'bariatrique', 'lifestyle', 'fitness']",
-      "timestamp": "2026-01-02T15:51:58.072639"
+      "details": "Categories found: ['bariatrique', 'lifestyle', 'sant\u00e9', 'nutrition', 'fitness']",
+      "timestamp": "2026-01-02T15:52:58.059091"
     },
     {
       "test": "Articles Endpoint",
       "success": true,
       "details": "Status: 200, Expected: 200",
-      "timestamp": "2026-01-02T15:51:58.072641"
+      "timestamp": "2026-01-02T15:52:58.059094"
     }
   ]
 }
