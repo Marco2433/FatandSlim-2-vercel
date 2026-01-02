@@ -311,9 +311,11 @@ export default function WorkoutsPage() {
       
       if (response.data.is_favorite) {
         setFavorites([...favorites, video.id]);
+        setFavoriteVideos([...favoriteVideos, video]);
         toast.success('Ajouté aux favoris ⭐');
       } else {
         setFavorites(favorites.filter(id => id !== video.id));
+        setFavoriteVideos(favoriteVideos.filter(v => v.id !== video.id));
         toast.info('Retiré des favoris');
       }
     } catch (error) {
