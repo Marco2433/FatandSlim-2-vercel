@@ -959,6 +959,15 @@ export default function WorkoutsPage() {
                     <CalendarPlus className="w-4 h-4 mr-1" />
                     Agenda
                   </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setShowShareDialog(true)}
+                    className="flex-1"
+                  >
+                    <Share2 className="w-4 h-4 mr-1" />
+                    Partager
+                  </Button>
                 </div>
 
                 {/* Action Buttons - PAS de bouton YouTube externe */}
