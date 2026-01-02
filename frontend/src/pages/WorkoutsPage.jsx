@@ -44,7 +44,7 @@ import {
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-// Video categories - plus de catégories
+// Video categories - 20 catégories complètes
 const VIDEO_CATEGORIES = [
   { id: 'all', label: 'Toutes', icon: Video },
   { id: 'home', label: 'Maison', icon: Home },
@@ -61,9 +61,12 @@ const VIDEO_CATEGORIES = [
   { id: 'bras', label: 'Bras', icon: Dumbbell },
   { id: 'dos', label: 'Dos', icon: Dumbbell },
   { id: 'pectoraux', label: 'Pectoraux', icon: Dumbbell },
-  { id: 'fessiers', label: 'Fessiers', icon: Zap },
+  { id: 'pilates', label: 'Pilates', icon: Heart },
+  { id: 'boxe', label: 'Boxe', icon: Zap },
+  { id: 'danse', label: 'Danse', icon: Video },
   { id: 'debutant', label: 'Débutant', icon: Target },
-  { id: 'expert', label: 'Expert', icon: Trophy },
+  { id: 'senior', label: 'Senior', icon: Heart },
+  { id: 'postnatal', label: 'Post-Grossesse', icon: Heart },
 ];
 
 // Difficulty levels
