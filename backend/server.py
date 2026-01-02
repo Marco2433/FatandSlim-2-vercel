@@ -4197,7 +4197,7 @@ async def add_workout_to_agenda(data: dict, user: dict = Depends(get_current_use
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
-    await db.appointments.insert_one({**appointment, "_id": None})
+    await db.appointments.insert_one(appointment)
     return {"message": "Entraînement ajouté à l'agenda", "appointment": appointment}
 
 @api_router.post("/workouts/share")
