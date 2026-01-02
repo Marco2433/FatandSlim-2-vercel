@@ -62,6 +62,10 @@ export default function DashboardPage() {
   const [userStats, setUserStats] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   
+  // Bariatric daily reminder
+  const [showBariatricReminder, setShowBariatricReminder] = useState(false);
+  const [bariatricReminderData, setBariatricReminderData] = useState(null);
+  
   // Appointments
   const [appointments, setAppointments] = useState([]);
   const [todayAppointments, setTodayAppointments] = useState([]);
