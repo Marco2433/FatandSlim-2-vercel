@@ -7741,7 +7741,9 @@ async def share_achievement(data: dict, user: dict = Depends(get_current_user)):
         {"$inc": {"points": 15}}
     )
     
-    return {"message": "Partagé avec succès !", "post": post, "points_earned": 15}
+    # Remove the _id field for JSON serialization
+    post_response = {k: v for k, v in post.items() if k != '_id'}
+    return {"message": "Partagé avec succès !", "post": post_response, "points_earned": 15}
 
 # Initialize default groups on startup
 async def init_default_groups():
