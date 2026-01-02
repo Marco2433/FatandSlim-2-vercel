@@ -214,6 +214,7 @@ export default function WorkoutsPage() {
     fetchData();
     fetchVideos();
     loadWatchedVideos();
+    loadFavorites();
   }, []);
 
   useEffect(() => {
