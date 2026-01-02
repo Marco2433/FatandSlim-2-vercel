@@ -566,7 +566,7 @@ async def process_session(request: Request, response: Response):
         })
     
     # ============ MIGRATION AUTOMATIQUE POUR GOOGLE AUTH ============
-    profile = await db.profiles.find_one({"user_id": user_id}, {"_id": 0})
+    profile = await db.user_profiles.find_one({"user_id": user_id}, {"_id": 0})
     if profile and profile.get("profile_version", 1) < 3:
         migration_updates = {
             "profile_version": 3,
@@ -585,7 +585,7 @@ async def process_session(request: Request, response: Response):
             if field not in profile or profile[field] is None:
                 migration_updates[field] = default_value
         if len(migration_updates) > 2:
-            await db.profiles.update_one({"user_id": user_id}, {"$set": migration_updates})
+            await db.user_profiles.update_one({"user_id": user_id}, {"$set": migration_updates})
             logger.info(f"Google OAuth profile migrated for user {user_id}")
     # ============ FIN MIGRATION ============
     
