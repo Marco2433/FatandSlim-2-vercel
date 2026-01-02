@@ -543,11 +543,16 @@ export default function DashboardPage() {
             {userStats.recent_badges.slice(0, 3).map((badge) => (
               <div 
                 key={badge.id}
-                className="flex-shrink-0 px-3 py-2 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30"
+                className="flex-shrink-0 px-3 py-2 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 flex items-center gap-2 cursor-pointer hover:bg-primary/30 transition-colors"
                 title={badge.description}
+                onClick={() => {
+                  setAchievementToShare({ type: 'badge', data: badge });
+                  setShowShareAchievementDialog(true);
+                }}
               >
-                <span className="text-lg mr-1">{badge.icon}</span>
+                <span className="text-lg">{badge.icon}</span>
                 <span className="text-xs font-medium">{badge.name}</span>
+                <Share2 className="w-3 h-3 text-muted-foreground" />
               </div>
             ))}
           </div>
