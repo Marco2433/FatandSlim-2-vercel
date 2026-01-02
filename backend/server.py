@@ -616,12 +616,51 @@ async def process_session(request: Request, response: Response):
 
 @api_router.get("/auth/me")
 async def get_me(user: dict = Depends(get_current_user)):
+    # ============ MIGRATION AUTOMATIQUE DES ANCIENS UTILISATEURS ============
+    # Vérifie si le champ onboarding_completed existe dans users, sinon on check user_profiles
+    onboarding_completed = user.get("onboarding_completed")
+    
+    if onboarding_completed is None:
+        # Vérifier dans user_profiles si l'utilisateur a complété l'onboarding
+        profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+        
+        if profile:
+            # Un profil existe, vérifions s'il a les champs essentiels d'un onboarding complété
+            has_essential_fields = all([
+                profile.get("age") is not None,
+                profile.get("height") is not None,
+                profile.get("weight") is not None,
+                profile.get("goal") is not None
+            ])
+            
+            if has_essential_fields:
+                # L'onboarding a été fait, mettons à jour la collection users
+                onboarding_completed = True
+                await db.users.update_one(
+                    {"user_id": user["user_id"]},
+                    {"$set": {"onboarding_completed": True}}
+                )
+                logger.info(f"Migration auto: onboarding_completed=True pour user {user['user_id']}")
+            else:
+                onboarding_completed = False
+                await db.users.update_one(
+                    {"user_id": user["user_id"]},
+                    {"$set": {"onboarding_completed": False}}
+                )
+        else:
+            # Pas de profil du tout
+            onboarding_completed = False
+            await db.users.update_one(
+                {"user_id": user["user_id"]},
+                {"$set": {"onboarding_completed": False}}
+            )
+    
     return {
         "user_id": user["user_id"],
         "email": user["email"],
         "name": user.get("name", ""),
         "picture": user.get("picture"),
-        "onboarding_completed": user.get("onboarding_completed", False),
+        "onboarding_completed": onboarding_completed,
         "is_premium": user.get("is_premium", False)
     }
 
