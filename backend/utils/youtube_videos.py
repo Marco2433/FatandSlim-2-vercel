@@ -72,7 +72,7 @@ VIDEO_CATEGORIES = {
     "debutant": {"name": "Débutant", "icon": "🌱", "color": "#84cc16"},
     "senior": {"name": "Senior & Doux", "icon": "🧓", "color": "#64748b"},
     "postnatal": {"name": "Post-Grossesse", "icon": "🤱", "color": "#fb7185"},
-]
+}
 
 TITLES = {
     "hiit": ["HIIT Brûle-Graisse", "HIIT Cardio Intense", "Tabata Challenge", "HIIT Express", "HIIT Full Body", "HIIT Débutant", "HIIT Avancé"],
