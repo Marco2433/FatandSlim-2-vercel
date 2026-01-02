@@ -2108,9 +2108,9 @@ QUESTION DU PATIENT : {question}"""
             session_id=session_id,
             system_message=system_prompt
         )
-        response = await llm.send_async(
+        response = llm.send_message(
             model="gpt-4o",
-            messages=[UserMessage(text=question)]
+            message=question
         )
         
         # Log AI usage
