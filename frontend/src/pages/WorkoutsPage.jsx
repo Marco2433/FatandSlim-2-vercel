@@ -1022,6 +1022,76 @@ export default function WorkoutsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Share Dialog - Choose where to share */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>📤 Partager l'entraînement</DialogTitle>
+            <DialogDescription>
+              Choisissez où partager "{playingVideo?.title}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            {/* Public Wall Option */}
+            <Button 
+              variant={selectedShareTarget === 'public' ? 'default' : 'outline'}
+              className="w-full justify-start h-auto py-3"
+              onClick={() => setSelectedShareTarget('public')}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  🌍
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Mur public</p>
+                  <p className="text-xs text-muted-foreground">Visible par toute la communauté</p>
+                </div>
+              </div>
+            </Button>
+            
+            {/* User Groups */}
+            {userGroups.length > 0 && (
+              <>
+                <p className="text-sm font-medium text-muted-foreground mt-4">Mes groupes :</p>
+                {userGroups.map(group => (
+                  <Button 
+                    key={group.group_id}
+                    variant={selectedShareTarget === group.group_id ? 'default' : 'outline'}
+                    className="w-full justify-start h-auto py-3"
+                    onClick={() => setSelectedShareTarget(group.group_id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
+                        {group.name?.charAt(0) || '👥'}
+                      </div>
+                      <div className="text-left">
+                        <p className="font-medium">{group.name}</p>
+                        <p className="text-xs text-muted-foreground">{group.description?.slice(0, 40)}...</p>
+                      </div>
+                    </div>
+                  </Button>
+                ))}
+              </>
+            )}
+            
+            {userGroups.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-2">
+                Rejoignez des groupes pour partager avec eux !
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowShareDialog(false)}>
+              Annuler
+            </Button>
+            <Button onClick={() => playingVideo && shareWorkout(playingVideo, playingVideo.calories_estimate || 200, selectedShareTarget)}>
+              <Share2 className="w-4 h-4 mr-2" />
+              Partager
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Congratulations Dialog */}
       <Dialog open={showCongratsDialog} onOpenChange={setShowCongratsDialog}>
         <DialogContent className="text-center">
