@@ -344,17 +344,20 @@ export default function WorkoutsPage() {
     }
   };
 
-  const shareWorkout = async (video, caloriesBurned) => {
+  const shareWorkout = async (video, caloriesBurned, targetWall = 'public') => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(`${API}/workouts/share`, {
         video_data: video,
-        calories_burned: caloriesBurned
+        calories_burned: caloriesBurned,
+        target_wall: targetWall
       }, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true
       });
-      toast.success('Partagé sur votre mur ! +10 points 🎉');
+      const wallName = targetWall === 'public' ? 'le mur public' : 'votre groupe';
+      toast.success(`Partagé sur ${wallName} ! +10 points 🎉`);
+      setShowShareDialog(false);
     } catch (error) {
       toast.error('Erreur lors du partage');
     }
