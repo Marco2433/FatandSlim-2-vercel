@@ -450,7 +450,7 @@ async def login(user: UserLogin, response: Response):
     
     # ============ MIGRATION AUTOMATIQUE DES ANCIENS PROFILS ============
     # Vérifie si le profil a besoin d'être migré vers la nouvelle version
-    profile = await db.profiles.find_one({"user_id": user_doc["user_id"]}, {"_id": 0})
+    profile = await db.user_profiles.find_one({"user_id": user_doc["user_id"]}, {"_id": 0})
     if profile and profile.get("profile_version", 1) < 3:
         # Migration: ajouter les champs manquants avec valeurs par défaut
         migration_updates = {
@@ -490,7 +490,7 @@ async def login(user: UserLogin, response: Response):
         
         # Appliquer la migration
         if len(migration_updates) > 2:  # Plus que juste version et updated_at
-            await db.profiles.update_one(
+            await db.user_profiles.update_one(
                 {"user_id": user_doc["user_id"]},
                 {"$set": migration_updates}
             )
