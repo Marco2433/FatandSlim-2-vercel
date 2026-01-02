@@ -277,9 +277,24 @@ export default function WorkoutsPage() {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true
       });
-      setFavorites(response.data?.map(f => f.video_id) || []);
+      const favData = response.data || [];
+      setFavorites(favData.map(f => f.video_id));
+      setFavoriteVideos(favData.map(f => f.video_data).filter(Boolean));
     } catch (error) {
       console.error('Error loading favorites:', error);
+    }
+  };
+
+  const loadUserGroups = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/social/user-groups`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true
+      });
+      setUserGroups(response.data?.groups || []);
+    } catch (error) {
+      console.error('Error loading user groups:', error);
     }
   };
 
