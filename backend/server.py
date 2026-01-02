@@ -3127,13 +3127,11 @@ async def get_meal_plans(user: dict = Depends(get_current_user)):
 @api_router.get("/recipes/search-simple")
 async def search_recipes_simple(query: str = "", user: dict = Depends(get_current_user)):
     """Search recipes by name without AI - simple text matching"""
-    from recipes_database import search_recipes
-    
     if not query or len(query) < 2:
         return []
     
-    results = search_recipes(query, limit=20)
-    return results
+    results = search_recipes_by_name(query)
+    return results[:20]
 
 @api_router.post("/recipes/generate")
 async def generate_recipes(data: dict = {}, user: dict = Depends(get_current_user)):
