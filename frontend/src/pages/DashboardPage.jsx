@@ -281,6 +281,38 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchUserGroups = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/social/user-groups`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true
+      });
+      setUserGroups(response.data?.groups || []);
+    } catch (error) {
+      console.error('Error loading user groups:', error);
+    }
+  };
+
+  const shareAchievement = async (type, data, targetWall = 'public') => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/social/share-achievement`, {
+        type,
+        data,
+        target_wall: targetWall
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true
+      });
+      const wallName = targetWall === 'public' ? 'le mur public' : 'votre groupe';
+      toast.success(`Partagé sur ${wallName} ! +15 points 🎉`);
+      setShowShareAchievementDialog(false);
+    } catch (error) {
+      toast.error('Erreur lors du partage');
+    }
+  };
+
   const addRecipeToFavorites = async (recipe) => {
     try {
       await axios.post(`${API}/recipes/favorites`, { recipe }, { withCredentials: true });
