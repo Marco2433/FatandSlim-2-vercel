@@ -5788,6 +5788,87 @@ async def generate_progress_pdf(user: dict = Depends(get_current_user)):
         }
     }
     
+    # ========== DOSSIER BARIATRIQUE COMPLET ==========
+    if profile.get("bariatric_surgery"):
+        # Récupérer tous les logs bariatriques
+        bariatric_logs = await db.bariatric_daily_logs.find(
+            {"user_id": user["user_id"]},
+            {"_id": 0}
+        ).sort("date", 1).to_list(1000)
+        
+        # Calculer les statistiques bariatriques
+        surgery_date = profile.get("bariatric_surgery_date")
+        days_since_surgery = 0
+        if surgery_date:
+            if isinstance(surgery_date, str):
+                from dateutil import parser
+                surgery_date_dt = parser.parse(surgery_date)
+            else:
+                surgery_date_dt = surgery_date
+            days_since_surgery = (datetime.now(timezone.utc) - surgery_date_dt.replace(tzinfo=timezone.utc)).days
+        
+        # Statistiques des symptômes
+        symptom_stats = {
+            "nausea_avg": 0, "reflux_avg": 0, "fatigue_avg": 0, "pain_avg": 0,
+            "dumping_episodes": 0, "vomiting_count": 0
+        }
+        supplement_adherence = {"vitamins": 0, "calcium": 0, "iron": 0, "b12": 0}
+        protein_intake_avg = 0
+        water_intake_avg = 0
+        
+        if bariatric_logs:
+            symptom_stats["nausea_avg"] = round(sum(l.get("nausea_level", 0) for l in bariatric_logs) / len(bariatric_logs), 1)
+            symptom_stats["reflux_avg"] = round(sum(l.get("reflux_level", 0) for l in bariatric_logs) / len(bariatric_logs), 1)
+            symptom_stats["fatigue_avg"] = round(sum(l.get("fatigue_level", 0) for l in bariatric_logs) / len(bariatric_logs), 1)
+            symptom_stats["pain_avg"] = round(sum(l.get("pain_level", 0) for l in bariatric_logs) / len(bariatric_logs), 1)
+            symptom_stats["dumping_episodes"] = sum(1 for l in bariatric_logs if l.get("dumping_episode"))
+            symptom_stats["vomiting_count"] = sum(1 for l in bariatric_logs if l.get("vomiting"))
+            
+            supplement_adherence["vitamins"] = round(sum(1 for l in bariatric_logs if l.get("vitamins_taken")) / len(bariatric_logs) * 100)
+            supplement_adherence["calcium"] = round(sum(1 for l in bariatric_logs if l.get("calcium_taken")) / len(bariatric_logs) * 100)
+            supplement_adherence["iron"] = round(sum(1 for l in bariatric_logs if l.get("iron_taken")) / len(bariatric_logs) * 100)
+            supplement_adherence["b12"] = round(sum(1 for l in bariatric_logs if l.get("b12_taken")) / len(bariatric_logs) * 100)
+            
+            protein_intake_avg = round(sum(l.get("protein_intake_g", 0) for l in bariatric_logs) / len(bariatric_logs))
+            water_intake_avg = round(sum(l.get("water_intake_ml", 0) for l in bariatric_logs) / len(bariatric_logs))
+        
+        # Perte de poids depuis l'opération
+        weight_at_surgery = profile.get("weight_at_surgery") or weight_start
+        excess_weight_loss = 0
+        if profile.get("target_weight") and weight_at_surgery:
+            ideal_weight = profile.get("target_weight")
+            excess_weight = weight_at_surgery - ideal_weight
+            weight_lost = weight_at_surgery - weight_current
+            if excess_weight > 0:
+                excess_weight_loss = round((weight_lost / excess_weight) * 100, 1)
+        
+        report_data["bariatric_dossier"] = {
+            "surgery_type": profile.get("bariatric_surgery"),
+            "surgery_date": surgery_date.isoformat() if isinstance(surgery_date, datetime) else surgery_date,
+            "days_since_surgery": days_since_surgery,
+            "current_phase": calculate_bariatric_phase(surgery_date).get("phase_name") if surgery_date else "N/A",
+            "weight_at_surgery": weight_at_surgery,
+            "current_weight": weight_current,
+            "total_weight_lost": round(weight_at_surgery - weight_current, 1),
+            "excess_weight_loss_percent": excess_weight_loss,
+            "bmi_at_surgery": round(weight_at_surgery / (height_m ** 2), 1) if weight_at_surgery else 0,
+            "bmi_current": bmi_current,
+            "tracking_stats": {
+                "days_tracked": len(bariatric_logs),
+                "compliance_rate": round(len(bariatric_logs) / max(days_since_surgery, 1) * 100, 1) if days_since_surgery > 0 else 0
+            },
+            "symptom_stats": symptom_stats,
+            "supplement_adherence": supplement_adherence,
+            "nutrition_stats": {
+                "avg_protein_intake_g": protein_intake_avg,
+                "avg_water_intake_ml": water_intake_avg,
+                "protein_target_g": 60 if profile.get("bariatric_surgery") == "sleeve" else 80
+            },
+            "recent_logs": bariatric_logs[-14:],  # Last 14 days
+            "supplements": profile.get("bariatric_supplements", []),
+            "intolerances": profile.get("bariatric_intolerances", [])
+        }
+    
     return report_data
 
 # ==================== GOOGLE CALENDAR INTEGRATION ====================
