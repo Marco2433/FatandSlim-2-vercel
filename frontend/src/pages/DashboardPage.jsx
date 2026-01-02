@@ -850,9 +850,9 @@ export default function DashboardPage() {
                 <BookOpen className="w-6 h-6 text-secondary" />
               </div>
               <div className="flex-1">
-                <h3 className="font-heading font-semibold">Base de recettes</h3>
+                <h3 className="font-heading font-semibold">Recettes du jour</h3>
                 <p className="text-xs text-muted-foreground">
-                  50 000 recettes classées par Nutri-Score
+                  Recettes personnalisées selon votre profil
                 </p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
