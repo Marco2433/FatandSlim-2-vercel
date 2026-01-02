@@ -1353,6 +1353,96 @@ export default function DashboardPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Share Achievement Dialog */}
+      <Dialog open={showShareAchievementDialog} onOpenChange={setShowShareAchievementDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>📤 Partager mon accomplissement</DialogTitle>
+            <DialogDescription>
+              {achievementToShare?.type === 'challenge' 
+                ? `Partagez votre défi terminé "${achievementToShare?.data?.title}"`
+                : `Partagez votre badge "${achievementToShare?.data?.name}"`
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            {/* Preview */}
+            <div className="p-3 rounded-lg border bg-muted/50">
+              {achievementToShare?.type === 'challenge' ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white">
+                    ✓
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{achievementToShare?.data?.title}</p>
+                    <p className="text-xs text-muted-foreground">{achievementToShare?.data?.description}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{achievementToShare?.data?.icon}</span>
+                  <div>
+                    <p className="font-medium text-sm">{achievementToShare?.data?.name}</p>
+                    <p className="text-xs text-muted-foreground">{achievementToShare?.data?.description}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Public Wall Option */}
+            <Button 
+              variant={selectedShareTarget === 'public' ? 'default' : 'outline'}
+              className="w-full justify-start h-auto py-3"
+              onClick={() => setSelectedShareTarget('public')}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  🌍
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Mur public</p>
+                  <p className="text-xs text-muted-foreground">Visible par toute la communauté</p>
+                </div>
+              </div>
+            </Button>
+            
+            {/* User Groups */}
+            {userGroups.length > 0 && (
+              <>
+                <p className="text-sm font-medium text-muted-foreground">Mes groupes :</p>
+                {userGroups.map(group => (
+                  <Button 
+                    key={group.group_id}
+                    variant={selectedShareTarget === group.group_id ? 'default' : 'outline'}
+                    className="w-full justify-start h-auto py-3"
+                    onClick={() => setSelectedShareTarget(group.group_id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
+                        {group.name?.charAt(0) || '👥'}
+                      </div>
+                      <div className="text-left">
+                        <p className="font-medium">{group.name}</p>
+                        <p className="text-xs text-muted-foreground">{group.description?.slice(0, 40)}...</p>
+                      </div>
+                    </div>
+                  </Button>
+                ))}
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowShareAchievementDialog(false)}>
+              Annuler
+            </Button>
+            <Button onClick={() => achievementToShare && shareAchievement(achievementToShare.type, achievementToShare.data, selectedShareTarget)}>
+              <Share2 className="w-4 h-4 mr-2" />
+              Partager
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
