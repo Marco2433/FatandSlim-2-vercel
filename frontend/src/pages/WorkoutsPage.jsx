@@ -843,6 +843,28 @@ export default function WorkoutsPage() {
                   <span className="text-muted-foreground">{playingVideo.equipment || 'Aucun'}</span>
                 </p>
 
+                {/* Quick Actions - Favoris, Agenda, Partage */}
+                <div className="flex gap-2 py-2 border-y">
+                  <Button 
+                    variant={favorites.includes(playingVideo.id) ? "default" : "ghost"} 
+                    size="sm"
+                    onClick={() => toggleFavorite(playingVideo)}
+                    className="flex-1"
+                  >
+                    <Star className={`w-4 h-4 mr-1 ${favorites.includes(playingVideo.id) ? 'fill-current' : ''}`} />
+                    Favoris
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setShowAddToAgenda(true)}
+                    className="flex-1"
+                  >
+                    <CalendarPlus className="w-4 h-4 mr-1" />
+                    Agenda
+                  </Button>
+                </div>
+
                 {/* Action Buttons - PAS de bouton YouTube externe */}
                 <div className="flex gap-2 pt-2">
                   <Button 
@@ -860,6 +882,38 @@ export default function WorkoutsPage() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add to Agenda Dialog */}
+      <Dialog open={showAddToAgenda} onOpenChange={setShowAddToAgenda}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>📅 Ajouter à l'agenda</DialogTitle>
+            <DialogDescription>
+              Planifiez votre entraînement "{playingVideo?.title}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Date prévue</Label>
+              <Input 
+                type="date" 
+                value={agendaDate}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setAgendaDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddToAgenda(false)}>
+              Annuler
+            </Button>
+            <Button onClick={() => playingVideo && addToAgenda(playingVideo, agendaDate)}>
+              <CalendarPlus className="w-4 h-4 mr-2" />
+              Ajouter
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
