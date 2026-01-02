@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import "@/App.css";
 
+// Version management
+import { initVersionCheck, shouldForceRefresh } from "@/utils/versionManager";
+
 // Pages
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
@@ -22,10 +25,17 @@ import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 // Context
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 // Components
 import { Toaster } from "@/components/ui/sonner";
 import BottomNav from "@/components/BottomNav";
+
+// Initialize version check on app load
+const wasUpdated = initVersionCheck();
+if (wasUpdated) {
+  console.log('[App] Application was updated, cache cleared');
+}
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading, isProcessingAuth } = useAuth();
