@@ -2127,6 +2127,129 @@ QUESTION DU PATIENT : {question}"""
         logger.error(f"Bariatric coach error: {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la génération de la réponse")
 
+@api_router.get("/bariatric/daily-reminder")
+async def check_daily_reminder(user: dict = Depends(get_current_user)):
+    """Check if user needs daily bariatric tracking reminder"""
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    if not profile or not profile.get("bariatric_surgery"):
+        return {"show_reminder": False}
+    
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Check if user already logged today
+    today_log = await db.bariatric_daily_logs.find_one({
+        "user_id": user["user_id"],
+        "date": today
+    })
+    
+    # Check if reminder was dismissed today
+    dismissed = await db.bariatric_reminder_dismissed.find_one({
+        "user_id": user["user_id"],
+        "date": today
+    })
+    
+    phase_info = calculate_bariatric_phase(profile.get("bariatric_surgery_date"))
+    surgery_name = "By-pass" if profile.get("bariatric_surgery") == "bypass" else "Sleeve"
+    
+    return {
+        "show_reminder": not today_log and not dismissed,
+        "already_logged": bool(today_log),
+        "surgery_type": surgery_name,
+        "phase": phase_info.get("phase_name", "Post-opératoire"),
+        "days_since_surgery": phase_info.get("days_since_surgery", 0)
+    }
+
+@api_router.post("/bariatric/dismiss-reminder")
+async def dismiss_daily_reminder(user: dict = Depends(get_current_user)):
+    """Dismiss the daily reminder for today"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    await db.bariatric_reminder_dismissed.update_one(
+        {"user_id": user["user_id"], "date": today},
+        {"$set": {"dismissed_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"message": "Rappel ignoré pour aujourd'hui"}
+
+@api_router.post("/bariatric/daily-log")
+async def save_daily_bariatric_log(data: dict, user: dict = Depends(get_current_user)):
+    """Save comprehensive daily bariatric tracking log"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    
+    log_entry = {
+        "log_id": f"barilog_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "date": today,
+        # Données de base
+        "weight": data.get("weight"),
+        "water_intake_ml": data.get("water_intake_ml", 0),  # en ml
+        "protein_intake_g": data.get("protein_intake_g", 0),  # en grammes
+        # Suppléments pris
+        "supplements_taken": data.get("supplements_taken", []),  # Liste des suppléments
+        "vitamins_taken": data.get("vitamins_taken", False),
+        "calcium_taken": data.get("calcium_taken", False),
+        "iron_taken": data.get("iron_taken", False),
+        "b12_taken": data.get("b12_taken", False),
+        # Symptômes et bien-être
+        "nausea_level": data.get("nausea_level", 0),  # 0-5
+        "vomiting": data.get("vomiting", False),
+        "dumping_episode": data.get("dumping_episode", False),
+        "reflux_level": data.get("reflux_level", 0),  # 0-5
+        "pain_level": data.get("pain_level", 0),  # 0-5
+        "fatigue_level": data.get("fatigue_level", 0),  # 0-5
+        "mood": data.get("mood", "neutral"),  # good, neutral, bad
+        "energy_level": data.get("energy_level", 3),  # 1-5
+        # Alimentation
+        "meals_count": data.get("meals_count", 0),
+        "texture_respected": data.get("texture_respected", True),
+        "eating_speed": data.get("eating_speed", "normal"),  # slow, normal, fast
+        "chewing_quality": data.get("chewing_quality", "good"),  # good, medium, poor
+        # Activité
+        "walked_today": data.get("walked_today", False),
+        "exercise_minutes": data.get("exercise_minutes", 0),
+        # Autres
+        "bowel_movement": data.get("bowel_movement", False),
+        "hair_loss_noticed": data.get("hair_loss_noticed", False),
+        "notes": data.get("notes", ""),
+        # Métadonnées
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Upsert pour permettre mise à jour dans la journée
+    await db.bariatric_daily_logs.update_one(
+        {"user_id": user["user_id"], "date": today},
+        {"$set": log_entry},
+        upsert=True
+    )
+    
+    # Update weight in profile if provided
+    if data.get("weight"):
+        await db.user_profiles.update_one(
+            {"user_id": user["user_id"]},
+            {"$set": {"weight": data["weight"], "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        # Add to weight history
+        await db.weight_logs.insert_one({
+            "user_id": user["user_id"],
+            "weight": data["weight"],
+            "date": today,
+            "source": "bariatric_daily",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+    
+    return {"message": "Suivi quotidien enregistré", "log": log_entry}
+
+@api_router.get("/bariatric/daily-log/{date}")
+async def get_daily_bariatric_log(date: str, user: dict = Depends(get_current_user)):
+    """Get bariatric daily log for a specific date"""
+    log = await db.bariatric_daily_logs.find_one(
+        {"user_id": user["user_id"], "date": date},
+        {"_id": 0}
+    )
+    return log or {}
+
 @api_router.get("/bariatric/check-disclaimer")
 async def check_bariatric_disclaimer(user: dict = Depends(get_current_user)):
     """Check if user has seen the bariatric disclaimer"""
