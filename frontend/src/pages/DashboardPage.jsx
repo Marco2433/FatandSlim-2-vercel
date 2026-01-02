@@ -150,6 +150,7 @@ export default function DashboardPage() {
     fetchUserStats();
     fetchAppointments();
     checkBariatricReminder();
+    fetchUserGroups();
     
     // Show recommendation after 45 minutes of first load
     const initialTimeout = setTimeout(() => {
