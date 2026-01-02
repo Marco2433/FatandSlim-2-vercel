@@ -3767,19 +3767,18 @@ async def get_health_articles(user: dict = Depends(get_current_user)):
 
 @api_router.get("/recipes/daily")
 async def get_daily_recipes_endpoint(user: dict = Depends(get_current_user)):
-    """Get 6 personalized recipes of the day based on user profile"""
+    """Get 6 personalized recipes of the day - using VERIFIED database"""
+    from recipes_database import get_verified_recipes
+    
     profile = await db.user_profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
     
-    # Use the imported function from recipes_database
-    if profile:
-        profile["user_id"] = user["user_id"]
-    
-    selected = get_daily_recipes(user_profile=profile, count=6)
+    # Use verified recipes database (coherent name/ingredients/steps)
+    selected = get_verified_recipes(category="all", count=6)
     
     return {
         "recipes": selected, 
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        "total_database": len(SAMPLE_RECIPES)
+        "total_database": len(selected)
     }
 
 @api_router.get("/recipes/all")
