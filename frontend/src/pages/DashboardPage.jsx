@@ -357,9 +357,18 @@ export default function DashboardPage() {
 
   const togglePinAppointment = async (apt) => {
     try {
-      await axios.put(`${API}/appointments/${apt.appointment_id}`, { pinned: !apt.pinned }, { withCredentials: true });
+      const token = localStorage.getItem('token');
+      await axios.put(`${API}/appointments/${apt.appointment_id}`, 
+        { pinned: !apt.pinned }, 
+        { 
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true 
+        }
+      );
       fetchAppointments();
+      toast.success(apt.pinned ? 'Désépinglé' : 'Épinglé ✓');
     } catch (error) {
+      console.error('Pin error:', error);
       toast.error('Erreur lors de l\'épinglage');
     }
   };
