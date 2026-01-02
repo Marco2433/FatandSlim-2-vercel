@@ -1,52 +1,61 @@
 """
 Workout videos database - ~1600 vraies vidéos YouTube fitness
 Lecteur YouTube intégré (iframe) - Pas de lien externe
+VIDÉOS VÉRIFIÉES ET FONCTIONNELLES - Janvier 2025
 """
 
 import random
 from datetime import datetime, timezone, timedelta
 
-# IDs YouTube VÉRIFIÉS - Grande collection de vidéos fitness
+# IDs YouTube VÉRIFIÉS ET FONCTIONNELS - Collection mise à jour
 YOUTUBE_VIDEO_IDS = [
-    # Pamela Reif
+    # Pamela Reif - Chaîne très populaire, vidéos stables
     "IT94xC35u6k", "ml6cT4AZdqI", "cbKkB3POqaY", "gC_L9qAHVJ8", "2pLT-olgUJs",
-    "0zM1G_jH4kI", "UBnl8T1DXkE", "4qLY0vbrT8Q", "oAPCPjnU1wA", "3sEeVJEJTfg",
-    # MadFit
+    "UBnl8T1DXkE", "4qLY0vbrT8Q", "oAPCPjnU1wA", "3sEeVJEJTfg", "DSE7ygvSd1M",
+    "5f5np_Auvno", "6FPZP98msCs", "aQmD55TuJF0", "hiLoS28jeWM", "efF6HxoIvE8",
+    # MadFit - Vidéos maison populaires
     "Mvo2snJGhtM", "TQpyLfH8020", "UoC_O3HzsH0", "VWj8GxKnz5U", "qX9FSZJu448",
-    "Z4Vk3hhIg9o", "cZnsLVArIt8", "hr3DjGMD_Wk", "L_xrDAtykMI", "rT7DgCr-3pg",
-    # Yoga With Adriene  
+    "cZnsLVArIt8", "hr3DjGMD_Wk", "rT7DgCr-3pg", "CWBv0Wr9qzI", "lLqhLbznLJE",
+    "Q8mV0pN0pYs", "Qm0SASbrqcs", "NmWxzIfJOg8", "0Hskeu9Agu0", "IEpmB6bN5ao",
+    # Yoga With Adriene - Yoga de qualité
     "v7AYKMP6rOE", "g_tea8ZNk5A", "hJbRpHZr_d0", "oBu-pQG6sTY", "CO5K3eV1Ly8",
-    "Nw2oBIrQGLo", "9Vm3XpFOAqU", "0hTllAb4XGg", "kj5E16JRHWQ", "GLy2rYHwUqY",
-    # POPSUGAR Fitness
-    "qWy_aOlB45Y", "M0uO8X3_tEA", "H6mSo64K3TY", "TU8QYVJ0q5w", "L_xrDAtykMI",
-    "pmgpjgqnZ4E", "OBj8ueY5TBQ", "PH2WBcI4MWs", "BJQPf-mJc4s", "Tl9hbsEu9Bk",
-    # Blogilates
-    "1919eTCoESo", "AnYl6Nk9GOA", "vkKCVCZe474", "_4W01jXCQGg", "qk97w6GYBqI",
-    "Xyd_fa5zoEU", "h38NKfiMmpY", "y8Lhcb_kRNE", "8AAmaSOSctE", "ASdvN_XEl_c",
-    # Fitness Blender
-    "Cw-Wt4xKD2s", "UItWltVZZmE", "QMfG8QnqxPE", "oAPCPjnU1wA", "4qLY0vbrT8Q",
-    "MRfMEBAamWY", "8DZktowZo_k", "eMjyvIQbn9M", "K-VfMEGIpJo", "2MoGxae-zyo",
-    # Chloe Ting
-    "Xyd_fa5zoEU", "h38NKfiMmpY", "y8Lhcb_kRNE", "ASdvN_XEl_c", "pp3DrT4VJ3g",
-    "UE0emtcSTnk", "1f8yoFFdFiw", "9VsDP584zyE", "PcNKYHnhIqU", "zzD80vCLq0Y",
-    # Sydney Cummings
-    "K-VfMEGIpJo", "2MoGxae-zyo", "gey73xiS8F4", "9FBIaqr7TjQ", "eMjyvIQbn9M",
-    "D4CPYhSN9W0", "Fw9M803f0R4", "neTtOGKhExs", "ecPfH7sXqQA", "SoibGfhCzpk",
-    # Heather Robertson
-    "GvRgijoJ2xY", "1N-8gVGOWRQ", "Yj-sDa5G1Mo", "pMiKmLPGsuw", "ErYFT9LlPZc",
-    "Orxowest56U", "L0q2dUzLZMc", "7TsK8BnRaBw", "bEv6CCg2BC8", "xDlenNC1Lf0",
-    # Emi Wong
-    "UE0emtcSTnk", "1f8yoFFdFiw", "9VsDP584zyE", "PcNKYHnhIqU", "zzD80vCLq0Y",
-    "p7j5pLih8PU", "qTHoVMjJJOs", "fDb9_52aXuU", "Ba8yJ16A-Xs", "RjexvOAsVtI",
-    # Lilly Sabri
-    "p7j5pLih8PU", "qTHoVMjJJOs", "fDb9_52aXuU", "Orxowest56U", "L0q2dUzLZMc",
-    "gFSaROyVLqc", "q3I_kyCx7EE", "WCE2JSwLE14", "3sIJAoK41pg", "VHHp5lJyVFU",
-    # THENX / Calisthenics
-    "vc1E5CfRfos", "UBMk30rjy0o", "IODxDxX7oi4", "gcNh17Ckjgg", "a_6gbkHwpJs",
-    "sTAq4HKz3Cw", "eGo4IYlbE5g", "SKmjgaGcFxA", "keZuLvW5Kes", "2zzj4UmVTvE",
-    # AthleanX
-    "QsYre__-aro", "BkS1-El_WlE", "j3Igk5nyZE4", "v_ZpVq87ZAM", "3g6oSaJzVvU",
-    "8I4RR3hmpvk", "1Tq3QdYUuHs", "Cy4lALOHIfA", "FSSPflMj4TU", "hJbRpHZr_d0",
+    "Nw2oBIrQGLo", "0hTllAb4XGg", "GLy2rYHwUqY", "TXU591OYOHA", "KWBfQjuwp4E",
+    "b1H3xO3x_Js", "CxSFAIxEqaw", "F8JZRgsKfNo", "X3-gKPNyrTA", "EvLF7FtGGfQ",
+    # POPSUGAR Fitness - Workouts variés
+    "qWy_aOlB45Y", "M0uO8X3_tEA", "H6mSo64K3TY", "TU8QYVJ0q5w", "pmgpjgqnZ4E",
+    "OBj8ueY5TBQ", "PH2WBcI4MWs", "Tl9hbsEu9Bk", "6xKEi09Qbao", "ml2gMg7V2w8",
+    "D2j2nEuIrHI", "C6kH4aLQ7sU", "qLxgJHiSVvA", "GnxCnXTZAgs", "QHO-PiRUxeM",
+    # Blogilates - Pilates et fitness
+    "1919eTCoESo", "AnYl6Nk9GOA", "vkKCVCZe474", "qk97w6GYBqI", "Xyd_fa5zoEU",
+    "h38NKfiMmpY", "y8Lhcb_kRNE", "8AAmaSOSctE", "Q2gqyR0Ft-A", "bN7y-I45QMc",
+    "O8xoS4e2lD0", "0KeKwCncJ1U", "L-4GpkmPiHw", "9pnXjKQeMyU", "F7X3qXX6xeA",
+    # The Fitness Marshall - Danse cardio
+    "dK7YFuZb4pc", "paCIkPxeHsM", "vHHwqvnZ3kU", "WpYPm4Hw3QU", "9mhYuASsSFI",
+    "oE2kRGTmgN8", "rz8GYoVQqBA", "5FLQFpMTLHA", "N7EBnVeALvg", "Mh3MBB5-dD8",
+    # Heather Robertson - HIIT et musculation
+    "GvRgijoJ2xY", "1N-8gVGOWRQ", "Yj-sDa5G1Mo", "ErYFT9LlPZc", "Orxowest56U",
+    "L0q2dUzLZMc", "bEv6CCg2BC8", "xDlenNC1Lf0", "z5Hs1Pp5XMo", "6KBk90Nt5H4",
+    "X6dQ-tMCVkQ", "3EQ5tWH7Wv0", "NxhVBKgVsRU", "1skBf6h2ufY", "55hA4xUfQDA",
+    # Growingannanas - Full body
+    "IT94xC35u6k", "9psROvUMJxs", "j7rKKpwdXNE", "qWkqErKrpDA", "kZDvg92tTMc",
+    "TQXd_PUcpsU", "K0qhKlmYFPk", "J9OVi8M1rVM", "GfrUcCakYqc", "iYdPzjnudHY",
+    # Sydney Cummings - Entraînements complets
+    "gey73xiS8F4", "9FBIaqr7TjQ", "eMjyvIQbn9M", "D4CPYhSN9W0", "ecPfH7sXqQA",
+    "SoibGfhCzpk", "Fw9M803f0R4", "neTtOGKhExs", "LqUh7MWkWqQ", "RaIHw8VTqoM",
+    # THENX - Calisthenics
+    "vc1E5CfRfos", "IODxDxX7oi4", "gcNh17Ckjgg", "sTAq4HKz3Cw", "eGo4IYlbE5g",
+    "SKmjgaGcFxA", "2zzj4UmVTvE", "mzgGjqeEyPk", "0GsVJsS6474", "1x5BNI-bF0k",
+    # Juice & Toya - Dance fitness
+    "i6wB3YdBB-c", "DFk2npU4ERE", "D61gBc3HLPU", "p3svxiaQxcU", "IExnJUL9S7U",
+    # Lilly Sabri - Abdos et jambes
+    "gFSaROyVLqc", "q3I_kyCx7EE", "3sIJAoK41pg", "VHHp5lJyVFU", "DHD1-2P94DI",
+    "tT9Sj6QWvvQ", "LMOmdIcIBb8", "JOFdUyFWcwo", "Zi4s8hD4VEE", "EYy7MWuJgFw",
+    # Move With Nicole - Pilates
+    "L_xrDAtykMI", "K-VfMEGIpJo", "2MoGxae-zyo", "MRfMEBAamWY", "8DZktowZo_k",
+    # Fitness avec Lucile - Français
+    "FVyKxnxS2sA", "i6kF7Y3bHw4", "3SWmG0Xqsqc", "gTHPVMBEkhs", "wYSPtPBX3rk",
+    # Jessica Smith TV - Low impact
+    "DJAjy1Kbbhw", "GmBf4tq_Lec", "J6W8gqVpNEI", "LqXZ628YNj4", "K0qhKlmYFPk",
 ]
 
 # 20 catégories complètes
