@@ -2100,10 +2100,17 @@ TU DOIS TOUJOURS :
 QUESTION DU PATIENT : {question}"""
 
     try:
-        llm = LlmChat(api_key=os.environ.get('EMERGENT_API_KEY'))
+        import uuid as uuid_module
+        session_id = f"bari_coach_{user['user_id']}_{uuid_module.uuid4().hex[:8]}"
+        
+        llm = LlmChat(
+            api_key=os.environ.get('EMERGENT_API_KEY') or os.environ.get('EMERGENT_LLM_KEY'),
+            session_id=session_id,
+            system_message=system_prompt
+        )
         response = await llm.send_async(
             model="gpt-4o",
-            messages=[UserMessage(text=system_prompt)]
+            messages=[UserMessage(text=question)]
         )
         
         # Log AI usage
