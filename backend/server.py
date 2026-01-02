@@ -3806,15 +3806,18 @@ async def get_all_recipes_endpoint(
     total = len(recipes)
     paginated = recipes[offset:offset + limit]
     
-    # Get enhanced stats including dish_type
-    stats = get_recipes_stats()
+    # Get stats from verified recipes
+    stats = {
+        "total": len(VERIFIED_RECIPES),
+        "by_category": {},
+        "by_nutri_score": {}
+    }
     
-    # Add dish_type stats from sample
-    dish_type_stats = {}
-    for r in SAMPLE_RECIPES:
-        dt = r.get("dish_type", "autre")
-        dish_type_stats[dt] = dish_type_stats.get(dt, 0) + 1
-    stats["by_dish_type"] = dish_type_stats
+    for r in VERIFIED_RECIPES:
+        cat = r.get("category", "other")
+        stats["by_category"][cat] = stats["by_category"].get(cat, 0) + 1
+        ns = r.get("nutri_score", "B")
+        stats["by_nutri_score"][ns] = stats["by_nutri_score"].get(ns, 0) + 1
     
     return {
         "recipes": paginated, 
@@ -3827,7 +3830,17 @@ async def get_all_recipes_endpoint(
 @api_router.get("/recipes/stats")
 async def get_recipes_stats_endpoint():
     """Get statistics about the recipe database"""
-    return get_recipes_stats()
+    stats = {
+        "total": len(VERIFIED_RECIPES),
+        "by_category": {},
+        "by_nutri_score": {}
+    }
+    for r in VERIFIED_RECIPES:
+        cat = r.get("category", "other")
+        stats["by_category"][cat] = stats["by_category"].get(cat, 0) + 1
+        ns = r.get("nutri_score", "B")
+        stats["by_nutri_score"][ns] = stats["by_nutri_score"].get(ns, 0) + 1
+    return stats
 
 # ==================== PROFILE PICTURE UPLOAD ====================
 
