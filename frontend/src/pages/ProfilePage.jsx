@@ -69,7 +69,7 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     await logout();
-    toast.success('Déconnexion réussie');
+    toast.success(language === 'fr' ? 'Déconnexion réussie' : 'Successfully logged out');
     navigate('/');
   };
 
