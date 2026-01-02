@@ -29,6 +29,7 @@ import {
   Trophy,
   Target,
   Calendar,
+  CalendarPlus,
   Award,
   ChevronRight,
   Bot,
@@ -40,6 +41,8 @@ import {
   Pause,
   X,
   Share2,
+  Star,
+  BookmarkPlus,
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
