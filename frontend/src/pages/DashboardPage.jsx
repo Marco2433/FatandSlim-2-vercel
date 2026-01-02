@@ -42,7 +42,8 @@ import {
   Edit,
   Trash2,
   AlertCircle,
-  Stethoscope
+  Stethoscope,
+  Share2
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
