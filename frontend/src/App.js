@@ -83,6 +83,11 @@ const PublicRoute = ({ children }) => {
 function AppRouter() {
   const location = useLocation();
 
+  // Scroll to top on page change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
   // Check URL fragment for session_id (Google OAuth callback)
   if (location.hash?.includes('session_id=')) {
