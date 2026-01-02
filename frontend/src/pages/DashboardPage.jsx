@@ -96,6 +96,12 @@ export default function DashboardPage() {
   // Recipe Modal state
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
+  
+  // Share achievement state
+  const [showShareAchievementDialog, setShowShareAchievementDialog] = useState(false);
+  const [achievementToShare, setAchievementToShare] = useState(null);
+  const [userGroups, setUserGroups] = useState([]);
+  const [selectedShareTarget, setSelectedShareTarget] = useState('public');
 
   // Check for midnight reset
   useEffect(() => {
