@@ -40,6 +40,7 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, logout, updateUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploadingPicture, setUploadingPicture] = useState(false);
