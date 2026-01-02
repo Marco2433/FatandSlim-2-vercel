@@ -3172,18 +3172,21 @@ Contexte utilisateur:
 - Objectif calorique: {profile.get('daily_calorie_target', 2000)} kcal/jour
 - Objectif: {profile.get('goal', 'maintain')}
 - Préférences: {', '.join(profile.get('dietary_preferences', [])) or 'Aucune'}
-- Allergies (À ÉVITER): {', '.join(profile.get('allergies', [])) or 'Aucune'}
+- Allergies (À ÉVITER ABSOLUMENT): {', '.join(profile.get('allergies', [])) or 'Aucune'}
 - Aliments aimés: {', '.join(profile.get('food_likes', [])) or 'Variés'}
 - Aliments détestés (À ÉVITER): {', '.join(profile.get('food_dislikes', [])) or 'Aucun'}
 - Budget: {profile.get('budget', 'moyen')}
 - Compétences: {profile.get('cooking_skill', 'intermédiaire')}
 
-Règles:
-1. Recettes SIMPLES (max 8 étapes)
-2. Ingrédients ÉCONOMIQUES et faciles à trouver
-3. Temps de préparation < 30 min
-4. Ne jamais utiliser les aliments détestés ou allergènes
-5. Favoriser les aliments aimés"""
+RÈGLES OBLIGATOIRES:
+1. Le NOM de la recette doit CORRESPONDRE EXACTEMENT aux ingrédients et étapes
+2. Les INGRÉDIENTS doivent être cohérents avec le nom (ex: "Poulet rôti" = poulet dans ingrédients)
+3. Les ÉTAPES doivent utiliser UNIQUEMENT les ingrédients listés
+4. Recettes SIMPLES (max 8 étapes courtes et claires)
+5. Ingrédients ÉCONOMIQUES et faciles à trouver en France
+6. Temps de préparation < 30 min
+7. NE JAMAIS utiliser les aliments détestés ou allergènes
+8. FAVORISER les aliments aimés"""
         ).with_model("openai", "gpt-4o")
         
         category_filter = f"pour {category}" if category != "all" else "variées (petit-déjeuner, déjeuner, dîner, collation)"
