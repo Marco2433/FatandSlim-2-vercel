@@ -1243,6 +1243,57 @@ export default function DashboardPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Bariatric Daily Reminder Dialog */}
+      <Dialog open={showBariatricReminder} onOpenChange={setShowBariatricReminder}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-2xl">🩺</span>
+              Rappel Suivi Quotidien
+            </DialogTitle>
+            <DialogDescription>
+              Dossier {bariatricReminderData?.surgery_type || 'Bariatrique'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-primary/10 rounded-lg text-center">
+              <p className="text-lg font-semibold">
+                Bonjour ! 👋
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                N'oubliez pas de remplir votre suivi quotidien pour suivre votre progression après votre opération.
+              </p>
+              {bariatricReminderData?.days_since_surgery && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  📅 Jour {bariatricReminderData.days_since_surgery} post-opératoire • Phase: {bariatricReminderData.phase}
+                </p>
+              )}
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={dismissBariatricReminder}
+              >
+                Plus tard
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={() => {
+                  sessionStorage.setItem('bariatricReminderShown', 'true');
+                  setShowBariatricReminder(false);
+                  navigate('/bariatric?tab=tracking');
+                }}
+              >
+                Remplir maintenant
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
