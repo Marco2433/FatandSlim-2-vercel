@@ -819,6 +819,9 @@ class FatSlimAPITester:
         self.test_progress_endpoints()
         self.test_gamification_endpoints()
         
+        # Test the specific endpoints mentioned in the review request
+        self.test_specific_review_endpoints()
+        
         # Test the new features specifically requested in the review
         self.test_new_features_endpoints()
         
