@@ -2027,15 +2027,15 @@ export default function NutritionPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Articles Section */}
+        {/* Articles Section - 10 articles par catégories */}
         {articles.length > 0 && activeTab === 'diary' && (
           <div className="mt-6">
             <h3 className="font-heading text-lg mb-3 flex items-center gap-2">
               <Newspaper className="w-5 h-5 text-primary" />
-              Articles du jour
+              Articles du jour ({articles.length})
             </h3>
             <div className="space-y-3">
-              {articles.slice(0, 3).map((article) => (
+              {articles.slice(0, 10).map((article) => (
                 <Card 
                   key={article.id} 
                   className="cursor-pointer hover:shadow-md transition-shadow"

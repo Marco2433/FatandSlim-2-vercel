@@ -387,21 +387,25 @@ export default function ProfilePage() {
               </div>
               <div className="flex gap-2">
                 <Button
-                  variant={localStorage.getItem('language') !== 'en' ? 'default' : 'outline'}
+                  variant={localStorage.getItem('app_language') !== 'en' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => {
+                    localStorage.setItem('app_language', 'fr');
                     localStorage.setItem('language', 'fr');
-                    window.location.reload();
+                    toast.success('Langue changée en Français');
+                    setTimeout(() => window.location.reload(), 500);
                   }}
                 >
                   🇫🇷 FR
                 </Button>
                 <Button
-                  variant={localStorage.getItem('language') === 'en' ? 'default' : 'outline'}
+                  variant={localStorage.getItem('app_language') === 'en' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => {
+                    localStorage.setItem('app_language', 'en');
                     localStorage.setItem('language', 'en');
-                    window.location.reload();
+                    toast.success('Language changed to English');
+                    setTimeout(() => window.location.reload(), 500);
                   }}
                 >
                   🇬🇧 EN
