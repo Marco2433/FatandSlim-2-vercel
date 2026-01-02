@@ -759,6 +759,7 @@ async def complete_onboarding(data: OnboardingData, user: dict = Depends(get_cur
     
     profile_doc = {
         "user_id": user["user_id"],
+        "profile_version": 3,  # Version du profil pour migration future
         "gender": data.gender,
         "age": data.age,
         "height": data.height,
