@@ -7389,6 +7389,116 @@ async def simulate_fake_interactions(user: dict = Depends(get_current_user)):
     
     return {"message": f"Simulated {interactions} interactions", "interactions": interactions}
 
+# ==================== MODERATION & REPORTING ====================
+
+@api_router.post("/social/report-user")
+async def report_user(data: dict, user: dict = Depends(get_current_user)):
+    """Report a user for inappropriate behavior"""
+    reported_user_id = data.get("user_id")
+    reason = data.get("reason", "other")
+    details = data.get("details", "")
+    
+    if reported_user_id == user["user_id"]:
+        raise HTTPException(status_code=400, detail="Vous ne pouvez pas vous signaler vous-même")
+    
+    report = {
+        "report_id": f"report_{uuid.uuid4().hex[:8]}",
+        "reporter_id": user["user_id"],
+        "reported_user_id": reported_user_id,
+        "reason": reason,  # harassment, spam, fake, inappropriate, other
+        "details": details,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.user_reports.insert_one(report)
+    return {"message": "Signalement envoyé. Merci de nous aider à garder la communauté saine.", "report_id": report["report_id"]}
+
+@api_router.post("/social/block-user")
+async def block_user(data: dict, user: dict = Depends(get_current_user)):
+    """Block a user"""
+    blocked_user_id = data.get("user_id")
+    
+    if blocked_user_id == user["user_id"]:
+        raise HTTPException(status_code=400, detail="Vous ne pouvez pas vous bloquer vous-même")
+    
+    # Check if already blocked
+    existing = await db.blocked_users.find_one({
+        "user_id": user["user_id"],
+        "blocked_user_id": blocked_user_id
+    })
+    
+    if existing:
+        # Unblock
+        await db.blocked_users.delete_one({"user_id": user["user_id"], "blocked_user_id": blocked_user_id})
+        return {"message": "Utilisateur débloqué", "is_blocked": False}
+    else:
+        # Block
+        await db.blocked_users.insert_one({
+            "user_id": user["user_id"],
+            "blocked_user_id": blocked_user_id,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        # Also remove friendship if exists
+        await db.friendships.delete_many({
+            "$or": [
+                {"user_id": user["user_id"], "friend_id": blocked_user_id},
+                {"user_id": blocked_user_id, "friend_id": user["user_id"]}
+            ]
+        })
+        return {"message": "Utilisateur bloqué", "is_blocked": True}
+
+@api_router.get("/social/blocked-users")
+async def get_blocked_users(user: dict = Depends(get_current_user)):
+    """Get list of blocked users"""
+    blocked = await db.blocked_users.find({"user_id": user["user_id"]}, {"_id": 0}).to_list(200)
+    blocked_ids = [b["blocked_user_id"] for b in blocked]
+    
+    if blocked_ids:
+        users = await db.users.find({"user_id": {"$in": blocked_ids}}, {"_id": 0, "password_hash": 0}).to_list(200)
+        return users
+    return []
+
+@api_router.get("/social/sent-friend-requests")
+async def get_sent_friend_requests(user: dict = Depends(get_current_user)):
+    """Get friend requests sent by the user"""
+    requests = await db.friendships.find({
+        "user_id": user["user_id"],
+        "status": "pending"
+    }, {"_id": 0}).to_list(100)
+    
+    # Get user details for each request
+    friend_ids = [r["friend_id"] for r in requests]
+    if friend_ids:
+        users = await db.users.find({"user_id": {"$in": friend_ids}}, {"_id": 0, "password_hash": 0}).to_list(100)
+        users_dict = {u["user_id"]: u for u in users}
+        
+        for r in requests:
+            r["friend_details"] = users_dict.get(r["friend_id"], {})
+    
+    return requests
+
+@api_router.post("/social/share-challenge")
+async def share_challenge_to_feed(data: dict, user: dict = Depends(get_current_user)):
+    """Share a completed challenge to the social feed"""
+    challenge_data = data.get("challenge", {})
+    
+    post = {
+        "post_id": f"post_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "content": f"🏆 Défi relevé : {challenge_data.get('title', 'Défi')} !\n\n🎯 +{challenge_data.get('points', 10)} points gagnés\n\n#Challenge #FatAndSlim #Motivation",
+        "type": "challenge_share",
+        "challenge_data": challenge_data,
+        "likes": [],
+        "comments": [],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.social_posts.insert_one(post)
+    await db.users.update_one({"user_id": user["user_id"]}, {"$inc": {"points": 5}})
+    
+    return {"message": "Défi partagé sur votre mur ! +5 points", "post": post}
+
 @api_router.get("/social/groups")
 async def get_groups(user: dict = Depends(get_current_user)):
     """Get available groups/communities"""
