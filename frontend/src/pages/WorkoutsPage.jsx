@@ -173,8 +173,12 @@ export default function WorkoutsPage() {
   const [congratsMessage, setCongratsMessage] = useState('');
   const [earnedBadge, setEarnedBadge] = useState(null);
   const [favorites, setFavorites] = useState([]);
+  const [favoriteVideos, setFavoriteVideos] = useState([]);
   const [showAddToAgenda, setShowAddToAgenda] = useState(false);
   const [agendaDate, setAgendaDate] = useState('');
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [userGroups, setUserGroups] = useState([]);
+  const [selectedShareTarget, setSelectedShareTarget] = useState('public');
   const videoRef = useRef(null);
   
   // Coach IA state
