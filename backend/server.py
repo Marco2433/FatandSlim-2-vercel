@@ -4228,7 +4228,7 @@ async def share_workout_to_feed(data: dict, user: dict = Depends(get_current_use
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
-    await db.social_posts.insert_one({**post, "_id": None})
+    await db.social_posts.insert_one(post)
     
     # Award points
     await db.users.update_one(
@@ -7729,7 +7729,7 @@ async def share_achievement(data: dict, user: dict = Depends(get_current_user)):
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
-    await db.social_posts.insert_one({**post, "_id": None})
+    await db.social_posts.insert_one(post)
     
     # Award points
     await db.users.update_one(
