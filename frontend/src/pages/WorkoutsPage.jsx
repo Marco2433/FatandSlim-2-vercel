@@ -544,16 +544,20 @@ export default function WorkoutsPage() {
 
       <main className="p-4 space-y-4 max-w-lg mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="videos" className="flex items-center gap-1">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="videos" className="flex items-center gap-1 text-xs">
               <Video className="w-4 h-4" />
               Vidéos
             </TabsTrigger>
-            <TabsTrigger value="programs" className="flex items-center gap-1">
+            <TabsTrigger value="favorites" className="flex items-center gap-1 text-xs">
+              <Star className="w-4 h-4" />
+              Favoris
+            </TabsTrigger>
+            <TabsTrigger value="programs" className="flex items-center gap-1 text-xs">
               <Target className="w-4 h-4" />
               Programmes
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-1">
+            <TabsTrigger value="history" className="flex items-center gap-1 text-xs">
               <Clock className="w-4 h-4" />
               Historique
             </TabsTrigger>
