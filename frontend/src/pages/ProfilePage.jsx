@@ -377,6 +377,40 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
+        {/* Language Selector */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-lg">🌐</span>
+                <Label>Langue / Language</Label>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant={localStorage.getItem('language') !== 'en' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    localStorage.setItem('language', 'fr');
+                    window.location.reload();
+                  }}
+                >
+                  🇫🇷 FR
+                </Button>
+                <Button
+                  variant={localStorage.getItem('language') === 'en' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    localStorage.setItem('language', 'en');
+                    window.location.reload();
+                  }}
+                >
+                  🇬🇧 EN
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Menu Items */}
         <Card>
           <CardContent className="p-0">
