@@ -3630,128 +3630,89 @@ async def clear_shopping_list(user: dict = Depends(get_current_user)):
 
 @api_router.get("/articles")
 async def get_health_articles(user: dict = Depends(get_current_user)):
-    """Get health and nutrition articles - cached daily"""
+    """Get health and nutrition articles - 10 articles rotating daily"""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    day_of_year = datetime.now(timezone.utc).timetuple().tm_yday
     
-    # Check cache first
-    cached = await db.articles_cache.find_one({"date": today}, {"_id": 0})
-    if cached and cached.get("articles"):
-        return {"articles": cached["articles"]}
-    
-    # Generate articles (simulated - in production, would fetch from news APIs)
-    articles = [
-        {
-            "id": f"art_{today}_1",
-            "title": "10 aliments brûle-graisses à intégrer dans votre alimentation",
-            "summary": "Découvrez les aliments qui accélèrent naturellement votre métabolisme et favorisent la perte de poids.",
-            "category": "nutrition",
-            "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400",
-            "source": "Santé Magazine",
-            "date": today,
-            "read_time": "4 min",
-            "content": """Les aliments brûle-graisses sont vos alliés minceur ! Voici les 10 meilleurs :
-
-1. **Le pamplemousse** - Riche en fibres et en vitamine C, il aide à réguler la glycémie.
-
-2. **Le thé vert** - Ses catéchines stimulent le métabolisme et l'oxydation des graisses.
-
-3. **Les épinards** - Très peu caloriques mais riches en nutriments essentiels.
-
-4. **Le saumon** - Ses oméga-3 favorisent la combustion des graisses.
-
-5. **Les œufs** - Riches en protéines, ils augmentent la satiété.
-
-6. **Le poivron** - La capsaïcine qu'il contient booste le métabolisme.
-
-7. **L'avocat** - Ses bonnes graisses aident à contrôler l'appétit.
-
-8. **Les baies** - Faibles en calories et riches en antioxydants.
-
-9. **Le brocoli** - Excellent ratio nutriments/calories.
-
-10. **La cannelle** - Aide à réguler la glycémie et réduit les envies de sucre.
-
-**Conseil** : Intégrez ces aliments progressivement dans vos repas quotidiens pour des résultats durables."""
-        },
-        {
-            "id": f"art_{today}_2",
-            "title": "Chirurgie bariatrique : ce qu'il faut savoir avant de se lancer",
-            "summary": "Bypass, sleeve : comprendre les différentes options et leurs implications sur votre santé.",
-            "category": "santé",
-            "image": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=400",
-            "source": "Le Figaro Santé",
-            "date": today,
-            "read_time": "6 min",
-            "content": """La chirurgie bariatrique est une solution pour l'obésité sévère quand les autres méthodes ont échoué.
-
-**Les principales interventions :**
-
-🔹 **La Sleeve gastrectomie**
-- Réduction de l'estomac de 75%
-- Perte de poids moyenne : 60% de l'excès de poids
-- Intervention irréversible
-
-🔹 **Le Bypass gastrique**
-- Court-circuit de l'estomac et d'une partie de l'intestin
-- Perte de poids moyenne : 70% de l'excès de poids
-- Nécessite un suivi nutritionnel strict
-
-**Critères d'éligibilité :**
-- IMC supérieur à 40
-- Ou IMC supérieur à 35 avec comorbidités (diabète, apnée du sommeil...)
-- Échec des régimes sur plusieurs années
-
-**Suivi post-opératoire essentiel :**
-- Consultations régulières
-- Supplémentation en vitamines
-- Adaptation progressive de l'alimentation
-- Activité physique régulière
-
-Consultez toujours un spécialiste avant de prendre une décision."""
-        },
-        {
-            "id": f"art_{today}_3",
-            "title": "5 exercices pour perdre du ventre à faire chez soi",
-            "summary": "Un programme simple et efficace pour tonifier votre ceinture abdominale sans équipement.",
-            "category": "fitness",
-            "image": "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400",
-            "source": "Doctissimo",
-            "date": today,
-            "read_time": "5 min",
-            "content": """Perdre du ventre demande de la régularité. Voici 5 exercices efficaces :
-
-**1. La planche (30 sec à 1 min)**
-Position de pompe, corps aligné, gainé. Maintenez la position.
-
-**2. Les crunchs (3x15 répétitions)**
-Allongé sur le dos, jambes pliées, montez le buste en contractant les abdos.
-
-**3. Le mountain climber (3x30 sec)**
-En position de planche, ramenez alternativement les genoux vers la poitrine.
-
-**4. Le gainage latéral (30 sec chaque côté)**
-Sur le côté, corps aligné, soulevez les hanches.
-
-**5. Le bicycle crunch (3x20 répétitions)**
-Allongé, simulez le pédalage en touchant coude/genou opposé.
-
-**Programme suggéré :**
-- 3 à 4 séances par semaine
-- Repos de 30 secondes entre chaque exercice
-- Augmentez progressivement la durée
-
-**Important** : Ces exercices tonifient mais ne font pas "fondre" la graisse localement. Associez-les à une alimentation équilibrée et du cardio pour des résultats optimaux."""
-        }
+    # Large pool of articles
+    all_articles = [
+        # Nutrition
+        {"title": "10 aliments brûle-graisses à intégrer", "summary": "Découvrez les aliments qui accélèrent votre métabolisme.", "category": "nutrition", "source": "Santé Magazine", "read_time": "4 min"},
+        {"title": "Les super-aliments : mythe ou réalité ?", "summary": "Analyse scientifique des aliments dits 'miracles'.", "category": "nutrition", "source": "Le Figaro Santé", "read_time": "5 min"},
+        {"title": "Comment manger équilibré avec un petit budget", "summary": "Conseils pratiques pour une alimentation saine et économique.", "category": "nutrition", "source": "Femme Actuelle", "read_time": "6 min"},
+        {"title": "Les protéines végétales : le guide complet", "summary": "Tout savoir sur les alternatives aux protéines animales.", "category": "nutrition", "source": "Bio Magazine", "read_time": "7 min"},
+        {"title": "Sucres cachés : où se trouvent-ils ?", "summary": "Apprenez à repérer les sucres ajoutés dans vos aliments.", "category": "nutrition", "source": "Top Santé", "read_time": "4 min"},
+        {"title": "Les bienfaits du jeûne intermittent", "summary": "Ce que dit la science sur cette pratique alimentaire.", "category": "nutrition", "source": "Doctissimo", "read_time": "6 min"},
+        {"title": "Microbiote : l'intestin, notre deuxième cerveau", "summary": "Comment prendre soin de sa flore intestinale.", "category": "nutrition", "source": "Science & Vie", "read_time": "8 min"},
+        
+        # Santé
+        {"title": "Chirurgie bariatrique : tout savoir", "summary": "Bypass, sleeve : comprendre les options disponibles.", "category": "santé", "source": "Le Monde Santé", "read_time": "7 min"},
+        {"title": "Diabète de type 2 : prévention et gestion", "summary": "Comment réduire les risques par l'alimentation.", "category": "santé", "source": "Santé Magazine", "read_time": "5 min"},
+        {"title": "L'impact du sommeil sur le poids", "summary": "Pourquoi bien dormir aide à maintenir un poids sain.", "category": "santé", "source": "Top Santé", "read_time": "4 min"},
+        {"title": "Stress et prise de poids : le lien", "summary": "Comment le cortisol influence votre silhouette.", "category": "santé", "source": "Psychologies", "read_time": "5 min"},
+        {"title": "Hypertension : alimentation et conseils", "summary": "Les habitudes alimentaires qui protègent votre cœur.", "category": "santé", "source": "Le Figaro Santé", "read_time": "6 min"},
+        
+        # Fitness
+        {"title": "5 exercices pour perdre du ventre à la maison", "summary": "Programme simple pour tonifier votre ceinture abdominale.", "category": "fitness", "source": "Doctissimo", "read_time": "5 min"},
+        {"title": "HIIT : pourquoi c'est efficace", "summary": "Les avantages de l'entraînement par intervalles.", "category": "fitness", "source": "Men's Health", "read_time": "4 min"},
+        {"title": "La marche : sous-estimée mais efficace", "summary": "10 000 pas par jour : bénéfices réels pour la santé.", "category": "fitness", "source": "Santé Magazine", "read_time": "4 min"},
+        {"title": "Yoga et perte de poids : ça fonctionne ?", "summary": "Comment le yoga peut aider dans votre parcours minceur.", "category": "fitness", "source": "Yoga Journal", "read_time": "5 min"},
+        {"title": "Musculation et métabolisme", "summary": "Comment les muscles brûlent des calories au repos.", "category": "fitness", "source": "Sport Magazine", "read_time": "5 min"},
+        
+        # Lifestyle
+        {"title": "Meal prep : organiser ses repas de la semaine", "summary": "Gagner du temps tout en mangeant sainement.", "category": "lifestyle", "source": "Femme Actuelle", "read_time": "6 min"},
+        {"title": "Applications nutrition : lesquelles choisir ?", "summary": "Comparatif des meilleures apps pour suivre son alimentation.", "category": "lifestyle", "source": "Tech Santé", "read_time": "5 min"},
+        {"title": "Manger en pleine conscience", "summary": "Les bienfaits de l'alimentation intuitive.", "category": "lifestyle", "source": "Psychologies", "read_time": "4 min"},
+        {"title": "Recettes healthy pour la semaine", "summary": "7 idées de plats équilibrés et savoureux.", "category": "lifestyle", "source": "Cuisine Actuelle", "read_time": "6 min"},
+        {"title": "Comment lire une étiquette nutritionnelle", "summary": "Décrypter les informations sur vos produits.", "category": "lifestyle", "source": "60 Millions", "read_time": "4 min"},
+        
+        # Bariatrique
+        {"title": "Après la sleeve : adaptation alimentaire", "summary": "Guide des premières semaines post-opératoires.", "category": "bariatrique", "source": "Obésité Info", "read_time": "7 min"},
+        {"title": "Bypass : les carences à surveiller", "summary": "Vitamines et minéraux essentiels après l'opération.", "category": "bariatrique", "source": "Chirurgie Santé", "read_time": "6 min"},
+        {"title": "Témoignage : ma vie après le bypass", "summary": "Histoire inspirante d'une transformation.", "category": "bariatrique", "source": "Santé Magazine", "read_time": "8 min"},
+        {"title": "Sport après chirurgie bariatrique", "summary": "Reprendre l'activité physique en toute sécurité.", "category": "bariatrique", "source": "Sport Santé", "read_time": "5 min"},
     ]
     
-    # Cache for today
-    await db.articles_cache.update_one(
-        {"date": today},
-        {"$set": {"articles": articles, "created_at": datetime.now(timezone.utc).isoformat()}},
-        upsert=True
-    )
+    # Shuffle based on day of year for daily rotation
+    import random as rnd
+    rnd.seed(day_of_year * 100)
+    shuffled = all_articles.copy()
+    rnd.shuffle(shuffled)
     
-    return {"articles": articles}
+    # Select 10 articles and add metadata
+    selected = []
+    images = [
+        "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400",
+        "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=400",
+        "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400",
+        "https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=400",
+        "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400",
+        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400",
+        "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400",
+        "https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=400",
+        "https://images.unsplash.com/photo-1493770348161-369560ae357d?w=400",
+        "https://images.unsplash.com/photo-1547592180-85f173990554?w=400",
+    ]
+    
+    categories_order = ["nutrition", "santé", "fitness", "lifestyle", "bariatrique"]
+    
+    for i, article in enumerate(shuffled[:10]):
+        selected.append({
+            "id": f"art_{today}_{i}",
+            "title": article["title"],
+            "summary": article["summary"],
+            "category": article["category"],
+            "image": images[i % len(images)],
+            "source": article["source"],
+            "date": (datetime.now(timezone.utc) - timedelta(hours=i*2)).strftime("%Y-%m-%d"),
+            "read_time": article["read_time"],
+            "published_at": (datetime.now(timezone.utc) - timedelta(hours=i*2)).isoformat()
+        })
+    
+    # Sort by category then by most recent
+    selected.sort(key=lambda x: (categories_order.index(x["category"]) if x["category"] in categories_order else 99))
+    
+    return {"articles": selected, "total": len(selected), "date": today}
 
 # ==================== DAILY RECIPES (RECETTES DU JOUR) ====================
 
