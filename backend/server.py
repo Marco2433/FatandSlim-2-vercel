@@ -4136,39 +4136,53 @@ async def toggle_favorite_video(data: dict, user: dict = Depends(get_current_use
 
 @api_router.post("/workouts/add-to-agenda")
 async def add_workout_to_agenda(data: dict, user: dict = Depends(get_current_user)):
-    """Add a workout video to user's agenda"""
+    """Add a workout video to user's agenda (appointments collection)"""
     video_data = data.get("video_data", {})
-    scheduled_date = data.get("scheduled_date")
+    scheduled_date = data.get("scheduled_date") or datetime.now(timezone.utc).strftime("%Y-%m-%d")
     
-    event = {
-        "event_id": f"workout_{uuid.uuid4().hex[:8]}",
+    # Create appointment in the same collection as dashboard appointments
+    appointment = {
+        "appointment_id": f"workout_{uuid.uuid4().hex[:8]}",
         "user_id": user["user_id"],
         "title": f"🏋️ {video_data.get('title', 'Entraînement')}",
         "description": f"Durée: {video_data.get('duration', '30:00')} - Calories: ~{video_data.get('calories_estimate', 200)} kcal",
-        "date": scheduled_date or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "date": scheduled_date,
+        "time": "09:00",
         "type": "workout",
+        "location": "",
+        "notes": f"Catégorie: {video_data.get('category_name', 'Fitness')}",
+        "pinned": False,
         "video_id": video_data.get("id"),
         "video_data": video_data,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
-    await db.agenda_events.insert_one({**event, "_id": None})
-    return {"message": "Entraînement ajouté à l'agenda", "event": event}
+    await db.appointments.insert_one({**appointment, "_id": None})
+    return {"message": "Entraînement ajouté à l'agenda", "appointment": appointment}
 
 @api_router.post("/workouts/share")
 async def share_workout_to_feed(data: dict, user: dict = Depends(get_current_user)):
-    """Share a completed workout to the social feed"""
+    """Share a completed workout to the social feed (public or group wall)"""
     video_data = data.get("video_data", {})
     calories_burned = data.get("calories_burned", video_data.get("calories_estimate", 200))
+    target_wall = data.get("target_wall", "public")  # "public" or group_id
+    
+    # Get user profile for post
+    profile = await db.profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    user_name = profile.get("name", user.get("name", "Utilisateur")) if profile else user.get("name", "Utilisateur")
     
     # Create a social post
     post = {
         "post_id": f"post_{uuid.uuid4().hex[:8]}",
         "user_id": user["user_id"],
+        "user_name": user_name,
+        "user_picture": profile.get("picture") if profile else None,
         "content": f"💪 Je viens de terminer : {video_data.get('title', 'un entraînement')} !\n\n🔥 {calories_burned} calories brûlées\n⏱️ Durée : {video_data.get('duration', '30 min')}\n\n#FatAndSlim #Fitness #Motivation",
         "type": "workout_share",
         "video_data": video_data,
         "calories_burned": calories_burned,
+        "target_wall": target_wall,
+        "group_id": target_wall if target_wall != "public" else None,
         "likes": [],
         "comments": [],
         "created_at": datetime.now(timezone.utc).isoformat()
@@ -4182,7 +4196,7 @@ async def share_workout_to_feed(data: dict, user: dict = Depends(get_current_use
         {"$inc": {"points": 10}}
     )
     
-    return {"message": "Entraînement partagé sur votre mur !", "post": post, "points_earned": 10}
+    return {"message": "Entraînement partagé !", "post": post, "points_earned": 10}
 
 @api_router.post("/workouts/complete")
 async def complete_workout(data: dict, user: dict = Depends(get_current_user)):
