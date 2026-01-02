@@ -652,6 +652,65 @@ export default function WorkoutsPage() {
             )}
           </TabsContent>
 
+          {/* Favorites Tab */}
+          <TabsContent value="favorites" className="space-y-4 mt-4">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Star className="w-5 h-5 text-yellow-500" />
+              Mes vidéos favorites ({favorites.length})
+            </h3>
+            
+            {favorites.length === 0 ? (
+              <Card className="p-8 text-center">
+                <Star className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
+                <p className="text-muted-foreground">Aucune vidéo favorite</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Cliquez sur l'étoile d'une vidéo pour l'ajouter ici
+                </p>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {videos.filter(v => favorites.includes(v.id)).map((video) => (
+                  <Card 
+                    key={video.id}
+                    className="cursor-pointer transition-all hover:border-primary/50 border-yellow-500/30"
+                    onClick={() => setPlayingVideo(video)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex gap-3">
+                        <div 
+                          className="relative flex-shrink-0 w-32 h-20 rounded-lg flex items-center justify-center"
+                          style={{
+                            background: `linear-gradient(135deg, ${video.category_color || '#6366f1'} 0%, ${video.category_color || '#6366f1'}99 100%)`
+                          }}
+                        >
+                          <span className="text-3xl">{video.category_icon || '🏋️'}</span>
+                          <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/80 rounded text-xs text-white">
+                            {video.duration}
+                          </div>
+                          <Star className="absolute top-1 right-1 w-4 h-4 text-yellow-400 fill-yellow-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm line-clamp-2">{video.title}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className={`text-xs ${DIFFICULTY_LABELS[video.level]?.color}`}>
+                              {DIFFICULTY_LABELS[video.level]?.label}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            ~{video.calories_estimate || video.duration_minutes * 10} kcal
+                          </p>
+                        </div>
+                        <Button variant="ghost" size="icon" className="self-center">
+                          <Play className="w-5 h-5" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
           {/* Programs Tab */}
           <TabsContent value="programs" className="space-y-4 mt-4">
             <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/30">
