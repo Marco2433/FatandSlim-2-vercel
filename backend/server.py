@@ -7640,6 +7640,65 @@ async def leave_group(data: dict, user: dict = Depends(get_current_user)):
     
     return {"message": "Left group"}
 
+@api_router.get("/social/user-groups")
+async def get_user_groups(user: dict = Depends(get_current_user)):
+    """Get only groups where user is a member (for share dialogs)"""
+    user_memberships = await db.group_members.find({"user_id": user["user_id"]}, {"_id": 0}).to_list(50)
+    user_group_ids = [m["group_id"] for m in user_memberships]
+    
+    if not user_group_ids:
+        return {"groups": []}
+    
+    groups = await db.groups.find({"group_id": {"$in": user_group_ids}}, {"_id": 0}).to_list(50)
+    return {"groups": groups}
+
+@api_router.post("/social/share-achievement")
+async def share_achievement(data: dict, user: dict = Depends(get_current_user)):
+    """Share a challenge completion or badge to community walls"""
+    achievement_type = data.get("type")  # "challenge" or "badge"
+    achievement_data = data.get("data", {})
+    target_wall = data.get("target_wall", "public")  # "public" or group_id
+    
+    # Get user profile
+    profile = await db.profiles.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    user_name = profile.get("name", user.get("name", "Utilisateur")) if profile else user.get("name", "Utilisateur")
+    
+    # Create post content based on achievement type
+    if achievement_type == "challenge":
+        content = f"🎯 Défi accompli : {achievement_data.get('title', 'Défi du jour')} !\n\n✅ {achievement_data.get('description', '')}\n\n#DéfiRéussi #FatAndSlim #Motivation"
+        post_type = "challenge_share"
+    elif achievement_type == "badge":
+        content = f"🏆 Nouveau badge obtenu : {achievement_data.get('name', 'Badge')} !\n\n{achievement_data.get('icon', '🌟')} {achievement_data.get('description', '')}\n\n#Badge #FatAndSlim #Achievement"
+        post_type = "badge_share"
+    else:
+        content = f"🌟 {achievement_data.get('title', 'Accomplissement')} !\n\n{achievement_data.get('description', '')}"
+        post_type = "achievement_share"
+    
+    post = {
+        "post_id": f"post_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "user_name": user_name,
+        "user_picture": profile.get("picture") if profile else None,
+        "content": content,
+        "type": post_type,
+        "achievement_data": achievement_data,
+        "target_wall": target_wall,
+        "group_id": target_wall if target_wall != "public" else None,
+        "likes": [],
+        "comments": [],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.social_posts.insert_one({**post, "_id": None})
+    
+    # Award points
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$inc": {"points": 15}}
+    )
+    
+    return {"message": "Partagé avec succès !", "post": post, "points_earned": 15}
+
 # Initialize default groups on startup
 async def init_default_groups():
     """Create default community groups if they don't exist"""
