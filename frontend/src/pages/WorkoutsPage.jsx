@@ -260,6 +260,76 @@ export default function WorkoutsPage() {
     }
   };
 
+  const loadFavorites = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/workouts/favorites`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true
+      });
+      setFavorites(response.data?.map(f => f.video_id) || []);
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (video) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API}/workouts/favorites`, {
+        video_id: video.id,
+        video_data: video
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true
+      });
+      
+      if (response.data.is_favorite) {
+        setFavorites([...favorites, video.id]);
+        toast.success('Ajouté aux favoris ⭐');
+      } else {
+        setFavorites(favorites.filter(id => id !== video.id));
+        toast.info('Retiré des favoris');
+      }
+    } catch (error) {
+      toast.error('Erreur lors de la mise à jour des favoris');
+    }
+  };
+
+  const addToAgenda = async (video, date) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/workouts/add-to-agenda`, {
+        video_data: video,
+        scheduled_date: date
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true
+      });
+      toast.success('Ajouté à l\'agenda 📅');
+      setShowAddToAgenda(false);
+      setAgendaDate('');
+    } catch (error) {
+      toast.error('Erreur lors de l\'ajout à l\'agenda');
+    }
+  };
+
+  const shareWorkout = async (video, caloriesBurned) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/workouts/share`, {
+        video_data: video,
+        calories_burned: caloriesBurned
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true
+      });
+      toast.success('Partagé sur votre mur ! +10 points 🎉');
+    } catch (error) {
+      toast.error('Erreur lors du partage');
+    }
+  };
+
   const getMockVideos = () => {
     // Fallback videos avec données locales - pas d'URLs externes
     const categories = [
