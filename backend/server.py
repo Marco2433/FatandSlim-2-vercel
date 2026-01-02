@@ -3789,8 +3789,10 @@ async def get_all_recipes_endpoint(
     limit: int = 100,
     offset: int = 0
 ):
-    """Get all available recipes with filtering"""
-    recipes = SAMPLE_RECIPES.copy()
+    """Get all available recipes with filtering - using VERIFIED database"""
+    from recipes_database import VERIFIED_RECIPES
+    
+    recipes = VERIFIED_RECIPES.copy()
     
     # Filter by nutri_score
     if nutri_score:
