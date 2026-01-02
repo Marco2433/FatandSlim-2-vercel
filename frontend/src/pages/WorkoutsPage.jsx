@@ -224,7 +224,11 @@ export default function WorkoutsPage() {
   }, []);
 
   useEffect(() => {
-    fetchVideos();
+    if (videoCategory === 'favorites') {
+      // Don't fetch from API, just show favorites
+    } else {
+      fetchVideos();
+    }
   }, [videoCategory]);
 
   const fetchData = async () => {
