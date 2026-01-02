@@ -50,6 +50,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 // Video categories - 20 catégories complètes
 const VIDEO_CATEGORIES = [
   { id: 'all', label: 'Toutes', icon: Video },
+  { id: 'favorites', label: 'Favoris', icon: Star },
   { id: 'home', label: 'Maison', icon: Home },
   { id: 'gym', label: 'Salle', icon: Building2 },
   { id: 'cardio', label: 'Cardio', icon: Heart },
