@@ -455,6 +455,217 @@ class FatSlimAPITester:
         success, response, details = self.test_endpoint('GET', 'challenges', 200)
         self.log_test("Get Challenges", success, details)
 
+    def test_specific_review_endpoints(self):
+        """Test the specific endpoints mentioned in the review request"""
+        print("\n🎯 Testing Specific Review Request Endpoints...")
+        
+        # 1. Test Workouts Add to Agenda - POST /api/workouts/add-to-agenda
+        print("\n📅 Testing Workouts Add to Agenda...")
+        workout_agenda_data = {
+            "video_data": {
+                "id": "workout_123",
+                "title": "HIIT Cardio Intense",
+                "duration": "25:00",
+                "calories_estimate": 300,
+                "category_name": "Cardio"
+            },
+            "scheduled_date": "2024-01-15"
+        }
+        
+        success, response, details = self.test_endpoint(
+            'POST', 'workouts/add-to-agenda', 200,
+            data=workout_agenda_data
+        )
+        
+        # Verify response structure
+        if success and response:
+            has_message = 'message' in response
+            has_appointment = 'appointment' in response
+            appointment = response.get('appointment', {})
+            
+            # Check appointment structure
+            required_fields = ['appointment_id', 'user_id', 'title', 'description', 'date', 'type', 'video_data']
+            appointment_valid = all(field in appointment for field in required_fields)
+            
+            self.log_test("Add to Agenda - Response Structure", has_message and has_appointment, 
+                         f"Has message: {has_message}, Has appointment: {has_appointment}")
+            self.log_test("Add to Agenda - Appointment Fields", appointment_valid, 
+                         f"Missing fields: {[f for f in required_fields if f not in appointment]}")
+            
+            # Verify appointment type is 'workout'
+            is_workout_type = appointment.get('type') == 'workout'
+            self.log_test("Add to Agenda - Workout Type", is_workout_type, 
+                         f"Type: {appointment.get('type')}")
+        
+        self.log_test("Workouts Add to Agenda", success, details)
+        
+        # 2. Test Workouts Share - POST /api/workouts/share
+        print("\n📢 Testing Workouts Share...")
+        workout_share_data = {
+            "video_data": {
+                "id": "workout_456",
+                "title": "Yoga Flow Débutant",
+                "duration": "30:00",
+                "calories_estimate": 150
+            },
+            "calories_burned": 180,
+            "target_wall": "public"
+        }
+        
+        success, response, details = self.test_endpoint(
+            'POST', 'workouts/share', 200,
+            data=workout_share_data
+        )
+        
+        # Verify response structure
+        if success and response:
+            has_message = 'message' in response
+            has_post = 'post' in response
+            has_points = 'points_earned' in response
+            post = response.get('post', {})
+            
+            # Check post structure
+            required_fields = ['post_id', 'user_id', 'content', 'type', 'video_data', 'target_wall']
+            post_valid = all(field in post for field in required_fields)
+            
+            self.log_test("Workout Share - Response Structure", has_message and has_post and has_points, 
+                         f"Has message: {has_message}, Has post: {has_post}, Has points: {has_points}")
+            self.log_test("Workout Share - Post Fields", post_valid, 
+                         f"Missing fields: {[f for f in required_fields if f not in post]}")
+            
+            # Verify post type and target wall
+            is_workout_share = post.get('type') == 'workout_share'
+            correct_target = post.get('target_wall') == 'public'
+            self.log_test("Workout Share - Post Type", is_workout_share, 
+                         f"Type: {post.get('type')}")
+            self.log_test("Workout Share - Target Wall", correct_target, 
+                         f"Target: {post.get('target_wall')}")
+        
+        self.log_test("Workouts Share", success, details)
+        
+        # 3. Test User Groups - GET /api/social/user-groups
+        print("\n👥 Testing User Groups...")
+        success, response, details = self.test_endpoint('GET', 'social/user-groups', 200)
+        
+        # Verify response structure
+        if success and response:
+            has_groups = 'groups' in response
+            groups = response.get('groups', [])
+            is_list = isinstance(groups, list)
+            
+            self.log_test("User Groups - Response Structure", has_groups, 
+                         f"Response keys: {list(response.keys())}")
+            self.log_test("User Groups - Groups List", is_list, 
+                         f"Groups type: {type(groups)}, Count: {len(groups) if is_list else 'N/A'}")
+        
+        self.log_test("User Groups", success, details)
+        
+        # 4. Test Share Achievement - POST /api/social/share-achievement
+        print("\n🏆 Testing Share Achievement...")
+        
+        # Test with challenge achievement
+        challenge_data = {
+            "type": "challenge",
+            "data": {
+                "title": "Défi 7 jours cardio",
+                "description": "Complété avec succès !"
+            },
+            "target_wall": "public"
+        }
+        
+        success, response, details = self.test_endpoint(
+            'POST', 'social/share-achievement', 200,
+            data=challenge_data
+        )
+        
+        # Verify response structure
+        if success and response:
+            has_message = 'message' in response
+            has_post = 'post' in response
+            has_points = 'points_earned' in response
+            post = response.get('post', {})
+            
+            # Check post structure
+            required_fields = ['post_id', 'user_id', 'content', 'type', 'achievement_data', 'target_wall']
+            post_valid = all(field in post for field in required_fields)
+            
+            self.log_test("Share Achievement - Response Structure", has_message and has_post and has_points, 
+                         f"Has message: {has_message}, Has post: {has_post}, Has points: {has_points}")
+            self.log_test("Share Achievement - Post Fields", post_valid, 
+                         f"Missing fields: {[f for f in required_fields if f not in post]}")
+            
+            # Verify post type for challenge
+            is_challenge_share = post.get('type') == 'challenge_share'
+            self.log_test("Share Achievement - Challenge Type", is_challenge_share, 
+                         f"Type: {post.get('type')}")
+        
+        self.log_test("Share Achievement (Challenge)", success, details)
+        
+        # Test with badge achievement
+        badge_data = {
+            "type": "badge",
+            "data": {
+                "name": "Première semaine",
+                "description": "7 jours d'activité consécutifs",
+                "icon": "🌟"
+            },
+            "target_wall": "public"
+        }
+        
+        success, response, details = self.test_endpoint(
+            'POST', 'social/share-achievement', 200,
+            data=badge_data
+        )
+        
+        # Verify badge share type
+        if success and response:
+            post = response.get('post', {})
+            is_badge_share = post.get('type') == 'badge_share'
+            self.log_test("Share Achievement - Badge Type", is_badge_share, 
+                         f"Type: {post.get('type')}")
+        
+        self.log_test("Share Achievement (Badge)", success, details)
+        
+        # 5. Test Articles - GET /api/articles
+        print("\n📰 Testing Articles...")
+        success, response, details = self.test_endpoint('GET', 'articles', 200)
+        
+        # Verify response structure
+        if success and response:
+            has_articles = 'articles' in response
+            has_total = 'total' in response
+            has_date = 'date' in response
+            has_day_seed = 'day_seed' in response
+            
+            articles = response.get('articles', [])
+            total = response.get('total', 0)
+            
+            # Check if we have 10 articles
+            has_ten_articles = len(articles) == 10 and total == 10
+            
+            # Check article structure
+            article_valid = True
+            if articles:
+                first_article = articles[0]
+                required_fields = ['title', 'summary', 'category', 'source', 'read_time', 'content']
+                article_valid = all(field in first_article for field in required_fields)
+            
+            self.log_test("Articles - Response Structure", has_articles and has_total and has_date and has_day_seed, 
+                         f"Response keys: {list(response.keys())}")
+            self.log_test("Articles - Count (10 articles)", has_ten_articles, 
+                         f"Articles count: {len(articles)}, Total: {total}")
+            self.log_test("Articles - Article Fields", article_valid, 
+                         f"First article fields: {list(first_article.keys()) if articles else 'No articles'}")
+            
+            # Check categories are present
+            if articles:
+                categories = set(article.get('category') for article in articles)
+                has_categories = len(categories) > 1
+                self.log_test("Articles - Multiple Categories", has_categories, 
+                             f"Categories found: {list(categories)}")
+        
+        self.log_test("Articles Endpoint", success, details)
+
     def test_new_features_endpoints(self):
         """Test the new features requested in the review"""
         print("\n🆕 Testing New Features (Review Request)...")
