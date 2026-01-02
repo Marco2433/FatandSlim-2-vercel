@@ -142,6 +142,7 @@ export default function DashboardPage() {
     fetchDashboardData();
     fetchUserStats();
     fetchAppointments();
+    checkBariatricReminder();
     
     // Show recommendation after 45 minutes of first load
     const initialTimeout = setTimeout(() => {
@@ -150,6 +151,38 @@ export default function DashboardPage() {
     
     return () => clearTimeout(initialTimeout);
   }, []);
+
+  // Check for bariatric daily reminder
+  const checkBariatricReminder = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/bariatric/daily-reminder`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true
+      });
+      
+      if (response.data.show_reminder && !sessionStorage.getItem('bariatricReminderShown')) {
+        setBariatricReminderData(response.data);
+        setShowBariatricReminder(true);
+      }
+    } catch (error) {
+      // User might not have bariatric profile - that's OK
+    }
+  };
+
+  const dismissBariatricReminder = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/bariatric/dismiss-reminder`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true
+      });
+      sessionStorage.setItem('bariatricReminderShown', 'true');
+      setShowBariatricReminder(false);
+    } catch (error) {
+      setShowBariatricReminder(false);
+    }
+  };
 
   // Show today's appointments alert on load
   useEffect(() => {
