@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -2082,8 +2083,8 @@ export default function NutritionPage() {
                   <span>•</span>
                   <span>{selectedArticle.read_time}</span>
                 </div>
-                <div className="prose prose-sm dark:prose-invert whitespace-pre-wrap text-sm">
-                  {selectedArticle.content}
+                <div className="prose prose-sm dark:prose-invert max-w-none text-sm [&>p]:mb-3 [&>ul]:mb-3 [&>ol]:mb-3 [&_strong]:text-primary [&_li]:ml-4">
+                  <ReactMarkdown>{selectedArticle.content}</ReactMarkdown>
                 </div>
                 <DialogFooter className="flex-row gap-2">
                   <Button variant="outline" className="flex-1" onClick={() => setShowArticleDialog(false)}>
