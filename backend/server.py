@@ -2334,11 +2334,11 @@ You MUST respond with a valid JSON object containing these exact fields:
     "sugar": <number in grams>,
     "sodium": <number in mg>,
     "nutri_score": "<A, B, C, D, or E>",
-    "serving_size": "estimated portion size",
-    "health_tips": ["tip1", "tip2"],
-    "ingredients_detected": ["ingredient1", "ingredient2"],
+    "serving_size": "estimated portion size in French",
+    "health_tips": ["conseil santé 1 en français", "conseil santé 2 en français"],
+    "ingredients_detected": ["ingrédient1 en français", "ingrédient2 en français"],
     "is_healthy": <true or false>,
-    "warnings": ["warning if applicable for user's health conditions"]
+    "warnings": ["avertissement en français si applicable pour les conditions de santé de l'utilisateur"]
 }}
 
 Nutri-Score guidelines:
