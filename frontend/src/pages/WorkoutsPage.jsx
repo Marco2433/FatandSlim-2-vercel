@@ -220,6 +220,7 @@ export default function WorkoutsPage() {
     fetchVideos();
     loadWatchedVideos();
     loadFavorites();
+    loadUserGroups();
   }, []);
 
   useEffect(() => {
