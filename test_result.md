@@ -47,7 +47,69 @@ backend:
         agent: "testing"
         comment: "✅ POST /api/social/share-achievement endpoint working correctly. Supports both challenge and badge types. Creates social posts with proper type (challenge_share or badge_share). Returns message, post object, and points_earned (15 points). Fixed ObjectId serialization issue."
 
-  - task: "Articles Daily Rotation"
+  - task: "Articles Daily Rotation with Full Content"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ GET /api/articles endpoint working. Returns 10 articles with full markdown content."
+      - working: true
+        agent: "main"
+        comment: "Added ReactMarkdown for proper content rendering in NutritionPage.jsx"
+
+  - task: "Auth Migration for Old Users"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ Enhanced /api/auth/me endpoint to auto-migrate onboarding_completed field for old users by checking user_profiles collection."
+
+  - task: "Language Selector"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/ProfilePage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ Fixed language selector to use LanguageContext instead of direct localStorage. Now uses setLanguage from context for proper React state update."
+
+frontend:
+  - task: "PWA Version Management"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/utils/versionManager.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ Updated to v3.5.0 with DATA_SCHEMA_VERSION 8. Cache clearing mechanism in place."
+
+  - task: "Articles Markdown Display"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/NutritionPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ Added react-markdown for proper article content rendering with styles."
     implemented: true
     working: true
     file: "/app/backend/server.py"
