@@ -4333,7 +4333,7 @@ async def award_video_badge(data: dict, user: dict = Depends(get_current_user)):
         "earned_at": datetime.now(timezone.utc).isoformat()
     }
     
-    await db.badges.insert_one({**badge, "_id": None})
+    await db.badges.insert_one(badge)
     badge.pop("_id", None)
     
     return {"message": "Badge awarded!", "badge": badge}
