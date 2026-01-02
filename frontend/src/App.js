@@ -34,7 +34,11 @@ import BottomNav from "@/components/BottomNav";
 // Initialize version check on app load
 const wasUpdated = initVersionCheck();
 if (wasUpdated) {
-  console.log('[App] Application was updated, cache cleared');
+  console.log(`[App] Application updated to v${getAppVersion()}, cache cleared`);
+  // Force page reload after update to ensure fresh content
+  if (shouldForceRefresh()) {
+    console.log('[App] Force refreshing data from API');
+  }
 }
 
 const ProtectedRoute = ({ children }) => {
