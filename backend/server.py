@@ -4238,7 +4238,9 @@ async def share_workout_to_feed(data: dict, user: dict = Depends(get_current_use
         {"$inc": {"points": 10}}
     )
     
-    return {"message": "Entraînement partagé !", "post": post, "points_earned": 10}
+    # Remove the _id field for JSON serialization
+    post_response = {k: v for k, v in post.items() if k != '_id'}
+    return {"message": "Entraînement partagé !", "post": post_response, "points_earned": 10}
 
 @api_router.post("/workouts/complete")
 async def complete_workout(data: dict, user: dict = Depends(get_current_user)):
