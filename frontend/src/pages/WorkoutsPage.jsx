@@ -926,7 +926,21 @@ export default function WorkoutsPage() {
             </div>
             <DialogTitle className="text-2xl mb-4">Félicitations !</DialogTitle>
             <p className="text-muted-foreground mb-4">{congratsMessage}</p>
-            {earnedBadge && (
+            
+            {/* Calories brûlées */}
+            {earnedBadge?.calories && (
+              <div className="p-4 bg-orange-500/10 rounded-lg mb-4">
+                <div className="flex items-center justify-center gap-2 text-orange-600">
+                  <Flame className="w-6 h-6" />
+                  <span className="text-2xl font-bold">{earnedBadge.calories} kcal</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Total aujourd'hui : {earnedBadge.totalToday || earnedBadge.calories} kcal brûlées
+                </p>
+              </div>
+            )}
+            
+            {earnedBadge?.name && (
               <div className="p-4 bg-primary/10 rounded-lg mb-4">
                 <p className="text-sm text-muted-foreground mb-2">Badge gagné :</p>
                 <div className="flex items-center justify-center gap-2">
@@ -935,9 +949,24 @@ export default function WorkoutsPage() {
                 </div>
               </div>
             )}
-            <Button onClick={() => setShowCongratsDialog(false)} className="w-full">
-              Continuer
-            </Button>
+            
+            {/* Boutons d'action */}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => {
+                  if (playingVideo) shareWorkout(playingVideo, earnedBadge?.calories || 200);
+                  setShowCongratsDialog(false);
+                }}
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Partager
+              </Button>
+              <Button onClick={() => setShowCongratsDialog(false)} className="flex-1">
+                Continuer
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
