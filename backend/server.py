@@ -3987,7 +3987,7 @@ def get_workout_videos_list():
 
 @api_router.get("/workouts/videos")
 async def get_workout_videos(category: Optional[str] = None):
-    """Get workout videos, optionally filtered by category - 400+ real YouTube videos"""
+    """Get workout videos, optionally filtered by category - 1600+ real YouTube videos"""
     videos = get_workout_videos_list()
     
     # Filter by category if provided
@@ -3998,6 +3998,141 @@ async def get_workout_videos(category: Optional[str] = None):
     videos.sort(key=lambda x: x["publishedAt"], reverse=True)
     
     return videos
+
+@api_router.get("/workouts/categories")
+async def get_workout_categories():
+    """Get all available workout categories"""
+    from utils.youtube_videos import get_categories
+    return get_categories()
+
+@api_router.get("/workouts/favorites")
+async def get_favorite_videos(user: dict = Depends(get_current_user)):
+    """Get user's favorite workout videos"""
+    favorites = await db.workout_favorites.find({"user_id": user["user_id"]}, {"_id": 0}).to_list(1000)
+    return favorites
+
+@api_router.post("/workouts/favorites")
+async def toggle_favorite_video(data: dict, user: dict = Depends(get_current_user)):
+    """Add or remove a video from favorites"""
+    video_id = data.get("video_id")
+    video_data = data.get("video_data", {})
+    
+    existing = await db.workout_favorites.find_one({"user_id": user["user_id"], "video_id": video_id})
+    
+    if existing:
+        await db.workout_favorites.delete_one({"user_id": user["user_id"], "video_id": video_id})
+        return {"action": "removed", "is_favorite": False}
+    else:
+        await db.workout_favorites.insert_one({
+            "user_id": user["user_id"],
+            "video_id": video_id,
+            "video_data": video_data,
+            "added_at": datetime.now(timezone.utc).isoformat()
+        })
+        return {"action": "added", "is_favorite": True}
+
+@api_router.post("/workouts/add-to-agenda")
+async def add_workout_to_agenda(data: dict, user: dict = Depends(get_current_user)):
+    """Add a workout video to user's agenda"""
+    video_data = data.get("video_data", {})
+    scheduled_date = data.get("scheduled_date")
+    
+    event = {
+        "event_id": f"workout_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "title": f"🏋️ {video_data.get('title', 'Entraînement')}",
+        "description": f"Durée: {video_data.get('duration', '30:00')} - Calories: ~{video_data.get('calories_estimate', 200)} kcal",
+        "date": scheduled_date or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "type": "workout",
+        "video_id": video_data.get("id"),
+        "video_data": video_data,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.agenda_events.insert_one({**event, "_id": None})
+    return {"message": "Entraînement ajouté à l'agenda", "event": event}
+
+@api_router.post("/workouts/share")
+async def share_workout_to_feed(data: dict, user: dict = Depends(get_current_user)):
+    """Share a completed workout to the social feed"""
+    video_data = data.get("video_data", {})
+    calories_burned = data.get("calories_burned", video_data.get("calories_estimate", 200))
+    
+    # Create a social post
+    post = {
+        "post_id": f"post_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "content": f"💪 Je viens de terminer : {video_data.get('title', 'un entraînement')} !\n\n🔥 {calories_burned} calories brûlées\n⏱️ Durée : {video_data.get('duration', '30 min')}\n\n#FatAndSlim #Fitness #Motivation",
+        "type": "workout_share",
+        "video_data": video_data,
+        "calories_burned": calories_burned,
+        "likes": [],
+        "comments": [],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.social_posts.insert_one({**post, "_id": None})
+    
+    # Award points
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$inc": {"points": 10}}
+    )
+    
+    return {"message": "Entraînement partagé sur votre mur !", "post": post, "points_earned": 10}
+
+@api_router.post("/workouts/complete")
+async def complete_workout(data: dict, user: dict = Depends(get_current_user)):
+    """Mark a workout as complete and update calories burned"""
+    video_data = data.get("video_data", {})
+    calories_burned = data.get("calories_burned", video_data.get("calories_estimate", 200))
+    
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Log the workout
+    workout_log = {
+        "log_id": f"wlog_{uuid.uuid4().hex[:8]}",
+        "user_id": user["user_id"],
+        "video_id": video_data.get("id"),
+        "video_title": video_data.get("title"),
+        "category": video_data.get("category"),
+        "duration_minutes": video_data.get("duration_minutes", 30),
+        "calories_burned": calories_burned,
+        "completed_at": datetime.now(timezone.utc).isoformat(),
+        "date": today
+    }
+    
+    await db.workout_logs.insert_one({**workout_log, "_id": None})
+    
+    # Update daily calories burned in nutrition log
+    existing_log = await db.nutrition_logs.find_one({"user_id": user["user_id"], "date": today})
+    
+    if existing_log:
+        new_burned = existing_log.get("calories_burned", 0) + calories_burned
+        await db.nutrition_logs.update_one(
+            {"user_id": user["user_id"], "date": today},
+            {"$set": {"calories_burned": new_burned, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    else:
+        await db.nutrition_logs.insert_one({
+            "user_id": user["user_id"],
+            "date": today,
+            "calories_consumed": 0,
+            "calories_burned": calories_burned,
+            "meals": [],
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+    
+    # Get updated totals
+    total_burned_today = (await db.workout_logs.find({"user_id": user["user_id"], "date": today}).to_list(100))
+    total_calories = sum(w.get("calories_burned", 0) for w in total_burned_today)
+    
+    return {
+        "message": "Entraînement terminé !",
+        "calories_burned": calories_burned,
+        "total_calories_burned_today": total_calories,
+        "workout_log": workout_log
+    }
 
 @api_router.get("/workouts/video-stream/{video_id}")
 async def stream_workout_video(video_id: str, request: Request):
