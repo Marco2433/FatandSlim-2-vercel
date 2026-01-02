@@ -387,17 +387,23 @@ export default function WorkoutsPage() {
     setWatchedVideos(newWatched);
     localStorage.setItem('watchedWorkoutVideos', JSON.stringify(newWatched));
     
+    const caloriesBurned = video.calories_estimate || Math.round(video.duration_minutes * 10);
+    
     // Generate random congratulation message
     const message = CONGRATULATION_MESSAGES[Math.floor(Math.random() * CONGRATULATION_MESSAGES.length)];
     setCongratsMessage(message);
     
     // Award badge
     try {
+      const token = localStorage.getItem('token');
       const response = await axios.post(`${API}/badges/award`, {
         type: 'video_complete',
         video_id: video.id,
         video_title: video.title
-      }, { withCredentials: true });
+      }, { 
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true 
+      });
       
       if (response.data.badge) {
         setEarnedBadge(response.data.badge);
@@ -406,18 +412,27 @@ export default function WorkoutsPage() {
       console.error('Error awarding badge:', error);
     }
     
-    // Log workout
+    // Complete workout and update calories burned
     try {
-      const durationMinutes = parseInt(video.duration.split(':')[0]);
-      await axios.post(`${API}/workouts/log`, {
-        workout_name: video.title,
-        duration_minutes: durationMinutes,
-        calories_burned: Math.round(durationMinutes * 8),
-        exercises: [],
-        source: 'video'
-      }, { withCredentials: true });
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API}/workouts/complete`, {
+        video_data: video,
+        calories_burned: caloriesBurned
+      }, { 
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true 
+      });
+      
+      toast.success(`🔥 ${caloriesBurned} calories brûlées !`);
+      
+      // Optionally show share dialog
+      setEarnedBadge(prev => ({ 
+        ...prev, 
+        calories: caloriesBurned,
+        totalToday: response.data.total_calories_burned_today 
+      }));
     } catch (error) {
-      console.error('Error logging workout:', error);
+      console.error('Error completing workout:', error);
     }
     
     setPlayingVideo(null);
