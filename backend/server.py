@@ -2005,18 +2005,30 @@ Prévenez votre chirurgien si les symptômes persistent ou s'aggravent.""",
     # Filter by surgery type
     filtered = [a for a in all_articles if a["surgery"] in ["both", surgery_type]]
     
-    # Use day of year to rotate articles (3 per day)
+    # Use day of year + timestamp to get different articles each day
     day_of_year = datetime.now(timezone.utc).timetuple().tm_yday
-    start_idx = (day_of_year * 3) % len(filtered)
+    seed = day_of_year * 1000  # Seed basé sur le jour
     
+    # Shuffle deterministically based on day
+    import random as rnd
+    rnd.seed(seed)
+    shuffled = filtered.copy()
+    rnd.shuffle(shuffled)
+    
+    # Get 10 articles per day, sorted by category
     daily_articles = []
-    for i in range(3):
-        idx = (start_idx + i) % len(filtered)
-        article = filtered[idx].copy()
-        article["article_id"] = f"bari_art_{idx}"
-        daily_articles.append(article)
+    categories_order = ["nutrition", "santé", "bypass", "sleeve", "lifestyle", "psychologie"]
     
-    return {"articles": daily_articles, "surgery_type": surgery_type}
+    for i, article in enumerate(shuffled[:10]):
+        art = article.copy()
+        art["article_id"] = f"bari_art_{day_of_year}_{i}"
+        art["published_date"] = (datetime.now(timezone.utc) - timedelta(hours=i*2)).isoformat()
+        daily_articles.append(art)
+    
+    # Sort by category then by most recent
+    daily_articles.sort(key=lambda x: (categories_order.index(x.get("category", "nutrition")) if x.get("category") in categories_order else 99, x.get("published_date", "")), reverse=False)
+    
+    return {"articles": daily_articles, "surgery_type": surgery_type, "total": len(daily_articles)}
 
 @api_router.post("/bariatric/coach")
 async def bariatric_coach(data: dict, user: dict = Depends(get_current_user)):
