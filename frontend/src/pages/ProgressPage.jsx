@@ -26,7 +26,8 @@ import {
   FileText,
   Loader2,
   RefreshCw,
-  Zap
+  Zap,
+  Share2
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
