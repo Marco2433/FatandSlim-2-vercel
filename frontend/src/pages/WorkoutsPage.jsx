@@ -549,9 +549,19 @@ export default function WorkoutsPage() {
     }
   };
 
-  const filteredVideos = videoCategory === 'favorites' 
+  const filteredVideos = (videoCategory === 'favorites' 
     ? favoriteVideos 
-    : videos.filter(v => videoCategory === 'all' || v.category === videoCategory);
+    : videos.filter(v => videoCategory === 'all' || v.category === videoCategory)
+  ).filter(v => {
+    // Apply search filter
+    if (!videoSearchQuery.trim()) return true;
+    const query = videoSearchQuery.toLowerCase();
+    return (
+      v.title?.toLowerCase().includes(query) ||
+      v.category_name?.toLowerCase().includes(query) ||
+      v.description?.toLowerCase().includes(query)
+    );
+  });
 
   if (loading) {
     return (
