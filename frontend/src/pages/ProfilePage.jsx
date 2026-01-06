@@ -124,6 +124,14 @@ export default function ProfilePage() {
     
     setSavingProfile(true);
     try {
+      // Update display name first if changed
+      if (editingProfile.display_name) {
+        await axios.put(`${API}/profile/name`, {
+          name: editingProfile.display_name
+        }, { withCredentials: true });
+        updateUser({ name: editingProfile.display_name });
+      }
+      
       // Recalculate calories and targets based on updated profile
       const response = await axios.post(`${API}/profile/onboarding`, {
         gender: editingProfile.gender,
