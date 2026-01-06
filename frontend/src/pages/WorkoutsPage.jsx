@@ -879,10 +879,15 @@ export default function WorkoutsPage() {
             {workoutLogs.length > 0 ? (
               <div className="space-y-2">
                 {workoutLogs.map((log, index) => (
-                  <Card key={index}>
+                  <Card key={index} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => {
+                    // If log has video_data, play it
+                    if (log.video_data) {
+                      setPlayingVideo(log.video_data);
+                    }
+                  }}>
                     <CardContent className="p-3">
                       <div className="flex items-center justify-between">
-                        <div>
+                        <div className="flex-1">
                           <p className="font-medium">{log.workout_name}</p>
                           <div className="flex gap-3 text-xs text-muted-foreground mt-1">
                             <span className="flex items-center gap-1">
@@ -895,9 +900,22 @@ export default function WorkoutsPage() {
                             </span>
                           </div>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(log.logged_at).toLocaleDateString('fr-FR')}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPlayingVideo(log.video_data || { title: log.workout_name, duration_minutes: log.duration_minutes });
+                              setShowShareDialog(true);
+                            }}
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </Button>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(log.logged_at).toLocaleDateString('fr-FR')}
+                          </span>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
