@@ -1188,14 +1188,23 @@ async def get_bariatric_dashboard(user: dict = Depends(get_current_user)):
         if missing:
             reminders.append({"type": "supplements", "message": f"💊 Suppléments à prendre : {', '.join(missing)}", "priority": "high"})
     
+    # Calculate pre-op BMI safely
+    height_for_bmi = profile.get("bariatric_pre_op_height") or profile.get("height") or 170
+    pre_op_bmi = None
+    if pre_op_weight and height_for_bmi:
+        try:
+            pre_op_bmi = round(pre_op_weight / ((height_for_bmi / 100) ** 2), 1)
+        except:
+            pre_op_bmi = None
+    
     return {
         "profile": {
             "surgery_type": surgery_type,
             "surgery_date": profile.get("bariatric_surgery_date"),
             "pre_op_weight": pre_op_weight,
-            "pre_op_bmi": round(pre_op_weight / ((profile.get("bariatric_pre_op_height", profile.get("height", 170)) / 100) ** 2), 1) if profile.get("bariatric_pre_op_height") or profile.get("height") else None,
+            "pre_op_bmi": pre_op_bmi,
             "current_weight": current_weight,
-            "weight_lost": round(weight_lost, 1),
+            "weight_lost": round(weight_lost, 1) if weight_lost else 0,
             "parcours": parcours,
             "supplements": supplements,
             "intolerances": profile.get("bariatric_intolerances", []),
