@@ -1160,9 +1160,9 @@ async def get_bariatric_dashboard(user: dict = Depends(get_current_user)):
     ).sort("date", -1).limit(30).to_list(30)
     
     # Calculate weight loss since surgery
-    pre_op_weight = profile.get("bariatric_pre_op_weight", profile.get("weight", 0))
-    current_weight = weights[0]["weight"] if weights else profile.get("weight", 0)
-    weight_lost = pre_op_weight - current_weight
+    pre_op_weight = profile.get("bariatric_pre_op_weight") or profile.get("weight") or 0
+    current_weight = weights[0]["weight"] if weights else (profile.get("weight") or 0)
+    weight_lost = (pre_op_weight or 0) - (current_weight or 0)
     
     # Get today's log
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
