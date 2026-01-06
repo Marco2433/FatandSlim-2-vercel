@@ -2082,9 +2082,10 @@ Prévenez votre chirurgien si les symptômes persistent ou s'aggravent.""",
     # Filter by surgery type
     filtered = [a for a in all_articles if a["surgery"] in ["both", surgery_type]]
     
-    # Use day of year + timestamp to get different articles each day
+    # Use day of year + year for truly different articles each day
     day_of_year = datetime.now(timezone.utc).timetuple().tm_yday
-    seed = day_of_year * 1000  # Seed basé sur le jour
+    year = datetime.now(timezone.utc).year
+    seed = (year * 1000) + day_of_year
     
     # Shuffle deterministically based on day
     import random as rnd
@@ -2092,20 +2093,26 @@ Prévenez votre chirurgien si les symptômes persistent ou s'aggravent.""",
     shuffled = filtered.copy()
     rnd.shuffle(shuffled)
     
+    # Additional rotation: start from different index each day
+    start_index = (day_of_year * 3) % max(len(shuffled), 1)
+    rotated = shuffled[start_index:] + shuffled[:start_index]
+    
     # Get 10 articles per day, sorted by category
     daily_articles = []
     categories_order = ["nutrition", "santé", "bypass", "sleeve", "lifestyle", "psychologie"]
     
-    for i, article in enumerate(shuffled[:10]):
+    for i, article in enumerate(rotated[:10]):
         art = article.copy()
-        art["article_id"] = f"bari_art_{day_of_year}_{i}"
+        art["article_id"] = f"bari_art_{year}_{day_of_year}_{i}"
         art["published_date"] = (datetime.now(timezone.utc) - timedelta(hours=i*2)).isoformat()
         daily_articles.append(art)
+    
+    rnd.seed()  # Reset seed
     
     # Sort by category then by most recent
     daily_articles.sort(key=lambda x: (categories_order.index(x.get("category", "nutrition")) if x.get("category") in categories_order else 99, x.get("published_date", "")), reverse=False)
     
-    return {"articles": daily_articles, "surgery_type": surgery_type, "total": len(daily_articles)}
+    return {"articles": daily_articles, "surgery_type": surgery_type, "total": len(daily_articles), "day": day_of_year}
 
 @api_router.post("/bariatric/coach")
 async def bariatric_coach(data: dict, user: dict = Depends(get_current_user)):
