@@ -471,6 +471,14 @@ def search_recipes(query, limit=20):
     
     return results[:limit]
 
+# Alias for backward compatibility
+def search_recipes_by_name(query, limit=20):
+    """Alias for search_recipes"""
+    return search_recipes(query, limit)
+
+# Pre-computed verified recipes for quick access
+VERIFIED_RECIPES = get_all_recipes()
+
 # Export count
-TOTAL_RECIPES = len(get_all_recipes())
+TOTAL_RECIPES = len(VERIFIED_RECIPES)
 print(f"[Recipes DB] {TOTAL_RECIPES} recettes chargées (dont bariatriques)")
