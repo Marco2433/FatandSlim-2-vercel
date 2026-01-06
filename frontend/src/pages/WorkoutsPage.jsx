@@ -612,6 +612,17 @@ export default function WorkoutsPage() {
 
           {/* Videos Tab */}
           <TabsContent value="videos" className="space-y-4 mt-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher une vidéo..."
+                value={videoSearchQuery}
+                onChange={(e) => setVideoSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
             {/* Category Filter - Scrollable horizontal */}
             <div className="relative -mx-4">
               <div 
