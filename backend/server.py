@@ -7481,6 +7481,9 @@ async def send_message(data: dict, user: dict = Depends(get_current_user)):
     # Create notification
     await create_notification(recipient_id, "message", f"Nouveau message de {user.get('name') or 'Quelquun'}", user["user_id"])
     
+    # Remove _id before returning (MongoDB adds it after insert)
+    message.pop("_id", None)
+    
     return {"message": "Message sent", "data": message}
 
 # --- Notifications ---
