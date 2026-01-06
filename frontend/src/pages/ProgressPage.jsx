@@ -780,8 +780,16 @@ export default function ProgressPage() {
                     {badges.earned.map((badge) => (
                       <div 
                         key={badge.id}
-                        className="p-4 rounded-xl border text-center bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/30"
+                        className="p-4 rounded-xl border text-center bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/30 relative group"
                       >
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => shareBadge(badge)}
+                        >
+                          <Share2 className="w-4 h-4 text-primary" />
+                        </Button>
                         <span className="text-3xl">{badge.icon}</span>
                         <p className="font-medium text-sm mt-2">{badge.name}</p>
                         <p className="text-xs text-muted-foreground">{badge.description}</p>
