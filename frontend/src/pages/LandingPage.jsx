@@ -59,9 +59,11 @@ export default function LandingPage() {
           {/* Logo */}
           <div className="flex items-center justify-between mb-12">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                <Zap className="w-6 h-6 text-primary-foreground" />
-              </div>
+              <img 
+                src="https://customer-assets.emergentagent.com/job_c618c56f-e2f2-438f-a5f9-200244f81f08/artifacts/8fl7ig96_11053968.png" 
+                alt="Fat & Slim Logo" 
+                className="w-10 h-10 rounded-xl object-contain"
+              />
               <span className="font-heading font-bold text-xl">Fat & Slim</span>
             </div>
             <Button 
