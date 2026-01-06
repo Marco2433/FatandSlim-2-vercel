@@ -919,6 +919,28 @@ async def update_profile(data: dict, user: dict = Depends(get_current_user)):
     )
     return {"message": "Profile updated"}
 
+@api_router.put("/profile/name")
+async def update_profile_name(data: dict, user: dict = Depends(get_current_user)):
+    """Update user display name"""
+    new_name = data.get("name", "").strip()
+    if not new_name:
+        raise HTTPException(status_code=400, detail="Le nom ne peut pas être vide")
+    
+    # Update in users collection
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"name": new_name, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Also update in user_profiles
+    await db.user_profiles.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"display_name": new_name, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    
+    return {"message": "Nom mis à jour", "name": new_name}
+
 # ==================== BARIATRIC ENDPOINTS ====================
 
 def calculate_bmr(weight_kg: float, height_cm: float, age: int, gender: str) -> float:
