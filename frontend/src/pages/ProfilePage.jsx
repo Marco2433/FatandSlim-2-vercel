@@ -460,6 +460,19 @@ export default function ProfilePage() {
 
           {editingProfile && (
             <div className="space-y-4 py-4">
+              {/* Name / Pseudo */}
+              <div>
+                <Label htmlFor="display_name">Nom / Pseudo</Label>
+                <Input
+                  id="display_name"
+                  type="text"
+                  placeholder="Votre nom ou pseudo"
+                  value={editingProfile.display_name || user?.name || ''}
+                  onChange={(e) => setEditingProfile(prev => ({ ...prev, display_name: e.target.value }))}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Ce nom sera affiché dans la communauté</p>
+              </div>
+
               {/* Basic Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
