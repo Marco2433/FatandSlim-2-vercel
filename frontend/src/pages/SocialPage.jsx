@@ -39,7 +39,11 @@ import {
   Users2,
   Target,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  Flag,
+  Ban,
+  AlertTriangle,
+  Share2
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
