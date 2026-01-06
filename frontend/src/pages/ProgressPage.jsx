@@ -113,11 +113,13 @@ export default function ProgressPage() {
       await axios.post(`${API}/progress/weight`, { weight: parseFloat(newWeight) }, { withCredentials: true });
       toast.success('Poids enregistré !');
       
-      // Refresh data immediately
-      const [weightRes, bmiRes] = await Promise.all([
+      // Refresh ALL data immediately including stats for current_weight
+      const [statsRes, weightRes, bmiRes] = await Promise.all([
+        axios.get(`${API}/progress/stats`, { withCredentials: true }),
         axios.get(`${API}/progress/weight`, { withCredentials: true }),
         axios.get(`${API}/progress/bmi`, { withCredentials: true })
       ]);
+      setStats(statsRes.data);
       setWeightHistory(weightRes.data);
       setBmiData(bmiRes.data);
       
