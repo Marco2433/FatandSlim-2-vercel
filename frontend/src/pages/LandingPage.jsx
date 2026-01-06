@@ -239,9 +239,11 @@ export default function LandingPage() {
       <footer className="px-4 py-8 border-t border-border">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-              <Zap className="w-4 h-4 text-primary-foreground" />
-            </div>
+            <img 
+              src="https://customer-assets.emergentagent.com/job_c618c56f-e2f2-438f-a5f9-200244f81f08/artifacts/8fl7ig96_11053968.png" 
+              alt="Fat & Slim Logo" 
+              className="w-8 h-8 rounded-lg object-contain"
+            />
             <span className="font-heading font-bold">Fat & Slim</span>
           </div>
           <p className="text-sm text-muted-foreground">
