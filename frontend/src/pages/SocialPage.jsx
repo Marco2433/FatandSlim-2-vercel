@@ -1271,27 +1271,87 @@ export default function SocialPage() {
               )}
               
               {!selectedProfile.is_self && (
-                <div className="flex gap-2">
-                  {selectedProfile.is_friend ? (
-                    <>
-                      <Button className="flex-1" onClick={() => { openConversation(selectedProfile.user_id, selectedProfile.name, selectedProfile.picture); setShowProfileDialog(false); }}>
-                        <MessageCircle className="w-4 h-4 mr-2" /> Message
-                      </Button>
+                <div className="space-y-2">
+                  {/* Message & Challenge buttons */}
+                  <div className="flex gap-2">
+                    <Button className="flex-1" onClick={() => startConversation(selectedProfile.user_id, selectedProfile.name, selectedProfile.picture)}>
+                      <MessageCircle className="w-4 h-4 mr-2" /> Message
+                    </Button>
+                    {selectedProfile.is_friend ? (
                       <Button variant="outline" onClick={() => { setChallengeFriend(selectedProfile); setShowChallengeDialog(true); setShowProfileDialog(false); }}>
                         <Swords className="w-4 h-4" />
                       </Button>
-                    </>
-                  ) : selectedProfile.is_pending ? (
-                    <Button disabled className="flex-1">En attente...</Button>
-                  ) : (
-                    <Button className="flex-1" onClick={() => { sendFriendRequest(selectedProfile.user_id); setShowProfileDialog(false); }}>
-                      <UserPlus className="w-4 h-4 mr-2" /> Ajouter en ami
+                    ) : selectedProfile.is_pending ? (
+                      <Button variant="outline" disabled>En attente</Button>
+                    ) : (
+                      <Button variant="outline" onClick={() => { sendFriendRequest(selectedProfile.user_id); }}>
+                        <UserPlus className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* Report & Block buttons */}
+                  <div className="flex gap-2 pt-2 border-t">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="flex-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                      onClick={() => { setReportingUser(selectedProfile); setShowReportDialog(true); }}
+                    >
+                      <Flag className="w-4 h-4 mr-2" /> Signaler
                     </Button>
-                  )}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="flex-1 text-red-500 hover:text-red-600 hover:bg-red-50"
+                      onClick={() => blockUser(selectedProfile.user_id, selectedProfile.name)}
+                    >
+                      <Ban className="w-4 h-4 mr-2" /> Bloquer
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Report Dialog */}
+      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-500">
+              <Flag className="w-5 h-5" /> Signaler {reportingUser?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Aidez-nous à garder la communauté saine et respectueuse.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Raison du signalement :</p>
+            <Textarea 
+              placeholder="Décrivez le comportement inapproprié..." 
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              rows={3}
+            />
+            <div className="flex gap-2 flex-wrap">
+              {['Spam', 'Contenu inapproprié', 'Harcèlement', 'Faux profil', 'Autre'].map(reason => (
+                <Button 
+                  key={reason} 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setReportReason(reason)}
+                >
+                  {reason}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReportDialog(false)}>Annuler</Button>
+            <Button onClick={reportUser} className="bg-orange-500 hover:bg-orange-600">Envoyer le signalement</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
