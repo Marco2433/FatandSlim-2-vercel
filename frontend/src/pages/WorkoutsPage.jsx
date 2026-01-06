@@ -179,6 +179,7 @@ export default function WorkoutsPage() {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [userGroups, setUserGroups] = useState([]);
   const [selectedShareTarget, setSelectedShareTarget] = useState('public');
+  const [videoSearchQuery, setVideoSearchQuery] = useState('');
   const videoRef = useRef(null);
   
   // Coach IA state
