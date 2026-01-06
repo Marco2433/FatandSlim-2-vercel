@@ -7499,6 +7499,9 @@ async def create_notification(user_id: str, notif_type: str, content: str, from_
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.notifications.insert_one(notification)
+    # Remove _id after insert
+    notification.pop("_id", None)
+    return notification
 
 @api_router.get("/social/notifications")
 async def get_notifications(user: dict = Depends(get_current_user)):
