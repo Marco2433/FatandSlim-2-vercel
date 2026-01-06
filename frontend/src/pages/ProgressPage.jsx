@@ -155,6 +155,21 @@ export default function ProgressPage() {
     }
   };
 
+  const shareBadge = async (badge) => {
+    try {
+      await axios.post(`${API}/social/share-achievement`, {
+        type: 'badge',
+        badge_id: badge.id,
+        badge_name: badge.name,
+        badge_icon: badge.icon,
+        badge_description: badge.description
+      }, { withCredentials: true });
+      toast.success(`Badge "${badge.name}" partagé sur la communauté !`);
+    } catch (error) {
+      toast.error('Erreur lors du partage');
+    }
+  };
+
   const generatePdfReport = async () => {
     setGeneratingPdf(true);
     
