@@ -181,6 +181,14 @@ export default function SocialPage() {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
   
+  // Report/Block
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportingUser, setReportingUser] = useState(null);
+  
+  // Daily Challenge for sharing
+  const [dailyChallenge, setDailyChallenge] = useState(null);
+  
   // Challenges
   const [showChallengeDialog, setShowChallengeDialog] = useState(false);
   const [challengeConfig, setChallengeConfig] = useState({ type: 'steps', target: 10000, duration_days: 7 });
