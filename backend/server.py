@@ -1088,7 +1088,16 @@ def calculate_bariatric_phase(surgery_date_str: str) -> dict:
         return {"phase": None, "phase_name": None, "days_since_surgery": 0}
     
     try:
-        surgery_date = datetime.fromisoformat(surgery_date_str.replace('Z', '+00:00'))
+        # Handle different date formats
+        if 'T' in surgery_date_str:
+            surgery_date = datetime.fromisoformat(surgery_date_str.replace('Z', '+00:00'))
+        else:
+            surgery_date = datetime.strptime(surgery_date_str, "%Y-%m-%d")
+        
+        # Ensure timezone aware
+        if surgery_date.tzinfo is None:
+            surgery_date = surgery_date.replace(tzinfo=timezone.utc)
+        
         days_since = (datetime.now(timezone.utc) - surgery_date).days
         
         if days_since < 0:
@@ -1101,7 +1110,8 @@ def calculate_bariatric_phase(surgery_date_str: str) -> dict:
             return {"phase": 3, "phase_name": "Phase 3 - Mou", "days_since_surgery": days_since, "texture": "soft", "weeks": "S4-S6"}
         else:
             return {"phase": 4, "phase_name": "Phase 4 - Solide adapté", "days_since_surgery": days_since, "texture": "solid_adapted", "weeks": "> S6"}
-    except:
+    except Exception as e:
+        logger.error(f"Error calculating bariatric phase: {e}")
         return {"phase": None, "phase_name": None, "days_since_surgery": 0}
 
 @api_router.get("/bariatric/nutrition-rules")
