@@ -564,7 +564,7 @@ export default function ProgressPage() {
                 <CardTitle className="font-heading text-lg flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Footprints className="w-5 h-5 text-primary" />
-                    Pas aujourd'hui
+                    Pas aujourd&apos;hui
                   </div>
                   <Button 
                     variant="ghost" 
@@ -695,19 +695,19 @@ export default function ProgressPage() {
                 <div className="p-3 rounded-xl bg-muted/50">
                   <p className="font-medium text-sm">🎯 Objectif quotidien</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {(stepsData?.goal || 10000).toLocaleString()} pas/jour basé sur votre niveau d'activité
+                    {(stepsData?.goal || 10000).toLocaleString()} pas/jour basé sur votre niveau d&apos;activité
                   </p>
                 </div>
                 <div className="p-3 rounded-xl bg-muted/50">
                   <p className="font-medium text-sm">🔥 Calories à brûler</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Environ {Math.round((stepsData?.goal || 10000) * 0.04)} kcal avec l'objectif de pas
+                    Environ {Math.round((stepsData?.goal || 10000) * 0.04)} kcal avec l&apos;objectif de pas
                   </p>
                 </div>
                 <div className="p-3 rounded-xl bg-muted/50">
                   <p className="font-medium text-sm">🚶 Distance estimée</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    ~{(((stepsData?.goal || 10000) * 0.75) / 1000).toFixed(1)} km pour atteindre l'objectif
+                    ~{(((stepsData?.goal || 10000) * 0.75) / 1000).toFixed(1)} km pour atteindre l&apos;objectif
                   </p>
                 </div>
               </CardContent>
