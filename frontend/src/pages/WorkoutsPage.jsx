@@ -255,11 +255,16 @@ export default function WorkoutsPage() {
         params: { category: videoCategory !== 'all' ? videoCategory : undefined },
         withCredentials: true
       });
-      setVideos(response.data || []);
+      // Shuffle videos randomly each time
+      const videosData = response.data || [];
+      const shuffled = [...videosData].sort(() => Math.random() - 0.5);
+      setVideos(shuffled);
     } catch (error) {
       console.error('Error fetching videos:', error);
-      // Use mock data if API fails
-      setVideos(getMockVideos());
+      // Use mock data if API fails and shuffle
+      const mockData = getMockVideos();
+      const shuffled = [...mockData].sort(() => Math.random() - 0.5);
+      setVideos(shuffled);
     } finally {
       setLoadingVideos(false);
     }
