@@ -469,6 +469,60 @@ export default function SocialPage() {
     }
   };
 
+  // Report User
+  const reportUser = async () => {
+    if (!reportingUser || !reportReason.trim()) {
+      toast.error('Veuillez indiquer une raison');
+      return;
+    }
+    try {
+      await axios.post(`${API}/social/report-user`, {
+        user_id: reportingUser.user_id,
+        reason: reportReason.trim()
+      }, { withCredentials: true });
+      toast.success('Signalement envoyé. Merci de nous aider à garder la communauté saine.');
+      setShowReportDialog(false);
+      setReportReason('');
+      setReportingUser(null);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erreur lors du signalement');
+    }
+  };
+
+  // Block User
+  const blockUser = async (userId, userName) => {
+    try {
+      await axios.post(`${API}/social/block-user`, { user_id: userId }, { withCredentials: true });
+      toast.success(`${userName || 'Utilisateur'} a été bloqué`);
+      setShowProfileDialog(false);
+      fetchData(); // Refresh to remove blocked user from lists
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erreur lors du blocage');
+    }
+  };
+
+  // Share Daily Challenge
+  const shareDailyChallenge = async (challenge) => {
+    try {
+      await axios.post(`${API}/social/post`, {
+        content: `🎯 **Défi du jour !**\n\n${challenge.title}\n\n${challenge.description}\n\n💪 Qui relève le défi avec moi ?`,
+        type: 'challenge_share',
+        is_public: true
+      }, { withCredentials: true });
+      toast.success('Défi partagé sur la communauté !');
+    } catch (error) {
+      toast.error('Erreur lors du partage');
+    }
+  };
+
+  // Open conversation with any user (not just friends)
+  const startConversation = (userId, userName, userPicture) => {
+    setSelectedConversation({ partner_id: userId, partner_name: userName, partner_picture: userPicture });
+    setMessages([]);
+    setShowMessageDialog(true);
+    setShowProfileDialog(false);
+  };
+
   // Profile
   const viewProfile = async (userId) => {
     try {
