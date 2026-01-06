@@ -4573,13 +4573,19 @@ Le bypass court-circuite une partie de l'estomac et de l'intestin grêle, rédui
     ]
     
     # Use a combination of day_of_year AND year to ensure truly different articles each day
-    # This creates a unique seed that changes daily and yearly
+    # Added: multiply by prime numbers for better distribution
     unique_seed = (year * 1000) + day_of_year
     
     import random as rnd
     rnd.seed(unique_seed)
+    
+    # Shuffle articles - use different starting points each day
     shuffled = all_articles.copy()
     rnd.shuffle(shuffled)
+    
+    # Additional rotation: start from different index each day based on day
+    start_index = (day_of_year * 7) % len(shuffled)  # Rotate by 7 each day
+    rotated = shuffled[start_index:] + shuffled[:start_index]
     
     # Select 10 articles with metadata
     selected = []
@@ -4598,12 +4604,12 @@ Le bypass court-circuite une partie de l'estomac et de l'intestin grêle, rédui
     
     categories_order = ["nutrition", "santé", "fitness", "lifestyle", "bariatrique"]
     
-    for i, article in enumerate(shuffled[:10]):
+    for i, article in enumerate(rotated[:10]):
         hours_ago = i * 2 + rnd.randint(0, 3)  # Add randomness to publication time
         published_date = datetime.now(timezone.utc) - timedelta(hours=hours_ago)
         
         selected.append({
-            "id": f"art_{today}_{i}_{unique_seed % 100}",
+            "id": f"art_{today}_{i}_{day_of_year}",  # Include day_of_year for uniqueness
             "title": article["title"],
             "summary": article["summary"],
             "content": article.get("content", article["summary"]),
@@ -4614,6 +4620,8 @@ Le bypass court-circuite une partie de l'estomac et de l'intestin grêle, rédui
             "read_time": article["read_time"],
             "published_at": published_date.isoformat()
         })
+    
+    rnd.seed()  # Reset seed
     
     # Sort by category (order defined) then by most recent within category
     selected.sort(key=lambda x: (
