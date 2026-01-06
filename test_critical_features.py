@@ -8,7 +8,7 @@ import time
 
 class CriticalFeatureTester:
     def __init__(self):
-        self.base_url = "https://fitness-fix.preview.emergentagent.com/api"
+        self.base_url = "https://fatslim-community.preview.emergentagent.com/api"
         self.session = requests.Session()
         self.user_id = None
         self.token = None
