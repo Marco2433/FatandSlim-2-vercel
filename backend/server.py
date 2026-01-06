@@ -7447,24 +7447,25 @@ async def get_messages(partner_id: str, user: dict = Depends(get_current_user)):
 
 @api_router.post("/social/messages")
 async def send_message(data: dict, user: dict = Depends(get_current_user)):
-    """Send a message"""
+    """Send a message - All community members can message each other"""
     recipient_id = data.get("recipient_id")
     content = data.get("content", "").strip()
     
     if not recipient_id or not content:
         raise HTTPException(status_code=400, detail="recipient_id and content required")
     
-    # Check if they are friends
-    friendship = await db.friendships.find_one({
-        "status": "accepted",
-        "$or": [
-            {"user_id": user["user_id"], "friend_id": recipient_id},
-            {"user_id": recipient_id, "friend_id": user["user_id"]}
-        ]
+    # Check if sender is blocked by recipient
+    block = await db.blocked_users.find_one({
+        "user_id": recipient_id,
+        "blocked_user_id": user["user_id"]
     })
+    if block:
+        raise HTTPException(status_code=403, detail="Vous ne pouvez pas envoyer de message à cet utilisateur")
     
-    if not friendship:
-        raise HTTPException(status_code=403, detail="You can only message friends")
+    # Check if recipient exists
+    recipient = await db.users.find_one({"user_id": recipient_id}, {"_id": 0})
+    if not recipient:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
     
     message = {
         "message_id": f"msg_{uuid.uuid4().hex[:8]}",
