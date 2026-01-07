@@ -211,12 +211,15 @@ export const PremiumProvider = ({ children }) => {
   };
 
   // Get formatted price from Google (or null if not available)
+  // IMPORTANT: Use formattedPrice directly from Google Play
+  // It's already properly formatted with locale, currency symbol, decimals
   const getFormattedPrice = () => {
-    if (!productInfo || !productInfo.price) {
+    if (!productInfo) {
       return null;
     }
-    return productInfo.price.formattedPrice || 
-           `${productInfo.price.value} ${productInfo.price.currency}`;
+    // Use formattedPrice directly - Google provides it properly formatted
+    // e.g., "23,99 €" or "$23.99" depending on user's locale
+    return productInfo.formattedPrice || null;
   };
 
   return (
