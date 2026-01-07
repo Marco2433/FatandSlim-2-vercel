@@ -27,6 +27,7 @@ export const PremiumProvider = ({ children }) => {
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
   const [productInfo, setProductInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [priceLoading, setPriceLoading] = useState(true);
   const [billingAvailable, setBillingAvailable] = useState(false);
 
   // Premium features list
@@ -71,23 +72,37 @@ export const PremiumProvider = ({ children }) => {
 
   // Check if billing is available
   useEffect(() => {
-    setBillingAvailable(isDigitalGoodsAvailable());
+    const available = isDigitalGoodsAvailable();
+    setBillingAvailable(available);
+    console.log('[Premium] Google Play Billing available:', available);
   }, []);
 
-  // Load product info
+  // Load product info from Google Play (NOT hardcoded)
   useEffect(() => {
     const loadProductInfo = async () => {
+      setPriceLoading(true);
       try {
+        // This fetches real pricing from Google Play
         const products = await getProductDetails();
-        if (products.length > 0) {
+        
+        if (products && products.length > 0) {
           setProductInfo(products[0]);
+          console.log('[Premium] Product info from Google:', products[0]);
+        } else {
+          // No price available - user not on Play Store version
+          setProductInfo(null);
+          console.log('[Premium] No product info available - app not from Play Store');
         }
       } catch (error) {
-        console.error('Failed to load product info:', error);
+        console.error('[Premium] Failed to load product info:', error);
+        setProductInfo(null);
+      } finally {
+        setPriceLoading(false);
       }
     };
+    
     loadProductInfo();
-  }, []);
+  }, [billingAvailable]);
 
   // Check premium status from backend
   const checkPremiumStatus = useCallback(async () => {
@@ -151,6 +166,10 @@ export const PremiumProvider = ({ children }) => {
       throw new Error('Vous devez être connecté pour vous abonner');
     }
 
+    if (!billingAvailable) {
+      throw new Error('L\'achat in-app n\'est disponible que via l\'application Google Play Store');
+    }
+
     try {
       const result = await purchaseSubscription(PRODUCT_IDS.PREMIUM_MONTHLY);
       
@@ -191,10 +210,20 @@ export const PremiumProvider = ({ children }) => {
     return isPremium;
   };
 
+  // Get formatted price from Google (or null if not available)
+  const getFormattedPrice = () => {
+    if (!productInfo || !productInfo.price) {
+      return null;
+    }
+    return productInfo.price.formattedPrice || 
+           `${productInfo.price.value} ${productInfo.price.currency}`;
+  };
+
   return (
     <PremiumContext.Provider value={{
       isPremium,
       loading,
+      priceLoading,
       subscriptionDetails,
       productInfo,
       premiumFeatures,
@@ -204,6 +233,7 @@ export const PremiumProvider = ({ children }) => {
       checkPremiumStatus,
       requiresPremium,
       canAccessFeature,
+      getFormattedPrice,
     }}>
       {children}
     </PremiumContext.Provider>
