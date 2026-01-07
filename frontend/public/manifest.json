@@ -1,8 +1,8 @@
 {
   "name": "Fat & Slim",
   "short_name": "Fat&Slim",
-  "description": "Application de coaching sportif et nutritionnel avec IA - Communauté, défis, classements, suivi bariatrique complet (bypass/sleeve), scanner alimentaire, 3000+ recettes dont 419 bariatriques, modération et 1600+ vidéos d'entraînement",
-  "start_url": "/dashboard?utm_source=pwa&v=3.9.0",
+  "description": "Application de coaching sportif et nutritionnel avec IA - Communauté, défis, classements, suivi bariatrique complet (bypass/sleeve), scanner alimentaire, 3000+ recettes dont 419 bariatriques, modération, abonnement Premium et 1600+ vidéos d'entraînement",
+  "start_url": "/dashboard?utm_source=pwa&v=4.0.0",
   "scope": "/",
   "display": "fullscreen",
   "display_override": ["fullscreen", "standalone"],
