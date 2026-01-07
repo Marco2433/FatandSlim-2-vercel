@@ -8875,10 +8875,10 @@ async def get_premium_features():
                 "icon": "🚫"
             }
         ],
-        "price": {
-            "monthly": PREMIUM_PRICE,
-            "currency": PREMIUM_CURRENCY
-        }
+        # Note: Price information comes from Google Play, not from backend
+        # Google handles currencies, taxes, and regional pricing
+        "product_id": PREMIUM_PRODUCT_ID,
+        "billing_info": "Price managed by Google Play Billing"
     }
 
 # Helper function to check if user is premium
