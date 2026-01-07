@@ -1,11 +1,14 @@
 /**
  * Google Digital Goods API Service for PWA Billing
  * Handles subscription purchases through Google Play Store
+ * 
+ * IMPORTANT: Prices are ALWAYS fetched from Google Play, never hardcoded
+ * Google handles: currencies, taxes (VAT), regional pricing, compliance
  */
 
 // Product IDs - Configure these in Google Play Console
 export const PRODUCT_IDS = {
-  PREMIUM_MONTHLY: 'premium_monthly_1999', // €19.99/month
+  PREMIUM_MONTHLY: 'premium_monthly_1999', // ID only, price comes from Google
 };
 
 // Google Play Billing service URL
@@ -24,7 +27,7 @@ export const isDigitalGoodsAvailable = () => {
  */
 export const getDigitalGoodsService = async () => {
   if (!isDigitalGoodsAvailable()) {
-    console.log('[Billing] Digital Goods API not available');
+    console.log('[Billing] Digital Goods API not available - app not installed from Play Store');
     return null;
   }
 
@@ -40,30 +43,36 @@ export const getDigitalGoodsService = async () => {
 
 /**
  * Get product details from Google Play
+ * Returns pricing info with correct currency, taxes, and regional pricing
  */
 export const getProductDetails = async (productIds = [PRODUCT_IDS.PREMIUM_MONTHLY]) => {
   const service = await getDigitalGoodsService();
+  
   if (!service) {
-    // Return mock data for development/testing
-    return [{
-      itemId: PRODUCT_IDS.PREMIUM_MONTHLY,
-      title: 'Fat & Slim Premium',
-      description: 'Abonnement mensuel Premium avec IA illimitée, recettes exclusives et plus',
-      price: {
-        currency: 'EUR',
-        value: '19.99',
-      },
-      subscriptionPeriod: 'P1M', // 1 month
-    }];
+    // Return null when not available - UI should handle this case
+    console.log('[Billing] Cannot fetch prices - Digital Goods API not available');
+    return null;
   }
 
   try {
     const details = await service.getDetails(productIds);
-    console.log('[Billing] Product details:', details);
-    return details;
+    console.log('[Billing] Product details from Google:', details);
+    
+    // Transform Google's response to our format
+    return details.map(item => ({
+      itemId: item.itemId,
+      title: item.title,
+      description: item.description,
+      price: {
+        value: item.price?.value || item.price,
+        currency: item.price?.currency || 'EUR',
+        formattedPrice: item.formattedPrice || `${item.price?.value} ${item.price?.currency}`,
+      },
+      subscriptionPeriod: item.subscriptionPeriod,
+    }));
   } catch (error) {
-    console.error('[Billing] Failed to get product details:', error);
-    return [];
+    console.error('[Billing] Failed to get product details from Google:', error);
+    return null;
   }
 };
 
@@ -88,6 +97,7 @@ export const checkExistingPurchases = async () => {
 
 /**
  * Initiate a purchase using Payment Request API
+ * Price is determined by Google Play, not by the app
  */
 export const purchaseSubscription = async (productId = PRODUCT_IDS.PREMIUM_MONTHLY) => {
   // Check if Payment Request API is available
@@ -95,12 +105,17 @@ export const purchaseSubscription = async (productId = PRODUCT_IDS.PREMIUM_MONTH
     throw new Error('Payment Request API not supported');
   }
 
-  // Get product details first
+  // Get product details from Google first
   const products = await getProductDetails([productId]);
+  
+  if (!products || products.length === 0) {
+    throw new Error('Impossible de récupérer les informations du produit depuis Google Play');
+  }
+  
   const product = products.find(p => p.itemId === productId);
   
   if (!product) {
-    throw new Error('Product not found');
+    throw new Error('Produit non trouvé dans Google Play');
   }
 
   // Create payment method data for Google Play Billing
@@ -111,13 +126,13 @@ export const purchaseSubscription = async (productId = PRODUCT_IDS.PREMIUM_MONTH
     },
   }];
 
-  // Payment details
+  // Payment details - Google provides the actual price
   const paymentDetails = {
     total: {
       label: product.title,
       amount: {
-        currency: product.price?.currency || 'EUR',
-        value: product.price?.value || '19.99',
+        currency: product.price.currency,
+        value: product.price.value,
       },
     },
   };
@@ -128,10 +143,10 @@ export const purchaseSubscription = async (productId = PRODUCT_IDS.PREMIUM_MONTH
     // Check if can make payment
     const canMakePayment = await request.canMakePayment();
     if (!canMakePayment) {
-      throw new Error('Cannot make payment through Google Play');
+      throw new Error('Paiement non disponible via Google Play');
     }
 
-    // Show payment UI
+    // Show payment UI (Google handles the actual payment)
     const paymentResponse = await request.show();
     
     // Get purchase token from response
@@ -151,7 +166,7 @@ export const purchaseSubscription = async (productId = PRODUCT_IDS.PREMIUM_MONTH
     console.error('[Billing] Purchase failed:', error);
     
     if (error.name === 'AbortError') {
-      return { success: false, error: 'Payment cancelled by user' };
+      return { success: false, error: 'Paiement annulé' };
     }
     
     return { success: false, error: error.message };
