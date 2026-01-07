@@ -8703,8 +8703,7 @@ async def get_premium_status(user: dict = Depends(get_current_user)):
                     "start_date": subscription.get("start_date"),
                     "expiry_date": subscription.get("expiry_date"),
                     "next_billing_date": subscription.get("next_billing_date"),
-                    "price": subscription.get("price", PREMIUM_PRICE),
-                    "currency": subscription.get("currency", PREMIUM_CURRENCY)
+                    # Note: Price info should come from Google Play, not stored here
                 }
             }
         else:
