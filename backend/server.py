@@ -8673,6 +8673,229 @@ async def init_default_groups():
 async def startup_event():
     await init_default_groups()
 
+# ==================== PREMIUM SUBSCRIPTION (GOOGLE PLAY BILLING) ====================
+
+class PremiumVerifyRequest(BaseModel):
+    purchase_token: str
+    product_id: str
+
+# Product IDs - must match Google Play Console
+PREMIUM_PRODUCT_ID = "premium_monthly_1999"
+PREMIUM_PRICE = 19.99
+PREMIUM_CURRENCY = "EUR"
+
+@api_router.get("/premium/status")
+async def get_premium_status(user: dict = Depends(get_current_user)):
+    """Get user's premium subscription status"""
+    subscription = await db.premium_subscriptions.find_one(
+        {"user_id": user["user_id"], "status": "active"},
+        {"_id": 0}
+    )
+    
+    if subscription:
+        # Check if subscription is still valid
+        expiry_date = datetime.fromisoformat(subscription.get("expiry_date", "2000-01-01"))
+        if expiry_date > datetime.now(timezone.utc):
+            return {
+                "is_premium": True,
+                "subscription": {
+                    "product_id": subscription.get("product_id"),
+                    "start_date": subscription.get("start_date"),
+                    "expiry_date": subscription.get("expiry_date"),
+                    "next_billing_date": subscription.get("next_billing_date"),
+                    "price": subscription.get("price", PREMIUM_PRICE),
+                    "currency": subscription.get("currency", PREMIUM_CURRENCY)
+                }
+            }
+        else:
+            # Subscription expired, update status
+            await db.premium_subscriptions.update_one(
+                {"user_id": user["user_id"], "status": "active"},
+                {"$set": {"status": "expired"}}
+            )
+    
+    return {
+        "is_premium": False,
+        "subscription": None
+    }
+
+@api_router.post("/premium/verify")
+async def verify_premium_purchase(data: PremiumVerifyRequest, user: dict = Depends(get_current_user)):
+    """
+    Verify a purchase from Google Play and activate premium.
+    In production, you should verify the purchase token with Google Play Developer API.
+    """
+    purchase_token = data.purchase_token
+    product_id = data.product_id
+    
+    if not purchase_token:
+        raise HTTPException(status_code=400, detail="Missing purchase token")
+    
+    # TODO: In production, verify purchase_token with Google Play Developer API
+    # For now, we'll trust the client (for testing purposes)
+    # 
+    # Production verification would look like:
+    # async with httpx.AsyncClient() as client:
+    #     response = await client.get(
+    #         f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{PACKAGE_NAME}/purchases/subscriptions/{product_id}/tokens/{purchase_token}",
+    #         headers={"Authorization": f"Bearer {GOOGLE_API_TOKEN}"}
+    #     )
+    #     verification = response.json()
+    
+    now = datetime.now(timezone.utc)
+    expiry_date = now + timedelta(days=30)  # Monthly subscription
+    
+    # Check for existing subscription
+    existing = await db.premium_subscriptions.find_one({
+        "user_id": user["user_id"],
+        "status": "active"
+    })
+    
+    if existing:
+        # Update existing subscription
+        await db.premium_subscriptions.update_one(
+            {"user_id": user["user_id"], "status": "active"},
+            {"$set": {
+                "purchase_token": purchase_token,
+                "product_id": product_id,
+                "expiry_date": expiry_date.isoformat(),
+                "next_billing_date": expiry_date.isoformat(),
+                "updated_at": now.isoformat()
+            }}
+        )
+    else:
+        # Create new subscription
+        subscription = {
+            "subscription_id": f"sub_{uuid.uuid4().hex[:12]}",
+            "user_id": user["user_id"],
+            "product_id": product_id,
+            "purchase_token": purchase_token,
+            "status": "active",
+            "price": PREMIUM_PRICE,
+            "currency": PREMIUM_CURRENCY,
+            "start_date": now.isoformat(),
+            "expiry_date": expiry_date.isoformat(),
+            "next_billing_date": expiry_date.isoformat(),
+            "created_at": now.isoformat()
+        }
+        await db.premium_subscriptions.insert_one(subscription)
+    
+    # Update user profile with premium status
+    await db.user_profiles.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"is_premium": True, "premium_since": now.isoformat()}}
+    )
+    
+    # Award premium badge
+    await db.user_badges.update_one(
+        {"user_id": user["user_id"]},
+        {"$addToSet": {"badges": {
+            "id": "premium_member",
+            "name": "Membre Premium",
+            "description": "A souscrit à l'abonnement Premium",
+            "icon": "👑",
+            "earned_at": now.isoformat()
+        }}},
+        upsert=True
+    )
+    
+    logger.info(f"Premium subscription activated for user {user['user_id']}")
+    
+    return {
+        "success": True,
+        "message": "Abonnement Premium activé avec succès !",
+        "subscription": {
+            "product_id": product_id,
+            "start_date": now.isoformat(),
+            "expiry_date": expiry_date.isoformat()
+        }
+    }
+
+@api_router.post("/premium/cancel")
+async def cancel_premium(user: dict = Depends(get_current_user)):
+    """
+    Mark subscription as cancelled.
+    Note: Actual cancellation should be done through Google Play.
+    The subscription remains active until expiry_date.
+    """
+    result = await db.premium_subscriptions.update_one(
+        {"user_id": user["user_id"], "status": "active"},
+        {"$set": {
+            "status": "cancelled",
+            "cancelled_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="No active subscription found")
+    
+    return {
+        "success": True,
+        "message": "Abonnement annulé. Il reste actif jusqu'à la fin de la période payée."
+    }
+
+@api_router.get("/premium/features")
+async def get_premium_features():
+    """Get list of premium features"""
+    return {
+        "features": [
+            {
+                "id": "unlimited_ai",
+                "title": "IA Illimitée",
+                "description": "Générez autant de plans repas et conseils IA que vous voulez",
+                "icon": "🤖"
+            },
+            {
+                "id": "exclusive_recipes",
+                "title": "Recettes Exclusives",
+                "description": "Accédez à plus de 500 recettes premium et bariatriques avancées",
+                "icon": "👨‍🍳"
+            },
+            {
+                "id": "premium_workouts",
+                "title": "Programmes Premium",
+                "description": "Programmes d'entraînement personnalisés par des coachs certifiés",
+                "icon": "💪"
+            },
+            {
+                "id": "priority_support",
+                "title": "Support Prioritaire",
+                "description": "Assistance prioritaire et réponses sous 24h",
+                "icon": "⭐"
+            },
+            {
+                "id": "advanced_analytics",
+                "title": "Statistiques Avancées",
+                "description": "Analyses détaillées de votre progression et prédictions",
+                "icon": "📊"
+            },
+            {
+                "id": "no_ads",
+                "title": "Sans Publicités",
+                "description": "Profitez d'une expérience 100% sans publicités",
+                "icon": "🚫"
+            }
+        ],
+        "price": {
+            "monthly": PREMIUM_PRICE,
+            "currency": PREMIUM_CURRENCY
+        }
+    }
+
+# Helper function to check if user is premium
+async def is_user_premium(user_id: str) -> bool:
+    """Check if a user has active premium subscription"""
+    subscription = await db.premium_subscriptions.find_one({
+        "user_id": user_id,
+        "status": {"$in": ["active", "cancelled"]}  # Cancelled but not expired
+    })
+    
+    if subscription:
+        expiry_date = datetime.fromisoformat(subscription.get("expiry_date", "2000-01-01"))
+        return expiry_date > datetime.now(timezone.utc)
+    
+    return False
+
 # Include router - MUST be after all endpoint definitions
 app.include_router(api_router)
 
