@@ -210,12 +210,13 @@ export default function PremiumPage() {
                   <Loader2 className="w-5 h-5 animate-spin" />
                   <span className="text-muted-foreground">Chargement du prix...</span>
                 </div>
-              ) : billingAvailable && productInfo ? (
-                // Price from Google Play
-                <>
+              ) : billingAvailable && getFormattedPrice() ? (
+                // Price from Google Play - use formattedPrice directly
+                // Google provides it properly formatted (e.g., "23,99 €")
+                <div className="flex items-baseline justify-center gap-1">
                   <span className="text-4xl font-bold">{getFormattedPrice()}</span>
-                  <span className="text-muted-foreground">/mois</span>
-                </>
+                  <span className="text-muted-foreground text-lg">/mois</span>
+                </div>
               ) : (
                 // No price available - not from Play Store
                 <div className="space-y-2">
