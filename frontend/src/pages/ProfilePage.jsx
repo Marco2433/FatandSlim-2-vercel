@@ -309,25 +309,34 @@ export default function ProfilePage() {
         </Card>
 
         {/* Premium Banner */}
-        {!user?.is_premium && (
-          <Card className="border-secondary/30 bg-gradient-to-r from-secondary/10 to-secondary/5 overflow-hidden">
-            <CardContent className="p-6 relative">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/20 rounded-full blur-3xl" />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-2">
-                  <Crown className="w-5 h-5 text-secondary" />
-                  <span className="font-heading font-bold text-secondary">Premium</span>
+        <Card 
+          className="border-yellow-500/30 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 overflow-hidden cursor-pointer hover:border-yellow-500/50 transition-all"
+          onClick={() => navigate('/premium')}
+        >
+          <CardContent className="p-4 relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/20 rounded-full blur-3xl" />
+            <div className="relative flex items-center gap-4">
+              <img 
+                src="/premium-badge.png" 
+                alt="Premium" 
+                className="w-16 h-16 object-contain"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-heading font-bold text-yellow-500">
+                    {user?.is_premium ? 'Vous êtes Premium !' : 'Passer Premium'}
+                  </span>
                 </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Débloquez toutes les fonctionnalités avancées
+                <p className="text-sm text-muted-foreground">
+                  {user?.is_premium 
+                    ? 'Gérer mon abonnement' 
+                    : 'IA illimitée, recettes exclusives, programmes premium'}
                 </p>
-                <Button className="rounded-full shadow-glow-purple bg-secondary hover:bg-secondary/90">
-                  Passer à Premium - 19,99€/mois
-                </Button>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <ChevronRight className="w-5 h-5 text-yellow-500" />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Stats */}
         {profile && profile.goal && (
