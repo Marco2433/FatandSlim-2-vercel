@@ -309,34 +309,36 @@ export default function ProfilePage() {
         </Card>
 
         {/* Premium Banner */}
-        <Card 
-          className="border-yellow-500/30 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 overflow-hidden cursor-pointer hover:border-yellow-500/50 transition-all"
+        <div 
           onClick={() => navigate('/premium')}
+          className="cursor-pointer"
         >
-          <CardContent className="p-4 relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/20 rounded-full blur-3xl" />
-            <div className="relative flex items-center gap-4">
-              <img 
-                src="/premium-badge.png" 
-                alt="Premium" 
-                className="w-16 h-16 object-contain"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-heading font-bold text-yellow-500">
-                    {user?.is_premium ? 'Vous êtes Premium !' : 'Passer Premium'}
-                  </span>
+          <Card className="border-yellow-500/30 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 overflow-hidden hover:border-yellow-500/50 transition-all active:scale-[0.98]">
+            <CardContent className="p-4 relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/20 rounded-full blur-3xl" />
+              <div className="relative flex items-center gap-4">
+                <img 
+                  src="/premium-badge.png" 
+                  alt="Premium" 
+                  className="w-16 h-16 object-contain"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-heading font-bold text-yellow-500">
+                      {user?.is_premium ? 'Vous êtes Premium !' : 'Passer Premium'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {user?.is_premium 
+                      ? 'Gérer mon abonnement' 
+                      : 'IA illimitée, recettes exclusives, programmes premium'}
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {user?.is_premium 
-                    ? 'Gérer mon abonnement' 
-                    : 'IA illimitée, recettes exclusives, programmes premium'}
-                </p>
+                <ChevronRight className="w-5 h-5 text-yellow-500" />
               </div>
-              <ChevronRight className="w-5 h-5 text-yellow-500" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Stats */}
         {profile && profile.goal && (
