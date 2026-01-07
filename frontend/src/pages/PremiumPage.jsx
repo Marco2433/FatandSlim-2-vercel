@@ -218,12 +218,13 @@ export default function PremiumPage() {
                   <span className="text-muted-foreground text-lg">/mois</span>
                 </div>
               ) : (
-                // No price available - not from Play Store
-                <div className="space-y-2">
-                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                    <Smartphone className="w-5 h-5" />
-                    <span>Prix disponible via Google Play</span>
-                  </div>
+                // No price available yet - show premium badge image
+                <div className="py-2">
+                  <img 
+                    src="/premium-badge.png" 
+                    alt="Premium" 
+                    className="w-32 h-32 mx-auto object-contain"
+                  />
                 </div>
               )}
             </div>
