@@ -8764,14 +8764,13 @@ async def verify_premium_purchase(data: PremiumVerifyRequest, user: dict = Depen
         )
     else:
         # Create new subscription
+        # Note: Price info is managed by Google Play, not stored here
         subscription = {
             "subscription_id": f"sub_{uuid.uuid4().hex[:12]}",
             "user_id": user["user_id"],
             "product_id": product_id,
             "purchase_token": purchase_token,
             "status": "active",
-            "price": PREMIUM_PRICE,
-            "currency": PREMIUM_CURRENCY,
             "start_date": now.isoformat(),
             "expiry_date": expiry_date.isoformat(),
             "next_billing_date": expiry_date.isoformat(),
