@@ -21,11 +21,13 @@ import SocialPage from "@/pages/SocialPage";
 import BariatricPage from "@/pages/BariatricPage";
 import AuthCallback from "@/pages/AuthCallback";
 import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
+import PremiumPage from "@/pages/PremiumPage";
 
 // Context
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { PremiumProvider } from "@/context/PremiumContext";
 
 // Components
 import { Toaster } from "@/components/ui/sonner";
