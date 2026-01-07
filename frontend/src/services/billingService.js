@@ -44,6 +44,14 @@ export const getDigitalGoodsService = async () => {
 /**
  * Get product details from Google Play
  * Returns pricing info with correct currency, taxes, and regional pricing
+ * 
+ * Google Play Digital Goods API returns:
+ * - itemId: string
+ * - title: string  
+ * - description: string
+ * - price: { value: string, currency: string } OR just the formatted string
+ * - formattedPrice: string (e.g., "23,99 €") - THIS IS WHAT WE SHOULD DISPLAY
+ * - subscriptionPeriod: string (e.g., "P1M")
  */
 export const getProductDetails = async (productIds = [PRODUCT_IDS.PREMIUM_MONTHLY]) => {
   const service = await getDigitalGoodsService();
@@ -56,20 +64,27 @@ export const getProductDetails = async (productIds = [PRODUCT_IDS.PREMIUM_MONTHL
 
   try {
     const details = await service.getDetails(productIds);
-    console.log('[Billing] Product details from Google:', details);
+    console.log('[Billing] Raw product details from Google:', JSON.stringify(details));
     
-    // Transform Google's response to our format
-    return details.map(item => ({
-      itemId: item.itemId,
-      title: item.title,
-      description: item.description,
-      price: {
-        value: item.price?.value || item.price,
-        currency: item.price?.currency || 'EUR',
-        formattedPrice: item.formattedPrice || `${item.price?.value} ${item.price?.currency}`,
-      },
-      subscriptionPeriod: item.subscriptionPeriod,
-    }));
+    // Use formattedPrice directly from Google - it's already properly formatted
+    // with correct locale, currency symbol, and decimal places
+    return details.map(item => {
+      // Log for debugging
+      console.log('[Billing] Item formattedPrice:', item.formattedPrice);
+      console.log('[Billing] Item price object:', item.price);
+      
+      return {
+        itemId: item.itemId,
+        title: item.title,
+        description: item.description,
+        // IMPORTANT: Use formattedPrice from Google directly
+        // This is already formatted correctly (e.g., "23,99 €")
+        formattedPrice: item.formattedPrice,
+        // Keep raw price for any calculations if needed
+        price: item.price,
+        subscriptionPeriod: item.subscriptionPeriod,
+      };
+    });
   } catch (error) {
     console.error('[Billing] Failed to get product details from Google:', error);
     return null;
