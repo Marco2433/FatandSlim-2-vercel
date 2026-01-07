@@ -1,8 +1,8 @@
 // Version and cache management for PWA updates
 // This file handles automatic cache clearing and data migration after app updates
 
-const APP_VERSION = '4.0.0';
-const DATA_SCHEMA_VERSION = 13;
+const APP_VERSION = '4.1.0';
+const DATA_SCHEMA_VERSION = 14;
 
 // Keys to ALWAYS preserve during cache clear (auth-critical)
 const PRESERVED_KEYS = [
