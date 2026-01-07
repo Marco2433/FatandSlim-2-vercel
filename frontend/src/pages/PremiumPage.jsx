@@ -15,7 +15,9 @@ import {
   Zap,
   Star,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  AlertCircle,
+  Smartphone
 } from 'lucide-react';
 
 export default function PremiumPage() {
@@ -23,13 +25,15 @@ export default function PremiumPage() {
   const { user } = useAuth();
   const { 
     isPremium, 
-    loading, 
+    loading,
+    priceLoading,
     subscriptionDetails,
     productInfo,
     premiumFeatures,
     billingAvailable,
     purchasePremium,
     cancelSubscription,
+    getFormattedPrice,
   } = usePremium();
   
   const [purchasing, setPurchasing] = useState(false);
@@ -41,6 +45,11 @@ export default function PremiumPage() {
       return;
     }
 
+    if (!billingAvailable) {
+      toast.error('L\'achat in-app n\'est disponible que via l\'application Google Play Store');
+      return;
+    }
+
     setPurchasing(true);
     try {
       const result = await purchasePremium();
@@ -48,7 +57,7 @@ export default function PremiumPage() {
       if (result.success) {
         toast.success('🎉 Bienvenue dans Fat & Slim Premium !');
       } else {
-        if (result.error !== 'Payment cancelled by user') {
+        if (result.error !== 'Paiement annulé') {
           toast.error(result.error || 'Erreur lors de l\'achat');
         }
       }
@@ -184,7 +193,7 @@ export default function PremiumPage() {
           </p>
         </div>
 
-        {/* Price Card */}
+        {/* Price Card - Dynamic from Google Play */}
         <Card className="overflow-hidden border-2 border-yellow-500/50 relative">
           <div className="absolute top-0 right-0">
             <Badge className="rounded-none rounded-bl-lg bg-yellow-500 text-black">
@@ -193,37 +202,82 @@ export default function PremiumPage() {
           </div>
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-lg">Abonnement Mensuel</CardTitle>
+            
+            {/* Dynamic Price Display */}
             <div className="mt-4">
-              <span className="text-4xl font-bold">19,99€</span>
-              <span className="text-muted-foreground">/mois</span>
+              {priceLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="text-muted-foreground">Chargement du prix...</span>
+                </div>
+              ) : billingAvailable && productInfo ? (
+                // Price from Google Play
+                <>
+                  <span className="text-4xl font-bold">{getFormattedPrice()}</span>
+                  <span className="text-muted-foreground">/mois</span>
+                </>
+              ) : (
+                // No price available - not from Play Store
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <Smartphone className="w-5 h-5" />
+                    <span>Prix disponible via Google Play</span>
+                  </div>
+                </div>
+              )}
             </div>
+            
             <CardDescription>
               Renouvelé automatiquement chaque mois
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
-            <Button 
-              className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
-              onClick={handlePurchase}
-              disabled={purchasing}
-            >
-              {purchasing ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Traitement...
-                </>
-              ) : (
-                <>
-                  <Crown className="w-5 h-5 mr-2" />
-                  S'abonner maintenant
-                </>
-              )}
-            </Button>
-            
-            {!billingAvailable && (
-              <p className="text-xs text-center text-muted-foreground mt-3">
-                💡 L'achat in-app sera disponible via Google Play Store
-              </p>
+            {billingAvailable ? (
+              // Google Play Billing available
+              <Button 
+                className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+                onClick={handlePurchase}
+                disabled={purchasing || priceLoading}
+              >
+                {purchasing ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Traitement...
+                  </>
+                ) : (
+                  <>
+                    <Crown className="w-5 h-5 mr-2" />
+                    S'abonner maintenant
+                  </>
+                )}
+              </Button>
+            ) : (
+              // Not from Play Store - show info message
+              <div className="space-y-4">
+                <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium text-yellow-600 dark:text-yellow-400 mb-1">
+                        Abonnement via Google Play
+                      </p>
+                      <p className="text-muted-foreground">
+                        Pour vous abonner à Premium, veuillez installer l'application depuis le Google Play Store. 
+                        Le prix sera affiché selon votre pays et inclura les taxes applicables.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <Button 
+                  className="w-full h-12"
+                  variant="outline"
+                  onClick={() => window.open('https://play.google.com/store/apps/details?id=com.fatandslim.app', '_blank')}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Ouvrir Google Play Store
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -282,6 +336,14 @@ export default function PremiumPage() {
               <h4 className="font-medium">Le paiement est-il sécurisé ?</h4>
               <p className="text-muted-foreground">
                 Oui, tous les paiements sont traités de manière sécurisée par Google Play Billing.
+                Google gère les devises, les taxes et la facturation.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-medium">Pourquoi je ne vois pas le prix ?</h4>
+              <p className="text-muted-foreground">
+                Le prix est fourni par Google Play selon votre pays. 
+                Installez l'application depuis le Play Store pour voir le prix exact.
               </p>
             </div>
             <div>
