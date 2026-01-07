@@ -152,9 +152,11 @@ function App() {
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <BrowserRouter>
-            <AppRouter />
-          </BrowserRouter>
+          <PremiumProvider>
+            <BrowserRouter>
+              <AppRouter />
+            </BrowserRouter>
+          </PremiumProvider>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>
