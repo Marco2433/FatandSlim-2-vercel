@@ -8680,9 +8680,9 @@ class PremiumVerifyRequest(BaseModel):
     product_id: str
 
 # Product IDs - must match Google Play Console
+# NOTE: Prices are managed by Google Play, not hardcoded here
+# Google handles currencies, taxes, and regional pricing
 PREMIUM_PRODUCT_ID = "premium_monthly_1999"
-PREMIUM_PRICE = 19.99
-PREMIUM_CURRENCY = "EUR"
 
 @api_router.get("/premium/status")
 async def get_premium_status(user: dict = Depends(get_current_user)):
