@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const [stats, setStats] = useState(null);
   const [dailySummary, setDailySummary] = useState(null);
   const [challenges, setChallenges] = useState(null);
@@ -489,10 +491,10 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-heading text-xl font-bold">
-              Bonjour, {user?.name?.split(' ')[0]} 👋
+              {t('hello')}, {user?.name?.split(' ')[0]} 👋
             </h1>
             <p className="text-sm text-muted-foreground">
-              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              {new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
           </div>
           <Button 
@@ -519,19 +521,19 @@ export default function DashboardPage() {
             <Card className="flex-1 bg-gradient-to-br from-primary/10 to-primary/5">
               <CardContent className="p-3 text-center">
                 <p className="text-2xl font-bold text-primary">{userStats.days_active}</p>
-                <p className="text-xs text-muted-foreground">jours sur l'app</p>
+                <p className="text-xs text-muted-foreground">{language === 'fr' ? 'jours sur l\'app' : 'days on app'}</p>
               </CardContent>
             </Card>
             <Card className="flex-1 bg-gradient-to-br from-secondary/10 to-secondary/5">
               <CardContent className="p-3 text-center">
                 <p className="text-2xl font-bold text-secondary">{userStats.streak}</p>
-                <p className="text-xs text-muted-foreground">jours de suite</p>
+                <p className="text-xs text-muted-foreground">{language === 'fr' ? 'jours de suite' : 'day streak'}</p>
               </CardContent>
             </Card>
             <Card className="flex-1 bg-gradient-to-br from-accent/10 to-accent/5">
               <CardContent className="p-3 text-center">
                 <p className="text-2xl font-bold text-accent">{userStats.badges_count}</p>
-                <p className="text-xs text-muted-foreground">badges</p>
+                <p className="text-xs text-muted-foreground">{t('badges')}</p>
               </CardContent>
             </Card>
           </div>
