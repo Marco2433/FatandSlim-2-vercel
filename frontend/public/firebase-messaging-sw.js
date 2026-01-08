@@ -11,7 +11,8 @@ const firebaseConfig = {
   projectId: "fatslim-8d2c9",
   storageBucket: "fatslim-8d2c9.firebasestorage.app",
   messagingSenderId: "188523032690",
-  appId: "1:188523032690:web:86f958696abb2a9d9dd2eb"
+  appId: "1:188523032690:web:86f958696abb2a9d9dd2eb",
+  measurementId: "G-VK9RSGMYP7
 };
 
 firebase.initializeApp(firebaseConfig);
