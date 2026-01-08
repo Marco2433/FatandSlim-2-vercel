@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    { "source": "/.well-known/assetlinks.json", "destination": "/well-known/assetlinks.json" },
+    { "source": "/.well-known/:path*", "destination": "/well-known/:path*" },
+    { "source": "/((?!static|icon|manifest|sw|service-worker|screenshot|premium|asset-manifest|assetlinks|well-known|vercel).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*).json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ]
+}
