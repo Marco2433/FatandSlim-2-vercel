@@ -62,6 +62,11 @@ export const PremiumProvider = ({ children }) => {
       description: 'Analyses détaillées de votre progression et prédictions',
       icon: '📊',
     },
+  ];
+      title: 'Statistiques Avancées',
+      description: 'Analyses détaillées de votre progression et prédictions',
+      icon: '📊',
+    },
     {
       id: 'no_ads',
       title: 'Sans Publicités',
