@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Télécharger Fat & Slim PWA</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            max-width: 500px;
+        }
+        h1 { 
+            font-size: 2.5rem; 
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #F472B6, #A3E635);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .version { color: #A3E635; margin-bottom: 30px; }
+        .download-btn {
+            display: inline-block;
+            background: linear-gradient(90deg, #F472B6, #A3E635);
+            color: #1a1a2e;
+            padding: 20px 50px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .download-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 40px rgba(244, 114, 182, 0.4);
+        }
+        .info {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.7);
+        }
+        .size { 
+            display: inline-block;
+            background: rgba(163, 230, 53, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏋️ Fat & Slim</h1>
+        <p class="version">Version 4.3.0 - PWA Statique</p>
+        
+        <a href="/fatandslim-pwa-v4.3.0.zip" download class="download-btn">
+            📥 Télécharger le ZIP
+        </a>
+        
+        <div class="info">
+            <p>Contenu du package :</p>
+            <ul style="list-style: none; margin-top: 10px;">
+                <li>✅ index.html</li>
+                <li>✅ manifest.json</li>
+                <li>✅ service-worker.js</li>
+                <li>✅ Toutes les icônes PWA</li>
+                <li>✅ CSS & JavaScript compilés</li>
+            </ul>
+            <span class="size">📦 3.3 MB</span>
+        </div>
+    </div>
+</body>
+</html>
