@@ -8933,6 +8933,90 @@ async def is_user_premium(user_id: str) -> bool:
     
     return False
 
+# ==================== PWA MANIFEST & ASSETLINKS ====================
+
+# PWA Manifest - served via API for proxy compatibility
+PWA_MANIFEST = {
+    "name": "Fat & Slim",
+    "short_name": "Fat&Slim",
+    "description": "Application de coaching sportif et nutritionnel avec IA - Communauté automatisée, défis, classements, suivi bariatrique complet (bypass/sleeve), scanner alimentaire, 32000+ recettes dont 1000 bariatriques, abonnement Premium via Google Play Billing et 1600+ vidéos d'entraînement personnalisées",
+    "start_url": "/dashboard?utm_source=pwa&v=4.3.0",
+    "scope": "/",
+    "display": "fullscreen",
+    "display_override": ["fullscreen", "standalone"],
+    "background_color": "#1a1a2e",
+    "theme_color": "#1a1a2e",
+    "orientation": "portrait-primary",
+    "lang": "fr",
+    "dir": "ltr",
+    "id": "com.fatandslim.app",
+    "categories": ["health", "fitness", "lifestyle", "food", "social", "medical"],
+    "iarc_rating_id": "",
+    "edge_side_panel": {"preferred_width": 400},
+    "handle_links": "preferred",
+    "launch_handler": {"client_mode": ["navigate-existing", "auto"]},
+    "icons": [
+        {"src": "/api/pwa/icon-48x48.png", "sizes": "48x48", "type": "image/png", "purpose": "any"},
+        {"src": "/api/pwa/icon-72x72.png", "sizes": "72x72", "type": "image/png", "purpose": "any"},
+        {"src": "/api/pwa/icon-96x96.png", "sizes": "96x96", "type": "image/png", "purpose": "any"},
+        {"src": "/api/pwa/icon-128x128.png", "sizes": "128x128", "type": "image/png", "purpose": "any"},
+        {"src": "/api/pwa/icon-144x144.png", "sizes": "144x144", "type": "image/png", "purpose": "any"},
+        {"src": "/api/pwa/icon-152x152.png", "sizes": "152x152", "type": "image/png", "purpose": "any"},
+        {"src": "/api/pwa/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+        {"src": "/api/pwa/icon-256x256.png", "sizes": "256x256", "type": "image/png", "purpose": "any"},
+        {"src": "/api/pwa/icon-384x384.png", "sizes": "384x384", "type": "image/png", "purpose": "any"},
+        {"src": "/api/pwa/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+        {"src": "/api/pwa/icon-192x192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+        {"src": "/api/pwa/icon-512x512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    ],
+    "screenshots": [
+        {"src": "/api/pwa/screenshot-wide.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "Dashboard Fat & Slim"},
+        {"src": "/api/pwa/screenshot-narrow.png", "sizes": "540x720", "type": "image/png", "form_factor": "narrow", "label": "Application Fat & Slim"}
+    ],
+    "shortcuts": [
+        {"name": "Communauté", "short_name": "Social", "description": "Fil public, groupes et classements", "url": "/social?utm_source=shortcut", "icons": [{"src": "/api/pwa/icon-96x96.png", "sizes": "96x96"}]},
+        {"name": "Entraînements", "short_name": "Sport", "description": "Vidéos et programmes sportifs", "url": "/workouts?utm_source=shortcut", "icons": [{"src": "/api/pwa/icon-96x96.png", "sizes": "96x96"}]},
+        {"name": "Nutrition", "short_name": "Nutrition", "description": "Recettes et suivi alimentaire", "url": "/nutrition?utm_source=shortcut", "icons": [{"src": "/api/pwa/icon-96x96.png", "sizes": "96x96"}]},
+        {"name": "Mon Progrès", "short_name": "Progrès", "description": "Statistiques et badges", "url": "/progress?utm_source=shortcut", "icons": [{"src": "/api/pwa/icon-96x96.png", "sizes": "96x96"}]}
+    ],
+    "related_applications": [],
+    "prefer_related_applications": False
+}
+
+# Asset Links for TWA verification
+ASSET_LINKS = [
+    {
+        "relation": ["delegate_permission/common.handle_all_urls"],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "com.fatandslim.app",
+            "sha256_cert_fingerprints": [
+                "FC:60:08:CA:12:D9:BC:DA:C1:A2:64:A1:7A:95:24:98:A5:E3:35:14:A4:89:D9:71:AD:F0:4C:9B:B8:11:A3:8A"
+            ]
+        }
+    }
+]
+
+@app.get("/manifest.json")
+async def serve_manifest():
+    """Serve PWA manifest at root level"""
+    return JSONResponse(content=PWA_MANIFEST, media_type="application/manifest+json")
+
+@app.get("/api/manifest.json")
+async def serve_manifest_api():
+    """Serve PWA manifest via API"""
+    return JSONResponse(content=PWA_MANIFEST, media_type="application/manifest+json")
+
+@app.get("/.well-known/assetlinks.json")
+async def serve_assetlinks():
+    """Serve asset links for TWA verification"""
+    return JSONResponse(content=ASSET_LINKS, media_type="application/json")
+
+@app.get("/api/assetlinks.json")
+async def serve_assetlinks_api():
+    """Serve asset links via API"""
+    return JSONResponse(content=ASSET_LINKS, media_type="application/json")
+
 # Include router - MUST be after all endpoint definitions
 app.include_router(api_router)
 
