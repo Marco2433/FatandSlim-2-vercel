@@ -5,14 +5,14 @@ import { useLanguage } from '@/context/LanguageContext';
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { t } = useLanguage();
 
   const navItems = [
-    { path: '/dashboard', icon: Home, label: language === 'fr' ? 'Accueil' : 'Home' },
-    { path: '/scanner', icon: Camera, label: 'Scanner' },
-    { path: '/nutrition', icon: Utensils, label: 'Nutrition' },
-    { path: '/workouts', icon: Dumbbell, label: language === 'fr' ? 'Sport' : 'Workouts' },
-    { path: '/progress', icon: TrendingUp, label: language === 'fr' ? 'Progrès' : 'Progress' },
+    { path: '/dashboard', icon: Home, label: t('home') },
+    { path: '/scanner', icon: Camera, label: t('scanner') },
+    { path: '/nutrition', icon: Utensils, label: t('nutrition') },
+    { path: '/workouts', icon: Dumbbell, label: t('sport') },
+    { path: '/progress', icon: TrendingUp, label: t('progress') },
   ];
 
   return (
