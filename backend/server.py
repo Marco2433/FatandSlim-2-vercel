@@ -33,19 +33,6 @@ from recipes_database import (
 )
 
 ROOT_DIR = Path(__file__).parent
-
-# ==================== DOWNLOAD PWA ZIP ====================
-@app.get("/download-pwa")
-async def download_pwa_zip():
-    """Direct download of PWA static files"""
-    zip_path = ROOT_DIR / "fatandslim-pwa-v4.3.0.zip"
-    if zip_path.exists():
-        return FileResponse(
-            path=str(zip_path),
-            filename="fatandslim-pwa-v4.3.0.zip",
-            media_type="application/zip"
-        )
-    raise HTTPException(status_code=404, detail="ZIP file not found")
 FRONTEND_PUBLIC_DIR = ROOT_DIR.parent / 'frontend' / 'public'
 load_dotenv(ROOT_DIR / '.env')
 
