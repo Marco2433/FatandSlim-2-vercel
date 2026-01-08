@@ -185,128 +185,249 @@ export default function ProgressPage() {
       // Generate PDF
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
       
-      // Header
-      doc.setFontSize(24);
-      doc.setTextColor(244, 114, 182); // Primary color
-      doc.text('Fat & Slim', pageWidth / 2, 20, { align: 'center' });
+      // Colors
+      const primaryColor = [244, 114, 182]; // Pink
+      const greenColor = [163, 230, 53];
+      const yellowColor = [251, 191, 36];
+      const purpleColor = [147, 51, 234];
+      const blueColor = [59, 130, 246];
       
-      doc.setFontSize(14);
-      doc.setTextColor(100);
-      doc.text('Rapport de Progression', pageWidth / 2, 30, { align: 'center' });
+      // ===== PAGE 1: Header & Profile =====
+      // Header with gradient background simulation
+      doc.setFillColor(...primaryColor);
+      doc.rect(0, 0, pageWidth, 35, 'F');
       
-      // User info
+      doc.setFontSize(28);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Fat & Slim', pageWidth / 2, 18, { align: 'center' });
+      
+      doc.setFontSize(12);
+      doc.text(t('progressReport'), pageWidth / 2, 28, { align: 'center' });
+      
+      // User info box
+      doc.setFillColor(245, 245, 245);
+      doc.roundedRect(15, 42, pageWidth - 30, 25, 3, 3, 'F');
+      
       doc.setFontSize(10);
-      doc.setTextColor(60);
-      doc.text(`Généré le: ${new Date().toLocaleDateString('fr-FR')}`, 20, 45);
-      doc.text(`Utilisateur: ${data.user?.name || 'Non défini'}`, 20, 52);
-      doc.text(`Membre depuis: ${data.user?.created_at ? new Date(data.user.created_at).toLocaleDateString('fr-FR') : 'Non défini'}`, 20, 59);
-      doc.text(`Jours actifs: ${data.user?.days_active || 0}`, 20, 66);
+      doc.setTextColor(60, 60, 60);
+      const dateLocale = language === 'fr' ? 'fr-FR' : 'en-US';
+      doc.text(`${t('generatedOn')}: ${new Date().toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, 20, 52);
+      doc.text(`${language === 'fr' ? 'Utilisateur' : 'User'}: ${data.user?.name || 'N/A'}`, 20, 59);
+      doc.text(`${language === 'fr' ? 'Membre depuis' : 'Member since'}: ${data.user?.created_at ? new Date(data.user.created_at).toLocaleDateString(dateLocale) : 'N/A'} | ${language === 'fr' ? 'Jours actifs' : 'Active days'}: ${data.user?.days_active || 0}`, 120, 52);
       
       // Profile section
+      let lastY = 78;
       doc.setFontSize(14);
-      doc.setTextColor(0);
-      doc.text('Profil', 20, 82);
+      doc.setTextColor(...primaryColor);
+      doc.text(`📋 ${t('profileSection')}`, 15, lastY);
       
-      let lastY = 87;
+      lastY += 5;
+      autoTable(doc, {
+        startY: lastY,
+        head: [[language === 'fr' ? 'Paramètre' : 'Parameter', language === 'fr' ? 'Valeur' : 'Value']],
+        body: [
+          [t('age'), `${data.profile?.age || 'N/A'} ${language === 'fr' ? 'ans' : 'years'}`],
+          [t('height'), `${data.profile?.height || 'N/A'} cm`],
+          [language === 'fr' ? 'Objectif calories' : 'Calorie goal', `${data.profile?.daily_calorie_target || 'N/A'} kcal/${language === 'fr' ? 'jour' : 'day'}`],
+          [t('targetWeight'), `${data.profile?.target_weight || 'N/A'} kg`],
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: primaryColor, fontSize: 10 },
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: { 0: { fontStyle: 'bold' } },
+        margin: { left: 15, right: 15 }
+      });
+      
+      lastY = doc.lastAutoTable.finalY + 12;
+      
+      // Weight progress section with mini chart representation
+      doc.setFontSize(14);
+      doc.setTextColor(...greenColor);
+      doc.text(`📈 ${t('weightSection')}`, 15, lastY);
+      
+      lastY += 5;
+      
+      // Weight progress summary
+      const weightChange = data.weight_progress?.weight_change || 0;
+      const weightChangeText = weightChange > 0 ? `+${weightChange}` : `${weightChange}`;
+      const weightChangeColor = weightChange < 0 ? greenColor : (weightChange > 0 ? [239, 68, 68] : [100, 100, 100]);
       
       autoTable(doc, {
         startY: lastY,
-        head: [['Paramètre', 'Valeur']],
+        head: [[language === 'fr' ? 'Métrique' : 'Metric', language === 'fr' ? 'Valeur' : 'Value']],
         body: [
-          ['Âge', `${data.profile?.age || 'N/A'} ans`],
-          ['Taille', `${data.profile?.height || 'N/A'} cm`],
-          ['Objectif calories', `${data.profile?.daily_calorie_target || 'N/A'} kcal/jour`],
-          ['Poids objectif', `${data.profile?.target_weight || 'N/A'} kg`],
+          [t('initialWeight'), `${data.weight_progress?.start_weight || 'N/A'} kg`],
+          [t('currentWeight'), `${data.weight_progress?.current_weight || 'N/A'} kg`],
+          [t('weightChange'), `${weightChangeText} kg`],
+          [t('initialBmi'), `${data.weight_progress?.bmi_start || 'N/A'}`],
+          [t('currentBmi'), `${data.weight_progress?.bmi_current || 'N/A'}`],
+          [language === 'fr' ? 'Pesées enregistrées' : 'Weight entries', `${data.weight_progress?.entries_count || 0}`],
         ],
-        theme: 'grid',
-        headStyles: { fillColor: [244, 114, 182] },
-        styles: { fontSize: 9 }
+        theme: 'striped',
+        headStyles: { fillColor: greenColor, fontSize: 10 },
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: { 0: { fontStyle: 'bold' } },
+        margin: { left: 15, right: pageWidth / 2 + 5 },
+        tableWidth: pageWidth / 2 - 20
       });
       
-      lastY = doc.lastAutoTable.finalY + 15;
+      // Weight trend indicator
+      const tableEndY = doc.lastAutoTable.finalY;
+      const boxX = pageWidth / 2 + 10;
+      const boxY = lastY;
+      const boxWidth = pageWidth / 2 - 25;
+      const boxHeight = tableEndY - lastY;
       
-      // Weight progress section
-      doc.setFontSize(14);
-      doc.text('Progression du poids', 20, lastY);
+      doc.setFillColor(245, 250, 245);
+      doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 3, 3, 'F');
       
-      autoTable(doc, {
-        startY: lastY + 5,
-        head: [['Métrique', 'Valeur']],
-        body: [
-          ['Poids initial', `${data.weight_progress?.start_weight || 'N/A'} kg`],
-          ['Poids actuel', `${data.weight_progress?.current_weight || 'N/A'} kg`],
-          ['Variation', `${(data.weight_progress?.weight_change || 0) > 0 ? '+' : ''}${data.weight_progress?.weight_change || 0} kg`],
-          ['IMC initial', `${data.weight_progress?.bmi_start || 'N/A'}`],
-          ['IMC actuel', `${data.weight_progress?.bmi_current || 'N/A'}`],
-          ['Pesées enregistrées', `${data.weight_progress?.entries_count || 0}`],
-        ],
-        theme: 'grid',
-        headStyles: { fillColor: [163, 230, 53] },
-        styles: { fontSize: 9 }
-      });
+      doc.setFontSize(11);
+      doc.setTextColor(60, 60, 60);
+      doc.text(language === 'fr' ? 'Tendance' : 'Trend', boxX + boxWidth/2, boxY + 12, { align: 'center' });
       
-      lastY = doc.lastAutoTable.finalY + 15;
+      // Big weight change display
+      doc.setFontSize(32);
+      doc.setTextColor(...weightChangeColor);
+      doc.text(`${weightChangeText} kg`, boxX + boxWidth/2, boxY + boxHeight/2 + 5, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      const trendText = weightChange < 0 
+        ? (language === 'fr' ? '↓ En baisse' : '↓ Decreasing')
+        : (weightChange > 0 ? (language === 'fr' ? '↑ En hausse' : '↑ Increasing') : (language === 'fr' ? '→ Stable' : '→ Stable'));
+      doc.text(trendText, boxX + boxWidth/2, boxY + boxHeight - 10, { align: 'center' });
+      
+      lastY = tableEndY + 12;
+      
+      // ===== PAGE 2: Nutrition & Activity =====
+      doc.addPage();
       
       // Nutrition stats
       doc.setFontSize(14);
-      doc.text('Statistiques nutritionnelles', 20, lastY);
+      doc.setTextColor(...yellowColor);
+      doc.text(`🍎 ${t('nutritionSection')}`, 15, 20);
+      
+      autoTable(doc, {
+        startY: 25,
+        head: [[language === 'fr' ? 'Métrique' : 'Metric', language === 'fr' ? 'Valeur' : 'Value']],
+        body: [
+          [t('totalMeals'), `${data.nutrition_stats?.total_meals_logged || 0}`],
+          [t('totalCalories'), `${(data.nutrition_stats?.total_calories_logged || 0).toLocaleString()} kcal`],
+          [t('dailyAverage'), `${data.nutrition_stats?.avg_daily_calories || 0} kcal`],
+          [language === 'fr' ? 'Objectif journalier' : 'Daily target', `${data.nutrition_stats?.target_calories || 0} kcal`],
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: yellowColor, fontSize: 10, textColor: [0, 0, 0] },
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: { 0: { fontStyle: 'bold' } },
+        margin: { left: 15, right: pageWidth / 2 + 5 },
+        tableWidth: pageWidth / 2 - 20
+      });
+      
+      // Nutrition pie chart simulation (using rectangles)
+      const pieX = pageWidth / 2 + 15;
+      const pieY = 25;
+      const pieSize = 50;
+      
+      doc.setFillColor(245, 245, 250);
+      doc.roundedRect(pieX, pieY, pieSize + 30, pieSize + 20, 3, 3, 'F');
+      
+      doc.setFontSize(10);
+      doc.setTextColor(60, 60, 60);
+      doc.text(language === 'fr' ? 'Macros moyens' : 'Avg Macros', pieX + (pieSize + 30)/2, pieY + 10, { align: 'center' });
+      
+      // Macro bars
+      const macros = [
+        { name: 'P', value: data.nutrition_stats?.avg_proteins || 25, color: blueColor },
+        { name: 'G', value: data.nutrition_stats?.avg_carbs || 50, color: yellowColor },
+        { name: 'L', value: data.nutrition_stats?.avg_fats || 25, color: [239, 68, 68] }
+      ];
+      
+      let barY = pieY + 18;
+      macros.forEach((macro, i) => {
+        doc.setFillColor(220, 220, 220);
+        doc.roundedRect(pieX + 5, barY, pieSize + 20, 10, 2, 2, 'F');
+        doc.setFillColor(...macro.color);
+        doc.roundedRect(pieX + 5, barY, (pieSize + 20) * (macro.value / 100), 10, 2, 2, 'F');
+        doc.setFontSize(8);
+        doc.setTextColor(50, 50, 50);
+        doc.text(`${macro.name}: ${macro.value}%`, pieX + 8, barY + 7);
+        barY += 14;
+      });
+      
+      lastY = Math.max(doc.lastAutoTable.finalY, pieY + pieSize + 25) + 15;
+      
+      // Activity stats
+      doc.setFontSize(14);
+      doc.setTextColor(...purpleColor);
+      doc.text(`🏃 ${t('activitySection')}`, 15, lastY);
       
       autoTable(doc, {
         startY: lastY + 5,
-        head: [['Métrique', 'Valeur']],
+        head: [[language === 'fr' ? 'Métrique' : 'Metric', language === 'fr' ? 'Valeur' : 'Value']],
         body: [
-          ['Repas enregistrés', `${data.nutrition_stats?.total_meals_logged || 0}`],
-          ['Calories totales', `${(data.nutrition_stats?.total_calories_logged || 0).toLocaleString()} kcal`],
-          ['Moyenne journalière', `${data.nutrition_stats?.avg_daily_calories || 0} kcal`],
-          ['Objectif journalier', `${data.nutrition_stats?.target_calories || 0} kcal`],
+          [t('totalSteps'), `${(data.activity_stats?.total_steps || 0).toLocaleString()}`],
+          [t('caloriesBurned'), `${(data.activity_stats?.total_calories_burned || 0).toLocaleString()} kcal`],
+          [t('dailyAverage'), `${(data.activity_stats?.avg_daily_steps || 0).toLocaleString()} ${language === 'fr' ? 'pas' : 'steps'}`],
+          [t('daysTracked'), `${data.activity_stats?.days_tracked || 0}`],
         ],
-        theme: 'grid',
-        headStyles: { fillColor: [251, 191, 36] },
-        styles: { fontSize: 9 }
+        theme: 'striped',
+        headStyles: { fillColor: purpleColor, fontSize: 10 },
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: { 0: { fontStyle: 'bold' } },
+        margin: { left: 15, right: 15 }
       });
       
       lastY = doc.lastAutoTable.finalY + 15;
       
-      // Activity stats
-      doc.setFontSize(14);
-      doc.text('Activité physique', 20, lastY);
+      // Badges section
+      if (data.badges && data.badges.length > 0) {
+        doc.setFontSize(14);
+        doc.setTextColor(...primaryColor);
+        doc.text(`🏆 ${t('badges')} (${data.badges.length})`, 15, lastY);
+        
+        lastY += 8;
+        doc.setFillColor(255, 245, 250);
+        doc.roundedRect(15, lastY, pageWidth - 30, Math.min(data.badges.length * 8 + 10, 50), 3, 3, 'F');
+        
+        doc.setFontSize(9);
+        doc.setTextColor(60, 60, 60);
+        let badgeY = lastY + 8;
+        data.badges.slice(0, 5).forEach((badge, i) => {
+          doc.text(`${badge.icon || '🏅'} ${badge.name}`, 20, badgeY);
+          badgeY += 8;
+        });
+        
+        if (data.badges.length > 5) {
+          doc.setFontSize(8);
+          doc.setTextColor(100, 100, 100);
+          doc.text(`... ${language === 'fr' ? 'et' : 'and'} ${data.badges.length - 5} ${language === 'fr' ? 'autres badges' : 'more badges'}`, 20, badgeY);
+        }
+      }
       
-      autoTable(doc, {
-        startY: lastY + 5,
-        head: [['Métrique', 'Valeur']],
-        body: [
-          ['Pas totaux', `${(data.activity_stats?.total_steps || 0).toLocaleString()}`],
-          ['Calories brûlées', `${(data.activity_stats?.total_calories_burned || 0).toLocaleString()} kcal`],
-          ['Moyenne journalière', `${(data.activity_stats?.avg_daily_steps || 0).toLocaleString()} pas`],
-          ['Jours suivis', `${data.activity_stats?.days_tracked || 0}`],
-        ],
-        theme: 'grid',
-        headStyles: { fillColor: [147, 51, 234] },
-        styles: { fontSize: 9 }
-      });
-      
-      // Footer
+      // Footer on all pages
       const pageCount = doc.internal.getNumberOfPages();
       doc.setFontSize(8);
-      doc.setTextColor(150);
+      doc.setTextColor(150, 150, 150);
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         doc.text(
-          `Fat & Slim - Rapport généré le ${new Date().toLocaleDateString('fr-FR')} - Page ${i}/${pageCount}`,
+          `Fat & Slim - ${t('generatedOn')} ${new Date().toLocaleDateString(dateLocale)} - Page ${i}/${pageCount}`,
           pageWidth / 2,
-          doc.internal.pageSize.getHeight() - 10,
+          pageHeight - 10,
           { align: 'center' }
         );
       }
       
       // Save PDF
-      doc.save(`fat-slim-rapport-${new Date().toISOString().split('T')[0]}.pdf`);
-      toast.success('Rapport PDF téléchargé !');
+      doc.save(`fat-slim-${language === 'fr' ? 'rapport' : 'report'}-${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success(language === 'fr' ? 'Rapport PDF téléchargé !' : 'PDF Report downloaded!');
       
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error('Erreur lors de la génération du rapport: ' + (error.message || 'Erreur inconnue'));
+      toast.error((language === 'fr' ? 'Erreur lors de la génération du rapport: ' : 'Error generating report: ') + (error.message || 'Unknown error'));
     } finally {
       setGeneratingPdf(false);
     }
