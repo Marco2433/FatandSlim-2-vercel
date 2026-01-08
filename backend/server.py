@@ -9042,6 +9042,77 @@ async def serve_assetlinks_api():
     """Serve asset links via API"""
     return JSONResponse(content=ASSET_LINKS, media_type="application/json")
 
+# ==================== PUSH NOTIFICATIONS ENDPOINTS ====================
+from notifications import init_firebase, send_push_notification, send_typed_notification, send_push_to_multiple, NOTIFICATION_TYPES
+
+# Initialize Firebase on startup
+init_firebase()
+
+@api_router.post("/notifications/register-token")
+async def register_push_token(data: dict, user: dict = Depends(get_current_user)):
+    """Register FCM token for push notifications"""
+    token = data.get("token")
+    if not token:
+        raise HTTPException(status_code=400, detail="Token required")
+    
+    # Save token to user's profile
+    await db.users.update_one(
+        {"id": user["id"]},
+        {
+            "$set": {"fcm_token": token, "notifications_enabled": True},
+            "$currentDate": {"fcm_token_updated": True}
+        }
+    )
+    
+    # Send welcome notification
+    await send_typed_notification(token, "welcome")
+    
+    return {"message": "Token registered successfully"}
+
+@api_router.post("/notifications/unregister-token")
+async def unregister_push_token(user: dict = Depends(get_current_user)):
+    """Unregister FCM token"""
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$unset": {"fcm_token": ""}, "$set": {"notifications_enabled": False}}
+    )
+    return {"message": "Token unregistered"}
+
+@api_router.get("/notifications/status")
+async def get_notification_status(user: dict = Depends(get_current_user)):
+    """Get notification status for user"""
+    user_data = await db.users.find_one({"id": user["id"]}, {"_id": 0, "fcm_token": 1, "notifications_enabled": 1})
+    return {
+        "enabled": user_data.get("notifications_enabled", False),
+        "token_registered": bool(user_data.get("fcm_token"))
+    }
+
+@api_router.post("/notifications/send-test")
+async def send_test_notification(user: dict = Depends(get_current_user)):
+    """Send a test notification to the user"""
+    user_data = await db.users.find_one({"id": user["id"]}, {"_id": 0, "fcm_token": 1})
+    token = user_data.get("fcm_token")
+    
+    if not token:
+        raise HTTPException(status_code=400, detail="No FCM token registered")
+    
+    success = await send_push_notification(
+        token=token,
+        title="Test de notification 🔔",
+        body="Les notifications push fonctionnent correctement !",
+        data={"type": "test", "url": "/profile"}
+    )
+    
+    if success:
+        return {"message": "Test notification sent"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to send notification")
+
+@api_router.get("/notifications/types")
+async def get_notification_types():
+    """Get available notification types"""
+    return {"types": list(NOTIFICATION_TYPES.keys())}
+
 # Include router - MUST be after all endpoint definitions
 app.include_router(api_router)
 
