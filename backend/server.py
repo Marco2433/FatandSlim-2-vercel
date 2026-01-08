@@ -8673,10 +8673,50 @@ async def init_default_groups():
             group["created_at"] = datetime.now(timezone.utc).isoformat()
             await db.groups.insert_one(group)
 
+# Initialize APScheduler for automated community interactions
+scheduler = BackgroundScheduler()
+
+def setup_community_scheduler():
+    """Setup automated community interactions at random intervals"""
+    # Run every 2-4 hours with some randomization
+    # Morning: 6-9 AM
+    scheduler.add_job(
+        run_community_automation,
+        CronTrigger(hour='6-9', minute='*/30'),
+        id='community_morning',
+        replace_existing=True
+    )
+    # Noon: 11-14
+    scheduler.add_job(
+        run_community_automation,
+        CronTrigger(hour='11-14', minute='*/45'),
+        id='community_noon',
+        replace_existing=True
+    )
+    # Afternoon: 15-18
+    scheduler.add_job(
+        run_community_automation,
+        CronTrigger(hour='15-18', minute='*/40'),
+        id='community_afternoon',
+        replace_existing=True
+    )
+    # Evening: 19-22
+    scheduler.add_job(
+        run_community_automation,
+        CronTrigger(hour='19-22', minute='*/35'),
+        id='community_evening',
+        replace_existing=True
+    )
+    logger.info("[Scheduler] Community automation jobs scheduled")
+
 # Call init on startup
 @app.on_event("startup")
 async def startup_event():
     await init_default_groups()
+    # Start the community scheduler
+    setup_community_scheduler()
+    scheduler.start()
+    logger.info("[Scheduler] APScheduler started for community automation")
 
 # ==================== PREMIUM SUBSCRIPTION (GOOGLE PLAY BILLING) ====================
 
@@ -8906,4 +8946,8 @@ app.add_middleware(
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    # Shutdown scheduler
+    if scheduler.running:
+        scheduler.shutdown(wait=False)
+        logger.info("[Scheduler] APScheduler shut down")
     client.close()
