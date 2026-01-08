@@ -63,17 +63,6 @@ export const PremiumProvider = ({ children }) => {
       icon: '📊',
     },
   ];
-      title: 'Statistiques Avancées',
-      description: 'Analyses détaillées de votre progression et prédictions',
-      icon: '📊',
-    },
-    {
-      id: 'no_ads',
-      title: 'Sans Publicités',
-      description: 'Profitez d\'une expérience 100% sans publicités',
-      icon: '🚫',
-    },
-  ];
 
   // Check if billing is available
   useEffect(() => {
