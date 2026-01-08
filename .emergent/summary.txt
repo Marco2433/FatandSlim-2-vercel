@@ -1,175 +1,257 @@
 <analysis>**original_problem_statement:**
-L'utilisateur a demandé une série de nouvelles fonctionnalités majeures, itérant sur les versions précédentes :
+L'utilisateur a demandé plusieurs nouvelles fonctionnalités, améliorations et corrections de bugs pour l'application de coaching Fat and Slim.
 
-1.  **Fonctionnalités Sociales (v2.1 - Implémenté)** : Refonte complète de la page Communauté avec fil public, groupes thématiques avec fils privés, upload d'images, commentaires, 3 types de classements, et seeding de 100 faux profils. Correction du défilement des catégories d'entraînements et de la mise à jour instantanée des publications. Ajout d'une alerte avant chaque utilisation de l'IA.
+**Requêtes spécifiques dans cette session :**
+1.  **Recettes :**
+    *   Augmenter la base de données à plus de 30 000 recettes, en s'assurant de la cohérence des photos, ingrédients et préparations.
+    *   L'utilisateur s'est plaint de l'incohérence des recettes générées.
 
-2.  **Module Bariatrique (v2.2 - Implémenté)** : Création d'un système complet pour les patients en chirurgie bariatrique (sleeve/bypass). Cela inclut un questionnaire d'onboarding conditionnel, un Dossier Bariatrique dédié et sécurisé sur le dashboard, un suivi quotidien, des recettes filtrées par phase post-opératoire, des articles spécifiques, un coach IA bariatrique avec des garde-fous stricts, et un disclaimer légal.
+2.  **Communauté :**
+    *   Automatiser les profils de la communauté pour qu'ils interagissent (posts, commentaires) à des heures différentes chaque jour.
 
-3.  **Améliorations Algorithmiques et UI (v2.3 - En cours)** :
-    *   **Algorithme Bariatrique** : Remplacer la logique simple par un algorithme déterministe complet pour les recommandations alimentaires et d'hydratation en pré-opératoire et pour les 4 phases post-opératoires, basé sur le BMR/TDEE et des règles médicales strictes fournies.
-    *   **Faux Profils Intelligents** : Ajouter 3798 faux profils supplémentaires et créer une logique pour qu'ils interagissent de manière autonome et réaliste (commentaires, likes, demandes d'amis).
-    *   **Améliorations UI/UX** :
-        *   Corriger le partage d'articles depuis la page Nutrition pour inclure l'image et le texte complet.
-        *   Sur le Dashboard, afficher les recettes dans une modale et faire pointer le lien voir les recettes vers le catalogue.
-        *   Sur la page de profil d'un utilisateur, afficher le nombre de badges, les points de défi et l'objectif personnel.
-        *   Dans le dossier bariatrique, ajouter des rappels de suivi quotidien et afficher les articles dans une modale avec un bouton de partage.
+3.  **Entraînements :**
+    *   Personnaliser l'affichage des vidéos en fonction des préférences du profil de chaque utilisateur.
+
+4.  **Profil :**
+    *   Corriger le sélecteur de langue (FR/EN) qui ne fonctionne pas sur toute l'application.
+    *   Pour l'abonnement premium, supprimer la mention sans publicité.
+
+5.  **Monétisation (Abonnement Premium) :**
+    *   Implémenter et configurer Google Billing et la Google Digital Goods API pour un abonnement mensuel à 19,99€.
+    *   Le prix doit être récupéré dynamiquement depuis Google, et non codé en dur.
+    *   Corriger l'affichage du prix qui montrait trop de décimales (ex: 23.990000).
+    *   Remplacer l'affichage textuel du prix par des images fournies par l'utilisateur lorsque l'application est consultée sur le web.
+
+6.  **Déploiement :**
+    *   Mettre à jour le , vider les caches et fournir les informations nécessaires pour générer une nouvelle version AAB via PWABuilder après chaque modification majeure.
+    *   Mettre à jour  avec le certificat de signature de l'application fourni par l'utilisateur.
+
+7.  **Contraintes :**
+    *   Utiliser un minimum de crédits Emergent.
+    *   Ne pas utiliser l'agent de test.
 
 **User's preferred language**: Français
 
 **what currently exists?**
-L'application Fat and Slim est une PWA full-stack (React/FastAPI/MongoDB) de coaching sportif et nutritionnel. Elle intègre l'authentification (JWT/Google), un fil social complet avec des groupes thématiques et des classements, une gestion avancée des recettes, un suivi des progrès, un coach IA, et un système de gamification. Une fonctionnalité majeure pour le suivi des patients en chirurgie bariatrique a été ajoutée, avec un questionnaire d'onboarding adaptatif et un dossier patient dédié. Le backend est actuellement un monolithe dans  qui a dépassé les 6000 lignes.
+*   **Backend**: Le fichier  monolithique gère toute la logique. Une base de données de plus de 30 000 recettes a été générée et est chargée au démarrage via . Des endpoints pour l'abonnement Premium () ont été ajoutés, mais sans logique de prix codée en dur. Un fichier  a été créé pour préparer l'automatisation des interactions de la communauté, mais n'est pas encore pleinement intégré.
+*   **Frontend**: L'application React a été mise à jour pour intégrer un début de système de monétisation. Les nouveaux fichiers incluent , , et . La logique a été adaptée pour afficher le prix dynamiquement depuis l'API Google Digital Goods (lorsque l'application est installée) ou afficher une image à la place sur le web. La mention Sans publicité a été retirée. Une tentative de correction du système de langue a commencé en modifiant .
 
 **Last working item**:
-- **Last item agent was working**: L'agent a commencé l'implémentation de la demande massive de l'utilisateur (v2.3). Il a modifié en profondeur le fichier  pour intégrer l'algorithme déterministe complexe de recommandations nutritionnelles (pré-op et post-op) pour les patients bariatriques. Il a également commencé à modifier  pour afficher ces nouvelles règles et a initié la logique pour la création massive et l'interaction des faux profils.
+- **Last item agent was working**: L'agent a commencé à travailler sur les demandes de l'utilisateur du message #309. Il a créé un fichier  pour l'automatisation des interactions et a examiné  et  pour préparer la complétion des traductions et l'activation du planificateur de tâches.
 - **Status**: IN PROGRESS
 - **Agent Testing Done**: N
-- **Which testing method agent to use?**: both. Le backend nécessite des tests via  ou des scripts Python pour valider l'algorithme nutritionnel, la création des 3798 nouveaux profils et leurs interactions. Le frontend nécessite des tests via  pour valider les nouvelles UI du dossier bariatrique, les corrections du dashboard et de la page de profil.
+- **Which testing method agent to use?**: both. Le backend nécessite de vérifier les logs (/1.1" 200 OK
+INFO:     10.64.129.77:48114 - "GET /api/bariatric/daily-reminder HTTP/1.1" 200 OK
+INFO:     10.64.128.209:33228 - "GET /api/profile HTTP/1.1" 200 OK
+INFO:     10.64.128.209:33228 - "GET /api/profile HTTP/1.1" 200 OK
+✅ Loaded 3007 recipes from database
+   - Bariatric recipes: 419
+   - Categories: 15
+✅ Loaded 3007 recipes from database
+   - Bariatric recipes: 419
+   - Categories: 15
+✅ Loaded 32070 recipes from database
+   - Bariatric recipes: 1000
+   - Categories: 16
+✅ Loaded 32070 recipes from database
+   - Bariatric recipes: 1000
+   - Categories: 16
+INFO:     10.64.130.110:46192 - "GET /api/recipes/stats HTTP/1.1" 200 OK
+INFO:     10.64.130.110:46192 - "GET /api/recipes/daily HTTP/1.1" 401 Unauthorized
+INFO:     10.64.128.91:47170 - "GET /api/recipes/daily HTTP/1.1" 401 Unauthorized
+INFO:     10.64.128.208:33260 - "GET /api/recipes/daily HTTP/1.1" 401 Unauthorized
+INFO:     10.64.128.209:60030 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+INFO:     10.64.129.77:44156 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+INFO:     10.64.128.209:60030 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+INFO:     10.64.129.77:44156 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+INFO:     10.64.128.194:47932 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+INFO:     10.64.128.208:41000 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+INFO:     10.64.128.209:41594 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+INFO:     10.64.129.77:55468 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+✅ Loaded 32070 recipes from database
+   - Bariatric recipes: 1000
+   - Categories: 16) pour confirmer que le scheduler s'exécute. Le frontend nécessite l'outil de capture d'écran pour valider que le changement de langue sur la page Profil se propage à d'autres composants comme la barre de navigation.
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-- **Issue 1**: Finaliser l'implémentation de l'algorithme nutritionnel bariatrique (P0)
-- **Issue 2**: Implémenter la création massive (3798) et l'interaction autonome des faux profils (P0)
-- **Issue 3**: Corriger le partage d'articles (texte complet + image) depuis la page Nutrition (P1)
-- **Issue 4**: Corriger les interactions sur le Dashboard (modale pour les recettes, lien vers le catalogue) (P1)
-- **Issue 5**: Mettre à jour la vue du profil utilisateur (badges, points, objectif) (P1)
-- **Issue 6**: Ajouter les rappels et la modale pour les articles dans le dossier bariatrique (P1)
-- **Issue 7**: Le mode plein écran de la PWA n'est pas encore validé par l'utilisateur (P2)
-- **Issue 8**: Le scanner de codes-barres n'est pas commencé (P2)
-- **Issue 9**: L'intégration Google Calendar est toujours bloquée (P3)
+- **Issue 1: Le système de langue ne fonctionne pas globalement (P0)**
+- **Issue 2: Personnalisation des vidéos d'entraînement non implémentée (P1)**
+- **Issue 3: Incohérence de la base de données de recettes (P1)**
+- **Issue 4: Le bouton Passer à Premium n'a pas été validé par l'utilisateur (P2)**
 
 **Issues Detail**:
-- **Issue 1: Finaliser l'implémentation de l'algorithme nutritionnel bariatrique (P0)**
-    - **Attempted fixes**: L'agent a ajouté une grande quantité de code dans  pour calculer le BMR, le TDEE, et appliquer des règles spécifiques pour les phases pré et post-opératoires. Le fichier  a été modifié pour afficher ces données.
+- **Issue 1: Le système de langue ne fonctionne pas globalement**
+    - **Attempted fixes**: L'agent a confirmé que  persiste la langue dans le . Il a identifié que le problème vient du fait que la plupart des pages et composants n'utilisent pas la fonction de traduction . Une première correction a été appliquée sur .
     - **Next debug checklist**:
-        1.  Revoir entièrement le code ajouté dans  pour s'assurer que tous les calculs (BMR, TDEE, calories, macros) et les règles de phase sont conformes à la demande de l'utilisateur.
-        2.  Vérifier que les spécificités Sleeve vs. Bypass sont bien prises en compte.
-        3.  Tester l'endpoint  avec différents profils (pré-op, post-op à différentes phases) pour valider la logique.
-        4.  S'assurer que l'UI dans  affiche correctement toutes les nouvelles informations (calories cibles, macros, hydratation).
-    - **Why fix this issue and what will be achieved with the fix?**: C'est le cœur de la nouvelle fonctionnalité bariatrique demandée, apportant une personnalisation non-basée sur l'IA, ce qui est crucial pour la sécurité et la pertinence médicale.
+        1.  Identifier les pages et composants les plus importants (Dashboard, Social, Workouts, etc.).
+        2.  Importer  et encapsuler toutes les chaînes de caractères statiques avec la fonction .
+        3.  Ajouter les traductions manquantes dans .
+    - **Why fix this issue and what will be achieved with the fix?**: C'est une demande utilisateur récurrente et essentielle pour l'internationalisation de l'application.
     - **Status**: IN PROGRESS
-    - **Is recurring issue?** N
-    - **Should Test frontend/backend/both after fix?**: both
+    - **Is recurring issue?**: Y
+    - **Should Test frontend/backend/both after fix?**: Frontend
+    - **Blocked on other issue**: Non.
 
-- **Issue 2: Implémenter la création massive (3798) et l'interaction autonome des faux profils (P0)**
-    - **Attempted fixes**: L'agent a modifié l'endpoint de seeding, mais la logique d'interaction autonome (likes, commentaires, amitiés entre faux profils) n'est pas encore implémentée.
+- **Issue 2: Personnalisation des vidéos d'entraînement non implémentée**
+    - **Attempted fixes**: L'agent a analysé  et a confirmé que les vidéos sont actuellement mélangées de manière aléatoire, mais pas personnalisées en fonction du profil de l'utilisateur (objectifs, niveau, etc.).
     - **Next debug checklist**:
-        1.  Créer une fonction ou une tâche de fond (ex: via un scheduler si possible, sinon simuler via un endpoint déclenchable) dans  qui s'exécute périodiquement.
-        2.  Cette fonction devrait :
-            - Sélectionner aléatoirement des faux utilisateurs.
-            - Les faire liker ou commenter des posts existants.
-            - Les faire créer de nouvelles publications.
-            - Créer des relations d'amitié entre eux.
-    - **Why fix this issue and what will be achieved with the fix?**: Pour rendre la communauté de l'application extrêmement vivante et réaliste, ce qui est une demande clé de l'utilisateur.
+        1.  Modifier la fonction  dans .
+        2.  Récupérer les préférences de l'utilisateur depuis le contexte d'authentification ou via un appel API.
+        3.  Adapter l'appel API (ou le filtrage côté client) pour retourner des vidéos correspondant aux préférences.
+    - **Why fix this issue and what will be achieved with the fix?**: Répondre à une demande explicite de l'utilisateur pour améliorer l'expérience sur la page Entraînements.
     - **Status**: NOT STARTED
-    - **Is recurring issue?** N
-    - **Should Test frontend/backend/both after fix?**: backend
+    - **Is recurring issue?**: N
+    - **Should Test frontend/backend/both after fix?**: Frontend
+    - **Blocked on other issue**: Non.
+
+- **Issue 3: Incohérence de la base de données de recettes**
+    - **Attempted fixes**: L'agent a généré une base de données de plus de 30 000 recettes en utilisant une combinaison de TheMealDB et de génération procédurale. Cependant, l'utilisateur s'est à nouveau plaint de l'incohérence.
+    - **Next debug checklist**:
+        1.  Analyser le script de génération dans .
+        2.  Trouver la source des incohérences (ex: images génériques, combinaisons d'ingrédients illogiques).
+        3.  Explorer des alternatives : utiliser une API de recettes plus fiable (même si payante, à proposer à l'utilisateur) ou améliorer drastiquement l'algorithme de génération pour garantir la cohérence.
+    - **Why fix this issue and what will be achieved with the fix?**: Le catalogue de recettes est une fonctionnalité centrale. Des données de mauvaise qualité dégradent fortement l'expérience utilisateur.
+    - **Status**: NOT STARTED
+    - **Is recurring issue?**: Y
+    - **Should Test frontend/backend/both after fix?**: Backend
+    - **Blocked on other issue**: Non.
+
+- **Issue 4: Le bouton Passer à Premium n'a pas été validé par l'utilisateur**
+    - **Attempted fixes**: L'agent a corrigé un problème de clics en ajoutant un wrapper  sur la  dans . Les tests de l'agent via capture d'écran ont montré une redirection réussie vers .
+    - **Next debug checklist**: L'agent doit explicitement demander à l'utilisateur de tester ce bouton après le déploiement de la prochaine version AAB.
+    - **Why fix this issue and what will be achieved with the fix?**: Assurer que le tunnel de conversion vers l'abonnement Premium est fonctionnel.
+    - **Status**: USER VERIFICATION PENDING
+    - **Is recurring issue?**: N
+    - **Should Test frontend/backend/both after fix?**: Frontend
+    - **Blocked on other issue**: Non.
 
 **In progress Task List**:
-- **Task 1: Finir la refonte bariatrique et les améliorations UI (P0)**
-    - **Where to resume**: Le travail a été interrompu après des modifications majeures sur  et . Il faut vérifier la compilation, corriger les erreurs éventuelles, puis continuer avec les points restants de la demande de l'utilisateur (UI fixes, profils améliorés, etc.).
-    - **What will be achieved with this?**: Une application avec un module bariatrique de niveau professionnel, une communauté très active (simulée), et une expérience utilisateur améliorée sur plusieurs pages clés.
+- **Task 1: Finaliser l'automatisation de la communauté (P1)**
+    - **Where to resume**: Intégrer le fichier  dans . Il faut instancier , ajouter la tâche  pour qu'elle s'exécute à intervalles réguliers et aléatoires, et démarrer le scheduler au lancement de l'application.
+    - **What will be achieved with this?**: Rendre la section communauté plus vivante et engageante, comme demandé par l'utilisateur.
     - **Status**: IN PROGRESS
-    - **Should Test frontend/backend/both after fix?**: both
-    - **Blocked on something**: None
+    - **Should Test frontend/backend/both after fix?**: Backend
+    - **Blocked on something**: Non.
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
--   **Scanner de codes-barres (P1)**: Intégrer une bibliothèque de scan sur  et connecter à l'API OpenFoodFacts.
--   **Intégration YouTube (P2)**: Remplacer les données de vidéos simulées par de vraies vidéos via l'API YouTube Data v3.
+-   **P0 - Correction du système de langue**: Appliquer la fonction  à toutes les pages principales.
+-   **P1 - Personnalisation des entraînements**: Modifier  pour afficher des vidéos basées sur le profil utilisateur.
+-   **P1 - Amélioration de la cohérence des recettes**: Revoir le script de génération de recettes ou proposer une alternative d'API.
 
 **Future Tasks:**
--   **Synchronisation Google Calendar (P3 - BLOCKED)**: Intégrer la lecture des événements du calendrier Google de l'utilisateur.
--   Mettre en place la monétisation via un abonnement Premium.
+-   **Amélioration du Rapport PDF** (P2): Ajouter des graphiques et des données croisées.
+-   **Synchronisation Google Calendar** (P3).
+-   **Finalisation de l'écosystème Premium** (P2): Restreindre l'accès à certaines fonctionnalités pour les utilisateurs non-premium.
 
 **Completed work in this session**
-- **Refonte Sociale Complète (v2.1)**:
-    - Implémentation du fil public, des groupes avec fils privés, de l'upload d'images, des commentaires et des classements (amis, global).
-    - Correction du bug de défilement sur la page des entraînements.
-    - Correction du bug de rafraîchissement instantané des publications.
-    - Création de 100 faux profils pour peupler le contenu initial.
-- **Alerte d'Utilisation de l'IA**:
-    - Un dialogue d'avertissement modal a été ajouté avant chaque appel aux fonctionnalités de l'IA, affichant les crédits restants.
-- **Module Bariatrique (v1.0)**:
-    - Création d'un flux d'onboarding conditionnel pour les patients bariatriques.
-    - Création d'une page Dossier Bariatrique () accessible depuis le dashboard, avec un disclaimer légal à la première visite.
-    - La page inclut un dashboard patient, un suivi quotidien, des recettes filtrées par phase, des articles et un coach IA dédié avec des garde-fous de sécurité.
-- **Corrections de bugs critiques**:
-    - Correction d'une erreur CORS qui empêchait la connexion depuis le frontend.
-    - Correction de plusieurs erreurs de syntaxe et de type dans le backend (, , ).
+-   **Correction Bug P0 de Redirection**: Le bug critique qui empêchait l'inscription et la connexion a été résolu. L'onboarding est maintenant accessible.
+-   **Intégration de Google Billing (Digital Goods API)**:
+    -   Mise en place de la structure frontend (, , ).
+    -   Création des endpoints backend pour la gestion des abonnements.
+    -   Le prix est désormais géré dynamiquement via l'API Google, avec une image de remplacement pour le web.
+-   **Création de la Base de Données de Recettes (30k+)**: Le système a été mis à jour pour générer et servir plus de 30 000 recettes.
+-   **Configuration TWA/AAB**:
+    -   Création et mise à jour de  avec le SHA256 de l'utilisateur.
+    -   Mises à jour successives des versions (, ) pour le déploiement.
+-   **Mises à jour UI/UX Premium**:
+    -   Suppression de la fonctionnalité Sans publicité.
+    -   Remplacement du texte du prix par une image fournie par l'utilisateur.
 
 **Earlier issues found/mentioned but not fixed**
--   **Amélioration du rapport PDF**: N'a pas été traité. Utiliser une bibliothèque comme  pour générer des images de graphiques et les insérer dans le PDF.
--   **Mise à jour du poids sur la page Progrès**: Le rafraîchissement non immédiat n'a pas été explicitement corrigé.
+-   **Issue 1: Manque de réactivité globale de l'UI**
+    - **Debug checklist**: L'état global n'est pas centralisé. Une solution de gestion d'état (comme Zustand, déjà dans le projet mais peu utilisé, ou un React Context plus robuste) est nécessaire pour que les mises à jour (ex: poids, calories) se répercutent partout instantanément.
+    - **Why to solve this issue and what will be achieved with this?**: Améliorera l'expérience utilisateur en garantissant la cohérence des données affichées sur toutes les pages.
+    - **Should Test frontend/backend/both after fix**: Frontend
+    - **Is recurring issue?**: Y
+
+**Known issue recurrence from previous fork**
+-   **Issue recurrence in previous fork**: Bug d'onboarding/login pour les anciens utilisateurs.
+-   **Recurrence count**: 4+
+-   **Status**: RESOLVED. L'agent a réussi à résoudre ce problème bloquant dans cette session.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Backend**: FastAPI, MongoDB (motor), Pydantic. La logique métier est devenue très complexe, notamment pour le module bariatrique avec des calculs nutritionnels déterministes (BMR, TDEE).
-- **Frontend**: React, Tailwind CSS, shadcn/ui, Recharts, Axios, . Utilisation intensive de state conditionnel pour gérer les différents profils utilisateurs (standard vs. bariatrique).
-- **IA**:  avec . L'utilisation est maintenant encadrée par des dialogues d'avertissement et des garde-fous stricts pour le coach bariatrique.
+-   **Backend**: FastAPI, MongoDB (motor), APScheduler
+-   **Frontend**: React, Tailwind CSS, shadcn/ui, React Context
+-   **Monétisation**: Google Play Billing via l'API Digital Goods (TWA)
 
 **key DB schema**
-- **(Étendu)** : Ajout de nombreux champs pour le suivi bariatrique (, , , , etc.).
-- **(Créé)** : .
+-   **premium_subscriptions**: { , , , , ,  }
+
+**changes in tech stack**
+- Aucune modification majeure de la stack, mais ajout de logiques métier complexes (génération de recettes, planification de tâches, facturation).
 
 **All files of reference**
--   : Fichier central pour toute la logique, a subi des modifications massives pour les fonctionnalités sociales et bariatriques.
--   : Fortement remanié pour inclure les questions conditionnelles pour les patients bariatriques.
--   : Modifié pour afficher conditionnellement le lien vers le dossier bariatrique.
--   : Nouvelle page centrale pour tout le module bariatrique.
--   : Entièrement réécrit pour la v2.1 des fonctionnalités sociales.
--   : Modifié pour intégrer l'alerte IA.
--   : Modifié pour corriger le scroll et intégrer l'alerte IA.
--   : Modifié pour ajouter la route vers la page bariatrique.
--   : Mis à jour pour refléter les nouvelles versions.
+*   
+*   
+*   
+*   
+*   
+*   
+*   
+*   
+*   
+*   
+*   
+*   
+*   
 
 **Areas that need refactoring**:
--   **** est devenu un risque majeur pour la stabilité et la maintenabilité du projet. Avec plus de 6000 lignes, il est **impératif et urgent** de le découper en  par fonctionnalité (ex: , , ). Ce doit être la prochaine tâche après la stabilisation de la version actuelle.
+-   ****: **Priorité absolue**. Ce fichier monolithique de plus de 8800 lignes est une source majeure de bugs et de complexité. Il doit être découpé en plusieurs  (par fonctionnalité : auth, profile, social, recipes, etc.).
+-   **Gestion de l'état Frontend**: Le projet a besoin d'une stratégie de gestion d'état globale et cohérente pour éviter les problèmes de synchronisation des données entre les pages.
 
 **key api endpoints**
--  (GET): Récupère toutes les données calculées pour le tableau de bord bariatrique.
--  (POST): Enregistre le suivi quotidien d'un patient bariatrique.
--  (GET): Récupère les recettes filtrées par la phase post-op du patient.
--  (GET): Récupère des articles spécifiques à la chirurgie bariatrique.
--  (POST): Interroge le coach IA bariatrique.
--  (POST): Endpoint unifié pour créer un post (avec ou sans image).
--  (POST): Crée les faux profils.
--  (GET): Récupère le fil d'un groupe spécifique.
--  (GET): Endpoint étendu pour les classements global et par groupe.
+-   : Récupère la liste des fonctionnalités premium.
+-   : Enregistre un nouvel abonnement après validation Google.
+-   : Vérifie le statut de l'abonnement d'un utilisateur.
+-   : Récupère toutes les recettes (authentification requise).
 
 **Critical Info for New Agent**
-- **Priorité Absolue**: Finaliser la demande de l'utilisateur (message #379). La tâche la plus complexe est de valider l'algorithme nutritionnel dans  et d'implémenter la simulation d'interaction pour les milliers de faux profils.
-- **Monolithe Backend Critique**: Le fichier  est extrêmement volumineux et fragile. Toute modification doit être faite avec une extrême prudence. Proposez activement à l'utilisateur un plan de refactorisation en modules dès que la fonctionnalité actuelle sera livrée et validée.
-- **Optimisation des Coûts**: L'utilisateur est très sensible aux coûts des crédits. L'implémentation doit être efficace et éviter les appels IA inutiles. La nouvelle logique bariatrique est déterministe pour cette raison.
-- **Pas de Testing Agent**: L'utilisateur a explicitement demandé de ne pas utiliser le testing agent. Les tests devront être effectués manuellement avec  pour le backend et des captures d'écran () pour le frontend.
+-   **Priorités multiples de l'utilisateur** : L'utilisateur demande plusieurs corrections et fonctionnalités en même temps avec une contrainte de crédits. Vous devez prioriser : 1. Langue, 2. Automatisation Communauté, 3. Personnalisation Entraînements, 4. Qualité des recettes. Confirmez ce plan.
+-   **Flux Google Billing incomplet** : L'intégration de Google Billing est prête côté code, mais ne peut être entièrement testée sans que l'utilisateur déploie une AAB sur le Play Store et l'utilise en mode testeur. Le code actuel est un meilleur effort qui doit être validé en conditions réelles.
+-   **Qualité des recettes** : Ne vous contentez pas de régénérer les 30 000 recettes. L'utilisateur a spécifiquement mentionné un problème de cohérence. Vous devez investiguer la cause et proposer une vraie solution, quitte à remettre en question la faisabilité de générer 30k recettes de *haute qualité* gratuitement.
+-   **Interdiction de l'agent de test** : L'utilisateur a explicitement demandé de ne pas utiliser l'agent de test. Fiez-vous aux tests manuels (curl, captures d'écran) et aux logs.
+
+**documents and test reports created in this job**
+- Aucun document ou rapport de test formel n'a été créé.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **#379**: Demande massive d'améliorations : algorithme nutritionnel bariatrique déterministe, 3798 faux profils supplémentaires avec interactions autonomes, et multiples corrections/améliorations UI sur le dashboard, la page de profil et les articles. (IN PROGRESS)
-2.  **#256**: Demande initiale pour le module bariatrique complet : onboarding conditionnel, dossier patient dédié, coach IA bariatrique, recettes filtrées par phase, et articles spécifiques. (DONE)
-3.  **#215**: L'utilisateur demande de continuer les tests et de finaliser les mises à jour (manifest, AAB) pour la version sociale. (DONE)
-4.  **#5**: Demande initiale pour la refonte sociale (v2.1) et diverses améliorations UI/UX. (DONE)
+1.  **#309**: Demande de corriger les points en attente : automatisation de la communauté et traductions. (IN PROGRESS)
+2.  **#308**: Résumé de l'agent. (DONE)
+3.  **#306**: L'agent fournit les infos pour l'AAB v4.2.0. (DONE)
+4.  **#245**: Demande en masse : corriger les 30k recettes, automatiser la communauté, personnaliser les entraînements, corriger le switch de langue, supprimer sans publicité. (PARTIALLY ADDRESSED)
+5.  **#237**: Demande de remplacer l'image premium par une version sans arrière-plan. (DONE)
+6.  **#226**: Demande de remplacer le texte Prix disponible par une image. (DONE)
+7.  **#207**: Signale que le prix est mal formaté (trop de zéros) et demande une correction. (DONE)
+8.  **#200**: Demande de mettre à jour et fournir les infos pour une nouvelle AAB. (DONE)
+9.  **#170**: Clarification cruciale : le prix doit être dynamique et provenir de Google, pas codé en dur. (ADDRESSED)
+10. **#169**: Résumé de l'agent sur l'avancement de l'intégration Google Billing. (DONE)
 
 **Project Health Check:**
-- **Working, but fragile**: L'application est fonctionnelle et très riche en fonctionnalités. Cependant, l'architecture backend (un seul fichier  de plus de 6000 lignes) représente une dette technique critique et un risque élevé pour les développements futurs. Les fonctionnalités en cours d'implémentation sont complexes et touchent au cœur de la logique métier.
+-   **Broken**: Le système de langue est non fonctionnel sur la majorité de l'application.
+-   **Mocked**: N/A.
 
 **3rd Party Integrations**
-- **OpenAI GPT-4o**: Utilise la Emergent LLM Key, avec un système de cache/limitation personnalisé et des garde-fous pour l'usage bariatrique.
-- **Google OAuth**: Pour l'authentification.
-- **jspdf, jspdf-autotable**: Pour la génération de PDF (fonctionnalité existante, non améliorée).
+-   **Google OAuth**: Pour l'authentification.
+-   **OpenFoodFacts**: API REST gratuite.
+-   **YouTube IFrame Player API**: Pour les vidéos.
+-   **TheMealDB**: API gratuite de recettes utilisée comme base.
+-   **Google Play Billing (Digital Goods API)**: Pour la gestion des abonnements via une TWA.
 
 **Testing status**
-- **Testing agent used after significant changes**: NO
-- **Troubleshoot agent used after agent stuck in loop**: NO
-- **Test files created**: []
-- **Known regressions**: Aucune identifiée, mais les modifications massives sur  présentent un risque élevé.
+-   **Testing agent used after significant changes**: NO (interdit par l'utilisateur).
+-   **Troubleshoot agent used after agent stuck in loop**: NO.
+-   **Test files created**: []
+-   **Known regressions**: Aucune nouvelle régression, mais des fonctionnalités existantes comme le switch de langue sont confirmées comme étant défectueuses.
 
 **Credentials to test flow:**
-L'inscription est fonctionnelle. Créez un nouvel utilisateur via le formulaire d'inscription. Pour tester les fonctionnalités bariatriques, sélectionnez Chirurgie bariatrique à l'étape 5 de l'onboarding et complétez les étapes supplémentaires.
+L'inscription de nouveaux utilisateurs fonctionne. Pour tester le flux post-onboarding, utilisez l'endpoint  après la création du compte pour marquer l'onboarding comme complété.
 
 **What agent forgot to execute**
-L'agent est en plein milieu de l'exécution de la dernière demande. Les points suivants de cette demande n'ont pas encore été traités :
-- La logique d'interaction autonome pour les faux profils.
-- Les corrections UI (partage d'article, modale de recette sur le dashboard, lien du catalogue).
-- L'amélioration de la vue du profil utilisateur.
-- Les améliorations du dossier bariatrique (rappels, modale d'article).</analysis>
+-   L'agent n'a pas encore implémenté la **personnalisation des vidéos d'entraînement** basée sur le profil utilisateur, une demande explicite.
+-   L'agent a généré un grand nombre de recettes mais n'a pas traité en profondeur le problème de **cohérence** soulevé par l'utilisateur.
+-   L'agent a créé  mais ne l'a pas **pleinement intégré et activé** dans  avec APScheduler.
+-   La **gestion d'état globale** du frontend reste un point faible non adressé, source potentielle de bugs de réactivité.</analysis>
