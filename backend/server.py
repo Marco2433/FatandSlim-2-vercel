@@ -9048,7 +9048,14 @@ app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=[
+        "https://fatand-slim-3.vercel.app",
+        "https://fatand-slim-2.vercel.app",
+        "https://coachfit-4.preview.emergentagent.com",
+        "https://coachfit.preview.emergentagent.com",
+        "http://localhost:3000",
+        "http://localhost:8001",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
