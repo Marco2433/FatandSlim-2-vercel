@@ -85,7 +85,7 @@ export const requestPushPermission = async () => {
     
     // Get registration token
     // VAPID key from Firebase Console > Project Settings > Cloud Messaging
-    const vapidKey = process.env.REACT_APP_FIREBASE_VAPID_KEY || 'YOUR_VAPID_KEY';
+    const vapidKey = process.env.REACT_APP_FIREBASE_VAPID_KEY || 'wM82C8AiRfk7nL9e09KaBtmVZCa5plbtpHYvSmrOjWU';
     
     const token = await getToken(messaging, {
       vapidKey: vapidKey,
