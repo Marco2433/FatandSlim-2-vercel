@@ -56,6 +56,31 @@ api_router = APIRouter(prefix="/api")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# ==================== DOWNLOAD PWA ZIP (Direct access, no /api prefix) ====================
+@app.get("/download-pwa")
+async def download_pwa_zip():
+    """Direct download of PWA static files - accessible without /api prefix"""
+    zip_path = ROOT_DIR / "fatandslim-pwa-v4.3.0.zip"
+    if zip_path.exists():
+        return FileResponse(
+            path=str(zip_path),
+            filename="fatandslim-pwa-v4.3.0.zip",
+            media_type="application/zip"
+        )
+    raise HTTPException(status_code=404, detail="ZIP file not found")
+
+@app.get("/api/download-pwa")
+async def download_pwa_zip_api():
+    """Direct download of PWA static files via API"""
+    zip_path = ROOT_DIR / "fatandslim-pwa-v4.3.0.zip"
+    if zip_path.exists():
+        return FileResponse(
+            path=str(zip_path),
+            filename="fatandslim-pwa-v4.3.0.zip",
+            media_type="application/zip"
+        )
+    raise HTTPException(status_code=404, detail="ZIP file not found")
+
 # ==================== AI USAGE LIMITING & CACHING SYSTEM ====================
 
 def normalize_prompt(prompt: str) -> str:
