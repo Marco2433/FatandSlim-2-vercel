@@ -546,3 +546,7 @@ frontend/node_modules/.cache/default-development/14.pack
 # Firebase secrets - NE PAS COMMIT
 backend/firebase-service-account.json
 firebase-service-account.json
+-e 
+# Environment files
+*.env
+*.env.*
