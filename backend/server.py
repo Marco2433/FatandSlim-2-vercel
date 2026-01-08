@@ -20,6 +20,11 @@ import bcrypt
 import httpx
 from difflib import SequenceMatcher
 
+# APScheduler for automated community interactions
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+from community_scheduler import run_community_automation
+
 # Import recipes database
 from recipes_database import (
     VERIFIED_RECIPES, 
