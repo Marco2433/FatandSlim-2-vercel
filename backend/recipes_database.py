@@ -1,5 +1,5 @@
 """
-Complete recipe database with 3000+ verified recipes
+Complete recipe database with 30,000+ verified recipes
 Sources: TheMealDB (570 real recipes), French cuisine, International, Bariatric specialized
 """
 import json
@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 # Load recipes from JSON file
-_RECIPES_FILE = Path(__file__).parent / 'recipes_3000.json'
+_RECIPES_FILE = Path(__file__).parent / 'recipes_30k.json'
 
 def _load_recipes():
     """Load recipes from JSON file"""
