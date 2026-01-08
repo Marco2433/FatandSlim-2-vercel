@@ -8956,28 +8956,28 @@ PWA_MANIFEST = {
     "handle_links": "preferred",
     "launch_handler": {"client_mode": ["navigate-existing", "auto"]},
     "icons": [
-        {"src": "/api/pwa/icon-48x48.png", "sizes": "48x48", "type": "image/png", "purpose": "any"},
-        {"src": "/api/pwa/icon-72x72.png", "sizes": "72x72", "type": "image/png", "purpose": "any"},
-        {"src": "/api/pwa/icon-96x96.png", "sizes": "96x96", "type": "image/png", "purpose": "any"},
-        {"src": "/api/pwa/icon-128x128.png", "sizes": "128x128", "type": "image/png", "purpose": "any"},
-        {"src": "/api/pwa/icon-144x144.png", "sizes": "144x144", "type": "image/png", "purpose": "any"},
-        {"src": "/api/pwa/icon-152x152.png", "sizes": "152x152", "type": "image/png", "purpose": "any"},
-        {"src": "/api/pwa/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-        {"src": "/api/pwa/icon-256x256.png", "sizes": "256x256", "type": "image/png", "purpose": "any"},
-        {"src": "/api/pwa/icon-384x384.png", "sizes": "384x384", "type": "image/png", "purpose": "any"},
-        {"src": "/api/pwa/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-        {"src": "/api/pwa/icon-192x192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
-        {"src": "/api/pwa/icon-512x512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+        {"src": "/icon-48x48.png", "sizes": "48x48", "type": "image/png", "purpose": "any"},
+        {"src": "/icon-72x72.png", "sizes": "72x72", "type": "image/png", "purpose": "any"},
+        {"src": "/icon-96x96.png", "sizes": "96x96", "type": "image/png", "purpose": "any"},
+        {"src": "/icon-128x128.png", "sizes": "128x128", "type": "image/png", "purpose": "any"},
+        {"src": "/icon-144x144.png", "sizes": "144x144", "type": "image/png", "purpose": "any"},
+        {"src": "/icon-152x152.png", "sizes": "152x152", "type": "image/png", "purpose": "any"},
+        {"src": "/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+        {"src": "/icon-256x256.png", "sizes": "256x256", "type": "image/png", "purpose": "any"},
+        {"src": "/icon-384x384.png", "sizes": "384x384", "type": "image/png", "purpose": "any"},
+        {"src": "/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+        {"src": "/icon-192x192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+        {"src": "/icon-512x512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
     ],
     "screenshots": [
-        {"src": "/api/pwa/screenshot-wide.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "Dashboard Fat & Slim"},
-        {"src": "/api/pwa/screenshot-narrow.png", "sizes": "540x720", "type": "image/png", "form_factor": "narrow", "label": "Application Fat & Slim"}
+        {"src": "/screenshot-wide.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "Dashboard Fat & Slim"},
+        {"src": "/screenshot-narrow.png", "sizes": "540x720", "type": "image/png", "form_factor": "narrow", "label": "Application Fat & Slim"}
     ],
     "shortcuts": [
-        {"name": "Communauté", "short_name": "Social", "description": "Fil public, groupes et classements", "url": "/social?utm_source=shortcut", "icons": [{"src": "/api/pwa/icon-96x96.png", "sizes": "96x96"}]},
-        {"name": "Entraînements", "short_name": "Sport", "description": "Vidéos et programmes sportifs", "url": "/workouts?utm_source=shortcut", "icons": [{"src": "/api/pwa/icon-96x96.png", "sizes": "96x96"}]},
-        {"name": "Nutrition", "short_name": "Nutrition", "description": "Recettes et suivi alimentaire", "url": "/nutrition?utm_source=shortcut", "icons": [{"src": "/api/pwa/icon-96x96.png", "sizes": "96x96"}]},
-        {"name": "Mon Progrès", "short_name": "Progrès", "description": "Statistiques et badges", "url": "/progress?utm_source=shortcut", "icons": [{"src": "/api/pwa/icon-96x96.png", "sizes": "96x96"}]}
+        {"name": "Communauté", "short_name": "Social", "description": "Fil public, groupes et classements", "url": "/social?utm_source=shortcut", "icons": [{"src": "/icon-96x96.png", "sizes": "96x96"}]},
+        {"name": "Entraînements", "short_name": "Sport", "description": "Vidéos et programmes sportifs", "url": "/workouts?utm_source=shortcut", "icons": [{"src": "/icon-96x96.png", "sizes": "96x96"}]},
+        {"name": "Nutrition", "short_name": "Nutrition", "description": "Recettes et suivi alimentaire", "url": "/nutrition?utm_source=shortcut", "icons": [{"src": "/icon-96x96.png", "sizes": "96x96"}]},
+        {"name": "Mon Progrès", "short_name": "Progrès", "description": "Statistiques et badges", "url": "/progress?utm_source=shortcut", "icons": [{"src": "/icon-96x96.png", "sizes": "96x96"}]}
     ],
     "related_applications": [],
     "prefer_related_applications": False
