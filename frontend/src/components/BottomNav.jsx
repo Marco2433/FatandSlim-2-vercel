@@ -1,17 +1,19 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Camera, Utensils, Dumbbell, TrendingUp, User } from 'lucide-react';
-
-const navItems = [
-  { path: '/dashboard', icon: Home, label: 'Accueil' },
-  { path: '/scanner', icon: Camera, label: 'Scanner' },
-  { path: '/nutrition', icon: Utensils, label: 'Nutrition' },
-  { path: '/workouts', icon: Dumbbell, label: 'Sport' },
-  { path: '/progress', icon: TrendingUp, label: 'Progrès' },
-];
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { language } = useLanguage();
+
+  const navItems = [
+    { path: '/dashboard', icon: Home, label: language === 'fr' ? 'Accueil' : 'Home' },
+    { path: '/scanner', icon: Camera, label: 'Scanner' },
+    { path: '/nutrition', icon: Utensils, label: 'Nutrition' },
+    { path: '/workouts', icon: Dumbbell, label: language === 'fr' ? 'Sport' : 'Workouts' },
+    { path: '/progress', icon: TrendingUp, label: language === 'fr' ? 'Progrès' : 'Progress' },
+  ];
 
   return (
     <nav 
