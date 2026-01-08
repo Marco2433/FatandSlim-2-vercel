@@ -251,14 +251,38 @@ export default function WorkoutsPage() {
   const fetchVideos = async () => {
     setLoadingVideos(true);
     try {
+      // Fetch user profile to get preferences for personalization
+      let userPreferences = {};
+      try {
+        const profileRes = await axios.get(`${API}/profile`, { withCredentials: true });
+        const profile = profileRes.data;
+        userPreferences = {
+          goal: profile.goal, // lose_weight, muscle_gain, maintain
+          activity_level: profile.activity_level, // sedentary, light, moderate, active, very_active
+          fitness_level: profile.fitness_level,
+          gender: profile.gender,
+          age: profile.age,
+        };
+      } catch (e) {
+        console.log('Could not fetch profile for personalization');
+      }
+
       const response = await axios.get(`${API}/workouts/videos`, {
-        params: { category: videoCategory !== 'all' ? videoCategory : undefined },
+        params: { 
+          category: videoCategory !== 'all' ? videoCategory : undefined,
+          // Pass user preferences for backend personalization
+          goal: userPreferences.goal,
+          activity_level: userPreferences.activity_level,
+        },
         withCredentials: true
       });
-      // Shuffle videos randomly each time
-      const videosData = response.data || [];
-      const shuffled = [...videosData].sort(() => Math.random() - 0.5);
-      setVideos(shuffled);
+      
+      let videosData = response.data || [];
+      
+      // Personalize video order based on user profile
+      videosData = personalizeVideos(videosData, userPreferences);
+      
+      setVideos(videosData);
     } catch (error) {
       console.error('Error fetching videos:', error);
       // Use mock data if API fails and shuffle
@@ -268,6 +292,51 @@ export default function WorkoutsPage() {
     } finally {
       setLoadingVideos(false);
     }
+  };
+
+  // Personalize videos based on user profile preferences
+  const personalizeVideos = (videos, preferences) => {
+    if (!preferences || !videos.length) {
+      // Just shuffle if no preferences
+      return [...videos].sort(() => Math.random() - 0.5);
+    }
+
+    // Score each video based on user preferences
+    const scoredVideos = videos.map(video => {
+      let score = Math.random() * 10; // Base random score for variety
+      
+      // Boost based on user goal
+      if (preferences.goal === 'lose_weight' || preferences.goal === 'lose') {
+        if (['cardio', 'hiit', 'fitness'].includes(video.category)) score += 30;
+        if (video.calories_burned > 200) score += 20;
+      } else if (preferences.goal === 'muscle_gain' || preferences.goal === 'gain') {
+        if (['musculation', 'bras', 'jambes', 'dos', 'pectoraux'].includes(video.category)) score += 30;
+      } else if (preferences.goal === 'maintain') {
+        if (['yoga', 'pilates', 'stretching', 'fitness'].includes(video.category)) score += 20;
+      }
+      
+      // Boost based on activity level
+      if (preferences.activity_level === 'sedentary' || preferences.activity_level === 'light') {
+        if (video.difficulty === 'beginner' || video.difficulty === 'debutant') score += 25;
+        if (['yoga', 'stretching', 'pilates'].includes(video.category)) score += 15;
+      } else if (preferences.activity_level === 'very_active' || preferences.activity_level === 'active') {
+        if (video.difficulty === 'expert' || video.difficulty === 'intermediate') score += 20;
+        if (['hiit', 'musculation', 'boxe'].includes(video.category)) score += 15;
+      }
+      
+      // Adjust for age if available
+      if (preferences.age) {
+        if (preferences.age > 55 && video.category === 'senior') score += 30;
+        if (preferences.age < 30 && ['hiit', 'boxe', 'danse'].includes(video.category)) score += 10;
+      }
+      
+      return { ...video, _score: score };
+    });
+    
+    // Sort by score (highest first) and remove score from output
+    return scoredVideos
+      .sort((a, b) => b._score - a._score)
+      .map(({ _score, ...video }) => video);
   };
 
   const loadWatchedVideos = () => {
