@@ -8866,12 +8866,6 @@ async def get_premium_features():
                 "title": "Statistiques Avancées",
                 "description": "Analyses détaillées de votre progression et prédictions",
                 "icon": "📊"
-            },
-            {
-                "id": "no_ads",
-                "title": "Sans Publicités",
-                "description": "Profitez d'une expérience 100% sans publicités",
-                "icon": "🚫"
             }
         ],
         # Note: Price information comes from Google Play, not from backend
